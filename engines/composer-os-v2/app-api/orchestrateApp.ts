@@ -4,6 +4,7 @@
  */
 
 import { orchestrate, type OrchestrateResult } from '../core/orchestrate/orchestrate';
+import type { E2PerformRequest } from '../core/orchestrate/e2Perform';
 import type { EnsembleTemplateId, OrchestrateRequest, SectionColourPlan } from '../core/orchestrate/types';
 
 const TEMPLATES: readonly EnsembleTemplateId[] = ['string_quartet', 'pierrot', 'wind_quintet', 'chamber_orchestra'];
@@ -21,7 +22,29 @@ function isPlan(value: unknown): value is SectionColourPlan {
 
 export function apiOrchestrate(body: unknown): OrchestrateResult {
   if (!body || typeof body !== 'object') return { ok: false, error: 'Orchestrate is off.' };
-  const request = body as Partial<OrchestrateRequest>;
+  const request = body as Partial<OrchestrateRequest> & { e2?: E2PerformRequest };
+  if (request.e2) {
+    if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
+    return orchestrate({
+      enabled: true,
+      sourceMusicXml: typeof request.sourceMusicXml === 'string' ? request.sourceMusicXml : '',
+      template: 'string_quartet',
+      plan: [{
+        section: 'e2',
+        startBar: 1,
+        endBar: 1,
+        density: 'sparse',
+        registerCentre: 60,
+        melodyCarriers: [],
+        doubling: 'none',
+        maxDoublingBars: 0,
+        harmonySource: 'source',
+      }],
+      seed: request.e2.seed,
+      preserveMelody: true,
+      e2: request.e2,
+    });
+  }
   if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
   if (request.preserveMelody !== true) return { ok: false, error: 'Melody preservation is required.' };
   if (typeof request.sourceMusicXml !== 'string' || !request.sourceMusicXml.trim()) {

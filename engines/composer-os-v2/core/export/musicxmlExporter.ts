@@ -51,6 +51,7 @@ import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXm
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 import { pianoGrandStaffEventsToXml, pianoPedalDirectionXml } from './pianoGrandStaffXml';
+import { exactSingleStaffEventsToXml, measureUsesExactStaff } from './exactSingleStaffXml';
 import { formatTimeXml } from '../piano/pianoMeterPlan';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
 import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
@@ -1875,7 +1876,9 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
                 ? guitarInstrumentGroupTabEventsToXml(m, i, part, decompose, opts, preferFlats, measureCapacity)
                 : part.pianoGrandStaff
                   ? pianoGrandStaffEventsToXml(m, i, part, decompose, preferFlats, measureCapacity)
-                  : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
+                  : measureUsesExactStaff(m)
+                    ? exactSingleStaffEventsToXml(m, part, preferFlats, measureCapacity)
+                    : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
         if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_end')) {
           xml += `    <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
         }

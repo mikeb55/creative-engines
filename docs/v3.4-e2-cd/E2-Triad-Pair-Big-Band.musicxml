@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>E2 Triad Pair Big Band</work-title></work>
+  <part-list>
+    <score-part id="as1">
+      <part-name>Alto Sax 1</part-name>
+      <score-instrument id="as1-I1"><instrument-name>Alto Sax 1</instrument-name>
+        <instrument-sound>wind.reed.saxophone.alto</instrument-sound></score-instrument>
+      <midi-instrument id="as1-I1">
+        <midi-program>66</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="as2">
+      <part-name>Alto Sax 2</part-name>
+      <score-instrument id="as2-I1"><instrument-name>Alto Sax 2</instrument-name>
+        <instrument-sound>wind.reed.saxophone.alto</instrument-sound></score-instrument>
+      <midi-instrument id="as2-I1">
+        <midi-program>66</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="ts1">
+      <part-name>Tenor Sax 1</part-name>
+      <score-instrument id="ts1-I1"><instrument-name>Tenor Sax 1</instrument-name>
+        <instrument-sound>wind.reed.saxophone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="ts1-I1">
+        <midi-program>67</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="ts2">
+      <part-name>Tenor Sax 2</part-name>
+      <score-instrument id="ts2-I1"><instrument-name>Tenor Sax 2</instrument-name>
+        <instrument-sound>wind.reed.saxophone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="ts2-I1">
+        <midi-program>67</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bs">
+      <part-name>Baritone Sax</part-name>
+      <score-instrument id="bs-I1"><instrument-name>Baritone Sax</instrument-name>
+        <instrument-sound>wind.reed.saxophone.baritone</instrument-sound></score-instrument>
+      <midi-instrument id="bs-I1">
+        <midi-program>68</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tp1">
+      <part-name>Trumpet 1</part-name>
+      <score-instrument id="tp1-I1"><instrument-name>Trumpet 1</instrument-name>
+        <instrument-sound>brass.trumpet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="tp1-I1">
+        <midi-program>57</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tp2">
+      <part-name>Trumpet 2</part-name>
+      <score-instrument id="tp2-I1"><instrument-name>Trumpet 2</instrument-name>
+        <instrument-sound>brass.trumpet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="tp2-I1">
+        <midi-program>57</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tp3">
+      <part-name>Trumpet 3</part-name>
+      <score-instrument id="tp3-I1"><instrument-name>Trumpet 3</instrument-name>
+        <instrument-sound>brass.trumpet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="tp3-I1">
+        <midi-program>57</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tp4">
+      <part-name>Trumpet 4</part-name>
+      <score-instrument id="tp4-I1"><instrument-name>Trumpet 4</instrument-name>
+        <instrument-sound>brass.trumpet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="tp4-I1">
+        <midi-program>57</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tbn1">
+      <part-name>Trombone 1</part-name>
+      <score-instrument id="tbn1-I1"><instrument-name>Trombone 1</instrument-name>
+        <instrument-sound>brass.trombone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="tbn1-I1">
+        <midi-program>58</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tbn2">
+      <part-name>Trombone 2</part-name>
+      <score-instrument id="tbn2-I1"><instrument-name>Trombone 2</instrument-name>
+        <instrument-sound>brass.trombone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="tbn2-I1">
+        <midi-program>58</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tbn3">
+      <part-name>Trombone 3</part-name>
+      <score-instrument id="tbn3-I1"><instrument-name>Trombone 3</instrument-name>
+        <instrument-sound>brass.trombone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="tbn3-I1">
+        <midi-program>58</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="tbn4">
+      <part-name>Trombone 4</part-name>
+      <score-instrument id="tbn4-I1"><instrument-name>Trombone 4</instrument-name>
+        <instrument-sound>brass.trombone.tenor</instrument-sound></score-instrument>
+      <midi-instrument id="tbn4-I1">
+        <midi-program>58</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="pn">
+      <part-name>Piano</part-name>
+      <score-instrument id="pn-I1"><instrument-name>Piano</instrument-name>
+        <instrument-sound>keyboard.piano</instrument-sound></score-instrument>
+      <midi-instrument id="pn-I1">
+        <midi-program>1</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bass">
+      <part-name>Upright Bass</part-name>
+      <part-abbreviation>Bas.</part-abbreviation>
+      <score-instrument id="bass-I1"><instrument-name>Upright Bass</instrument-name>
+        <instrument-sound>strings.contrabass</instrument-sound></score-instrument>
+      <midi-instrument id="bass-I1">
+        <midi-program>44</midi-program>
+      </midi-instrument>
+    </score-part>
+    <score-part id="drums">
+      <part-name>Drum Set</part-name>
+      <score-instrument id="drums-I1"><instrument-name>Drum Set</instrument-name></score-instrument>
+    </score-part>
+  </part-list>
+  <part id="as1">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-5</diatonic><chromatic>-9</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>96</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="96"/>
+    </direction>
+    <direction placement="above"><direction-type><words font-style="italic">C major then D major</words></direction-type></direction>
+        <note><pitch><step>A</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><alter>1</alter><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>E</step><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><pitch><step>B</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>D</step><alter>1</alter><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="3">
+        <note><pitch><step>E</step><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>C</step><alter>1</alter><octave>6</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="as2">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-5</diatonic><chromatic>-9</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="ts1">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>-1</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>G</step><alter>1</alter><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>B</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="2">
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><pitch><step>A</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="ts2">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>-1</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="bs">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-5</diatonic><chromatic>-9</chromatic><octave-change>-1</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tp1">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tp2">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tp3">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tp4">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tbn1">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tbn2">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tbn3">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="tbn4">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="pn">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="bass">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+      <transpose><diatonic>0</diatonic><chromatic>0</chromatic><octave-change>-1</octave-change></transpose>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="2">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="3">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="4">
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  </part>
+  <part id="drums">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef number="1"><sign>percussion</sign><line>2</line></clef>
+    </attributes>
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+  </measure>
+  <measure number="2">
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+  </measure>
+  <measure number="3">
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+  </measure>
+  <measure number="4">
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note><unpitched><display-step>G</display-step><display-octave>5</display-octave></unpitched><duration>480</duration><instrument id="drums-I1"/><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+  </measure>
+  </part>
+</score-partwise>

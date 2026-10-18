@@ -33,6 +33,7 @@ import {
   quartetBarsHaveParallelMotionViolation,
 } from '../string-quartet/quartetVoiceLeadingGuard';
 import { resolveTemplate, type ResolvedPart } from './ensembleTemplates';
+import { performE2 } from './e2Perform';
 import type {
   DerivedLineEvent,
   EnsembleTemplateId,
@@ -519,6 +520,36 @@ function partModel(part: ResolvedPart, measures: PartModel['measures']): PartMod
 }
 
 export function orchestrate(request: OrchestrateRequest): OrchestrateResult {
+  if (request.e2) {
+    const performed = performE2(request.e2);
+    if (!performed.ok) return { ok: false, error: performed.reason };
+    const receipt: OrchestrateReceipt = {
+      version: 'orchestrate-1',
+      inputSha256: request.e2.source?.sha256 ?? '',
+      params: request,
+      layerAssignments: [],
+      derivedLines: [],
+      omittedLines: [],
+      flagged: [],
+      omissions: [],
+      doublingRuns: [],
+      provenance: [],
+      planners: {
+        family: request.e2.ensemble,
+        density: [],
+        register: [],
+        guitarZone: null,
+        bassZone: null,
+        ownershipEntries: performed.placements.length,
+      },
+      parallelMotionReported: performed.parallelMotion,
+      independence: [],
+      voiceLeadingScores: [],
+      musicalQualityScore: null,
+      musicallyApproved: false,
+    };
+    return { ok: true, musicXml: performed.musicXml, receipt, score: performed.score };
+  }
   if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
   if (request.preserveMelody !== true) return { ok: false, error: 'Melody preservation is required.' };
   if (!request.plan.length) return { ok: false, error: 'Orchestrate needs a section colour plan.' };

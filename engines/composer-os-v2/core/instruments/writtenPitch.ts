@@ -66,6 +66,18 @@ export function soundingToWritten(soundingMidi: number, transposition: Transposi
   return { step: stepped.step, alter, octave: stepped.octave, midi };
 }
 
+/**
+ * Transpose a spelled sounding pitch without flattening sharps through spellMidi.
+ * Concert F♯5 on a B-flat trumpet is written G♯5. Concert A2 on octave-transposing bass is written A3.
+ */
+export function soundingSpellingToWritten(sounding: SpelledPitch, transposition: Transposition): SpelledPitch {
+  const shifted = shiftOctave(sounding, -transposition.octaveChange);
+  const stepped = shiftDiatonic(shifted, -transposition.diatonic);
+  const midi = sounding.midi - transposition.chromatic - transposition.octaveChange * 12;
+  const alter = midi - naturalMidi(stepped.step, stepped.octave);
+  return { step: stepped.step, alter, octave: stepped.octave, midi };
+}
+
 /** Written pitch plus the catalogue transposition returns the sounding pitch. */
 export function writtenToSounding(written: SpelledPitch, transposition: Transposition): SpelledPitch {
   const stepped = shiftDiatonic(written, transposition.diatonic);

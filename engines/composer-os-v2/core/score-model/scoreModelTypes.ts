@@ -371,6 +371,11 @@ export interface ScoreModel {
    */
   pianoV11StageA?: { enabled: true; divisions: number };
   /**
+   * E2 opt-in MIDI projection. Absent leaves generic MIDI on the legacy path:
+   * written pitch numbers, no tie merging, no tempo-map conductor events.
+   */
+  e2SoundingMidi?: true;
+  /**
    * V3.4 tempo map. Absent or empty keeps the single score tempo direction.
    */
   tempoMap?: TempoMapEvent[];

@@ -4,6 +4,7 @@
  */
 
 import type { Technique } from '../instruments/instrumentTypes';
+import type { E2PerformRequest } from './e2Perform';
 
 export type EnsembleTemplateId = 'string_quartet' | 'pierrot' | 'wind_quintet' | 'chamber_orchestra';
 
@@ -42,6 +43,8 @@ export interface OrchestrateRequest {
   plan: SectionColourPlan[];
   seed: number;
   preserveMelody: true;
+  /** Opt-in E2 realisation. When set, legacy source reduction does not run. */
+  e2?: E2PerformRequest;
 }
 
 export interface OrchestrateFlag {

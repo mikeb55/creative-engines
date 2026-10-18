@@ -15,6 +15,8 @@ import {
 import type { ChordEvent, MeasureModel, NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
 import { integralTicks } from '../piano/pianoExactTiming';
+import { writtenToSounding } from '../instruments/writtenPitch';
+import { CONCERT_TRANSPOSITION } from '../instruments/instrumentTypes';
 import { GROOVE_DRUMS_INSTRUMENT_IDENTITY, GROOVE_DRUMS_PART_ID } from '../groove-scaffold/grooveScaffold';
 
 /** Pulses per quarter (aligned with MusicXML divisions / drum guide). */
@@ -48,7 +50,12 @@ function createPrebuiltTrack(rawData: number[]): InstanceType<typeof MidiWriter.
 }
 
 /** Ordered meta events with absolute ticks (tempo + one time signature per bar start). */
-function buildConductorTrackBytes(bpm: number, totalBars: number, barMeterMap?: BarMeterMap): number[] {
+function buildConductorTrackBytes(
+  bpm: number,
+  totalBars: number,
+  barMeterMap?: BarMeterMap,
+  tempoMap?: ScoreModel['tempoMap'],
+): number[] {
   const utils = MidiWriter.Utils;
   type Queued = { t: number; order: number; bytes: number[] };
   const q: Queued[] = [];
@@ -63,6 +70,29 @@ function buildConductorTrackBytes(bpm: number, totalBars: number, barMeterMap?: 
       bytes: timeSigMetaBytes(sig.numerator, sig.denominator),
     });
     cumTick += measureDivisionsForMeter(sig.numerator, sig.denominator);
+  }
+  if (tempoMap && tempoMap.length > 0) {
+    let origin = 0;
+    for (let i = 0; i < totalBars; i += 1) {
+      const barNum = i + 1;
+      for (const event of tempoMap) {
+        if (event.bar !== barNum) continue;
+        const quarterBpm = event.beatUnit === 'half'
+          ? event.bpm * 2
+          : event.beatUnit === 'eighth'
+            ? event.bpm / 2
+            : event.beatUnit === 'dotted-quarter'
+              ? event.bpm * 1.5
+              : event.bpm;
+        q.push({
+          t: origin + Math.round(event.beat * SCORE_MIDI_PPQ),
+          order: 0,
+          bytes: tempoMetaBytes(quarterBpm),
+        });
+      }
+      const sig = resolveMeterForBar(barNum, barMeterMap);
+      origin += measureDivisionsForMeter(sig.numerator, sig.denominator);
+    }
   }
   q.sort((a, b) => a.t - b.t || a.order - b.order);
 
@@ -138,8 +168,12 @@ function melodicChannelForPartIndex(partIndex: number): number {
   return ch;
 }
 
-function midiChannelForPart(part: PartModel, partIndex: number): number {
-  if (part.id === GROOVE_DRUMS_PART_ID || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY) return 10;
+function midiChannelForPart(part: PartModel, partIndex: number, e2: boolean): number {
+  const drums = part.id === GROOVE_DRUMS_PART_ID
+    || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY
+    || part.instrumentIdentity === 'big_band_jazz_drums';
+  if (drums && (e2 || part.id === GROOVE_DRUMS_PART_ID || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY)) return 10;
+  if (e2 && partIndex >= 15) throw new Error(`E2 MIDI refuses channel wrap for part ${part.id}`);
   return melodicChannelForPartIndex(partIndex);
 }
 
@@ -162,6 +196,37 @@ export interface WriteScoreMidiOptions {
   barMeterMap?: BarMeterMap;
 }
 
+function mergeTieChains(
+  rows: readonly { pitch: number; startTick: number; durTicks: number; velocity: number; tie?: 'start' | 'stop' | 'continue'; voice: number }[],
+): Array<{ pitch: number; startTick: number; durTicks: number; velocity: number }> {
+  const pending = rows.map((row, index) => ({ ...row, index }));
+  const used = new Set<number>();
+  const out: Array<{ pitch: number; startTick: number; durTicks: number; velocity: number }> = [];
+  for (const row of pending) {
+    if (used.has(row.index)) continue;
+    if (row.tie === 'stop' || row.tie === 'continue') {
+      const owned = pending.some((other) => other.tie === 'start' && other.voice === row.voice && other.pitch === row.pitch && other.startTick < row.startTick);
+      if (owned) continue;
+    }
+    let end = row.startTick + row.durTicks;
+    if (row.tie === 'start' || row.tie === 'continue') {
+      for (let guard = 0; guard < 12; guard += 1) {
+        const next = pending.find((item) => !used.has(item.index)
+          && item.voice === row.voice
+          && item.pitch === row.pitch
+          && item.startTick === end
+          && (item.tie === 'stop' || item.tie === 'continue'));
+        if (!next) break;
+        used.add(next.index);
+        end = next.startTick + next.durTicks;
+        if (next.tie === 'stop') break;
+      }
+    }
+    out.push({ pitch: row.pitch, startTick: row.startTick, durTicks: end - row.startTick, velocity: row.velocity });
+  }
+  return out;
+}
+
 /**
  * Writes a Type-1 SMF to `outputPath` (conductor + one track per part).
  * @returns true when a non-empty file was written.
@@ -175,7 +240,8 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
   const barMeterMap = options?.barMeterMap ?? score.barMeterMap;
   const bpm = options?.bpm ?? score.tempo ?? 120;
 
-  const metaRaw = buildConductorTrackBytes(bpm, totalBars, barMeterMap);
+  const e2 = score.e2SoundingMidi === true;
+  const metaRaw = buildConductorTrackBytes(bpm, totalBars, barMeterMap, e2 ? score.tempoMap : undefined);
   const metaTrack = createPrebuiltTrack(metaRaw);
 
   const barStarts = cumulativeBarOffsets(score, totalBars, barMeterMap);
@@ -183,7 +249,7 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
   const tracks: InstanceType<typeof MidiWriter.Track>[] = [metaTrack];
 
   score.parts.forEach((part, pi) => {
-    const channel = midiChannelForPart(part, pi);
+    const channel = midiChannelForPart(part, pi, e2);
     const prog = Math.max(0, Math.min(127, Math.round(part.midiProgram)));
 
     const track = new MidiWriter.Track();
@@ -197,6 +263,7 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
     }
     const label = (part.name || part.id || `part_${pi}`).slice(0, 128);
     track.addEvent(new MidiWriter.TrackNameEvent({ text: label }));
+    const queued: Array<{ pitch: number; startTick: number; durTicks: number; velocity: number; tie?: 'start' | 'stop' | 'continue'; voice: number }> = [];
 
     for (let bar = 1; bar <= totalBars; bar++) {
       const meas = findMeasureForBar(part, bar);
@@ -212,11 +279,12 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
         const durationBeats = ev.duration;
         if (!Number.isFinite(startBeat) || !Number.isFinite(durationBeats)) continue;
 
-        const exact = ev.kind === 'note' ? ev.pianoExact : undefined;
+        const exact = ev.kind === 'note' || ev.kind === 'rest' ? ev.pianoExact : undefined;
+        if (ev.kind === 'rest') continue;
         const exactStart = exact ? integralTicks(exact.onsetQ, SCORE_MIDI_PPQ) : null;
         const exactDur = exact ? integralTicks(exact.durationQ, SCORE_MIDI_PPQ) : null;
         if (exact && (exactStart === null || exactDur === null)) {
-          throw new Error(`MIDI PPQ ${SCORE_MIDI_PPQ} cannot represent piano exact timing ${exact.onsetQ.n}/${exact.onsetQ.d}`);
+          throw new Error(`MIDI PPQ ${SCORE_MIDI_PPQ} cannot represent exact timing ${exact.onsetQ.n}/${exact.onsetQ.d}`);
         }
         const startTick = exactStart !== null ? baseTick + exactStart : baseTick + Math.round(startBeat * SCORE_MIDI_PPQ);
         let durTicks = exactDur !== null ? exactDur : Math.round(durationBeats * SCORE_MIDI_PPQ);
@@ -227,9 +295,25 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
             ? ev.velocity
             : 90;
         const velocity = writerVelocityFromMidi(velRaw);
+        const transposition = score.exportPartTranspose?.[part.id] ?? CONCERT_TRANSPOSITION;
+        const sounding = (written: number, spelling?: { step: string; alter: number }): number => {
+          if (!e2 || channel === 10) return written;
+          const octave = Math.floor(written / 12) - 1;
+          return writtenToSounding(
+            { step: spelling?.step ?? 'C', alter: spelling?.alter ?? 0, octave, midi: written },
+            transposition,
+          ).midi;
+        };
 
         const durStr = `t${durTicks}`;
+        const tie = ev.kind === 'note' ? ev.notation?.tie : undefined;
+        const voice = ev.voice ?? 1;
         for (const pitch of pitches) {
+          const soundingPitch = sounding(pitch, ev.kind === 'note' ? ev.spelling : ev.kind === 'chord' ? undefined : undefined);
+          if (e2) {
+            queued.push({ pitch: soundingPitch, startTick, durTicks, velocity, voice, ...(tie ? { tie } : {}) });
+            continue;
+          }
           const noteEvent = new MidiWriter.NoteEvent({
             pitch,
             startTick,
@@ -243,6 +327,19 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
           track.addEvent(noteEvent);
         }
       }
+    }
+
+    const midiNotes = e2 ? mergeTieChains(queued) : [];
+    for (const note of midiNotes) {
+      const noteEvent = new MidiWriter.NoteEvent({
+        pitch: note.pitch,
+        startTick: note.startTick,
+        duration: `t${note.durTicks}`,
+        channel,
+        velocity: note.velocity,
+      });
+      if (note.startTick === 0) noteEvent.tick = 0;
+      track.addEvent(noteEvent);
     }
 
     tracks.push(track);

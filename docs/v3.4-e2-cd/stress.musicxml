@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>E2 stress</work-title></work>
+  <part-list>
+    <score-part id="tp">
+      <part-name>Trumpet</part-name>
+      <score-instrument id="tp-I1"><instrument-name>Trumpet</instrument-name>
+        <instrument-sound>brass.trumpet.bflat</instrument-sound></score-instrument>
+      <midi-instrument id="tp-I1">
+        <midi-program>57</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="tp">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+      <transpose><diatonic>-1</diatonic><chromatic>-2</chromatic><octave-change>0</octave-change></transpose>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>48</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="48"/>
+    </direction>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>160</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes><normal-type>eighth</normal-type></time-modification><stem>up</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>160</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes><normal-type>eighth</normal-type></time-modification><stem>up</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>160</duration><voice>1</voice><type>eighth</type><time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes><normal-type>eighth</normal-type></time-modification><stem>up</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><tie type="start"/><voice>1</voice><type>quarter</type><stem>up</stem><notations><tied type="start"/></notations></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>96</duration><voice>2</voice><type>16th</type><time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes><normal-type>16th</normal-type></time-modification><stem>down</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>96</duration><voice>2</voice><type>16th</type><time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes><normal-type>16th</normal-type></time-modification><stem>down</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>F</step><alter>1</alter><octave>5</octave></pitch><duration>96</duration><voice>2</voice><type>16th</type><time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes><normal-type>16th</normal-type></time-modification><stem>down</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>G</step><octave>5</octave></pitch><duration>96</duration><voice>2</voice><type>16th</type><time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes><normal-type>16th</normal-type></time-modification><stem>down</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><pitch><step>A</step><octave>5</octave></pitch><duration>96</duration><voice>2</voice><type>16th</type><time-modification><actual-notes>5</actual-notes><normal-notes>4</normal-notes><normal-type>16th</normal-type></time-modification><stem>down</stem><notations><tuplet type="start" number="1" bracket="yes"/></notations></note>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+        <note><pitch><step>E</step><octave>5</octave></pitch><duration>480</duration><voice>2</voice><type>quarter</type><stem>down</stem></note>
+  </measure>
+  <measure number="2">
+    <attributes>
+      <time><beats>3</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><tie type="stop"/><voice>1</voice><type>quarter</type><stem>up</stem><notations><tied type="stop"/></notations></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="3">
+    <attributes>
+      <time><beats>5</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <backup><duration>2400</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+  </measure>
+  <measure number="4">
+    <attributes>
+      <time><beats>6</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="5">
+    <attributes>
+      <time><beats>7</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <backup><duration>1680</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>2</voice><type>eighth</type></note>
+  </measure>
+  <measure number="6">
+    <attributes>
+      <time><beats>9</beats><beat-type>16</beat-type></time>
+    </attributes>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type></note>
+        <backup><duration>1080</duration></backup>
+        <note><rest/><duration>960</duration><voice>2</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>2</voice><type>16th</type></note>
+  </measure>
+  <measure number="7">
+    <attributes>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+  </measure>
+  <measure number="8">
+    <attributes>
+      <time><beats>3</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="9">
+    <attributes>
+      <time><beats>5</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <backup><duration>2400</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+  </measure>
+  <measure number="10">
+    <attributes>
+      <time><beats>6</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="11">
+    <attributes>
+      <time><beats>7</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <backup><duration>1680</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>2</voice><type>eighth</type></note>
+  </measure>
+  <measure number="12">
+    <attributes>
+      <time><beats>9</beats><beat-type>16</beat-type></time>
+    </attributes>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type></note>
+        <backup><duration>1080</duration></backup>
+        <note><rest/><duration>960</duration><voice>2</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>2</voice><type>16th</type></note>
+  </measure>
+  <measure number="13">
+    <attributes>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+  </measure>
+  <measure number="14">
+    <attributes>
+      <time><beats>3</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="15">
+    <attributes>
+      <time><beats>5</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <backup><duration>2400</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+  </measure>
+  <measure number="16">
+    <attributes>
+      <time><beats>6</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="17">
+    <attributes>
+      <time><beats>7</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <backup><duration>1680</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>2</voice><type>eighth</type></note>
+  </measure>
+  <measure number="18">
+    <attributes>
+      <time><beats>9</beats><beat-type>16</beat-type></time>
+    </attributes>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type></note>
+        <backup><duration>1080</duration></backup>
+        <note><rest/><duration>960</duration><voice>2</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>2</voice><type>16th</type></note>
+  </measure>
+  <measure number="19">
+    <attributes>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+  </measure>
+  <measure number="20">
+    <attributes>
+      <time><beats>3</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="21">
+    <attributes>
+      <time><beats>5</beats><beat-type>4</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1920</duration><voice>1</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <backup><duration>2400</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type></note>
+        <note><rest/><duration>480</duration><voice>2</voice><type>quarter</type></note>
+  </measure>
+  <measure number="22">
+    <attributes>
+      <time><beats>6</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <backup><duration>1440</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="23">
+    <attributes>
+      <time><beats>7</beats><beat-type>8</beat-type></time>
+    </attributes>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type></note>
+        <backup><duration>1680</duration></backup>
+        <note><rest/><duration>1440</duration><voice>2</voice><type>half</type><dot/></note>
+        <note><rest/><duration>240</duration><voice>2</voice><type>eighth</type></note>
+  </measure>
+  <measure number="24">
+    <attributes>
+      <time><beats>9</beats><beat-type>16</beat-type></time>
+    </attributes>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>1</voice><type>16th</type></note>
+        <backup><duration>1080</duration></backup>
+        <note><rest/><duration>960</duration><voice>2</voice><type>half</type></note>
+        <note><rest/><duration>120</duration><voice>2</voice><type>16th</type></note>
+  </measure>
+  </part>
+</score-partwise>

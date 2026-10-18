@@ -91,3 +91,47 @@ export function resolveTemplate(id: EnsembleTemplateId): {
   }
   return { parts, omissions };
 }
+
+export type E2EnsembleId = 'big-band' | 'string-quartet' | 'ecm-duo';
+
+export interface E2RosterSlot {
+  partId: string;
+  instrumentId: string;
+  name: string;
+  drums?: boolean;
+}
+
+/** Individual players. Big-band drums stay outside the pitched catalogue. */
+export function e2Roster(ensemble: E2EnsembleId): readonly E2RosterSlot[] {
+  if (ensemble === 'string-quartet') {
+    return [
+      { partId: 'vn1', instrumentId: 'violin', name: 'Violin I' },
+      { partId: 'vn2', instrumentId: 'violin', name: 'Violin II' },
+      { partId: 'va', instrumentId: 'viola', name: 'Viola' },
+      { partId: 'vc', instrumentId: 'cello', name: 'Cello' },
+    ];
+  }
+  if (ensemble === 'ecm-duo') {
+    return [
+      { partId: 'guitar', instrumentId: 'clean_electric_guitar', name: 'Guitar' },
+      { partId: 'bass', instrumentId: 'double_bass', name: 'Upright Bass' },
+    ];
+  }
+  const saxes = [
+    ['as1', 'alto_sax', 'Alto Sax 1'],
+    ['as2', 'alto_sax', 'Alto Sax 2'],
+    ['ts1', 'tenor_sax', 'Tenor Sax 1'],
+    ['ts2', 'tenor_sax', 'Tenor Sax 2'],
+    ['bs', 'baritone_sax', 'Baritone Sax'],
+  ] as const;
+  const trumpets = [1, 2, 3, 4].map((index) => [`tp${index}`, 'trumpet_bb', `Trumpet ${index}`] as const);
+  const trombones = [1, 2, 3, 4].map((index) => [`tbn${index}`, 'trombone', `Trombone ${index}`] as const);
+  return [
+    ...saxes.map(([partId, instrumentId, name]) => ({ partId, instrumentId, name })),
+    ...trumpets.map(([partId, instrumentId, name]) => ({ partId, instrumentId, name })),
+    ...trombones.map(([partId, instrumentId, name]) => ({ partId, instrumentId, name })),
+    { partId: 'pn', instrumentId: 'piano', name: 'Piano' },
+    { partId: 'bass', instrumentId: 'double_bass', name: 'Upright Bass' },
+    { partId: 'drums', instrumentId: 'big_band_jazz_drums', name: 'Drum Kit', drums: true },
+  ];
+}

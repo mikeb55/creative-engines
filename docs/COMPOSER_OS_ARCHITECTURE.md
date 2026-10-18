@@ -12,6 +12,18 @@ Stage A adds an opt-in instrument catalogue (`core/instruments/`) and optional M
 
 `ingestCanonicalScore(xml, { strictSource: true })` is the only strict path. Omitted, the reader keeps the previous metre advance, absolute direction offsets, tie key and harmony text. `core/orchestrate/sourceFoundation.ts` freezes that strict read with the original SHA-256. `sourceLocks.ts` checks pitch, spelling, rhythm, ties, silence, declared harmony, complete sonority, form and tempo separately. `harmonicColour.ts` types a polychord, a triad pair and a dyad pair as different resources and calls the existing triad validators and major/minor transformations. It does not call `readSource()` or `orchestrate()`. BHL worlds, pentatonic analysis and Piano's own polychord API are unchanged.
 
+## V3.4 E2 C+D — harmonic realisation and ensemble adapters
+
+`harmonicRealisation.ts` schedules the A+B primitives. A simultaneous or superposed slot calls `realiseSimultaneous` or `realiseSuperpose`. An alternate slot keeps `realiseAlternateBar` only when the caller asks for that fixed pattern. Otherwise the schedule owns the attacks. A full anchor requires every parent member to cover the whole span and to overlap the others. If that cannot be done, the call refuses. It does not drop members.
+
+`sourceLocks.ts` `inSpan` is unchanged. `e2LockBoundary.ts` expands a selected span into event ids with half-open overlap, then calls `verifySourceLocks` with those ids and no span filter. Zero selected events use the sentinel `__e2_zero_selected_events__`, so an empty id list is not read as unrestricted.
+
+`performE2` runs only when `OrchestrateRequest.e2` is set. Big band calls `buildBigBandOrchestrationPlan` with rhythm role `bass_anchor` and emits the sixteen catalogue parts, not the section ids. String quartet uses `adaptQuartet`. A double stop is allowed only for an adjacent open-string pair with a witness. ECM calls `planEcmTextureBars` and `solveGuitarGrip`. A grip that returns fewer frets than the requested notes is refused. Guitar is concert pitch. Upright bass uses the catalogue octave transposition, and sounding pitch below E1 (MIDI 28) is refused.
+
+`exactSingleStaffXml.ts` writes one staff from `pianoExact` for parts that are not the piano grand staff and not the drum kit. `e2SoundingMidi` on the score turns MIDI export to sounding pitch, merges a start/stop tie into one attack, writes a tempo map, and assigns drums to channel 10. Pitched parts that would wrap past channel 16 are refused. Scores without the flag keep the previous MIDI bytes.
+
+Evidence scores are in `docs/v3.4-e2-cd/`. `musicalQualityScore` stays null. `musicallyApproved` stays false.
+
 ## V3.4 Stage D — composer-profile blending
 
 Song Mode `songwriterBlendWeight` (default 0.35) mixes two harmony slices as one contiguous 8-bar phrase, then installs that list as the only harmony authority. Weight 0 keeps the primary slice. Weight 1 runs the secondary slice when that slice exists. A secondary with no slice, including Ravel, is an `unsupported_secondary` receipt and the primary score is unchanged. Plain Guitar/Bass Duo rejects songwriter ids other than the existing Frank Zappa forward. Band mode and a mosaic section plan keep those request fields. Requested BPM is written into Song Mode and Duo MusicXML. A colour-voice Duo bass cell that would repeat for four bars is rhythmically broken without turning off `validateBassIdentity`. `vrbBlend.ts`, `riffVrbBlend.ts`, and BHL worlds are not part of this path. Polychord stacking is not implemented.
