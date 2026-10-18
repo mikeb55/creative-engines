@@ -24,6 +24,10 @@ Stage A adds an opt-in instrument catalogue (`core/instruments/`) and optional M
 
 Evidence scores are in `docs/v3.4-e2-cd/`. `musicalQualityScore` stays null. `musicallyApproved` stays false.
 
+## V3.4 E2 E+F — Harmony Lab
+
+`core/orchestrate/harmonyLab.ts` turns musician settings into an `E2PerformRequest` and calls `performE2`. It does not schedule pitches itself. Triad spelling goes through `triadParent`. Pair motion goes through `transformTriadParent`, `contraryDyad`, and `transposeDyad`. Guitar grips go through `solveGuitarGrip`. The Ensemble page hosts the lab beside Big Band, String Quartet, and Contrapuntal. `POST /api/harmony-lab` and `composer-os-api:harmony-lab` call `apiHarmonyLab`. `apiOrchestrate` still refuses a request whose `enabled` flag is not true. Preview, playback, MusicXML, and MIDI stay on the existing score components and exporters. A full six-note polychord is refused when the ensemble cannot hold it. Source locks still refuse an empty selection. `musicalQualityScore` stays null. `musicallyApproved` stays false.
+
 ## V3.4 Stage D — composer-profile blending
 
 Song Mode `songwriterBlendWeight` (default 0.35) mixes two harmony slices as one contiguous 8-bar phrase, then installs that list as the only harmony authority. Weight 0 keeps the primary slice. Weight 1 runs the secondary slice when that slice exists. A secondary with no slice, including Ravel, is an `unsupported_secondary` receipt and the primary score is unchanged. Plain Guitar/Bass Duo rejects songwriter ids other than the existing Frank Zappa forward. Band mode and a mosaic section plan keep those request fields. Requested BPM is written into Song Mode and Duo MusicXML. A colour-voice Duo bass cell that would repeat for four bars is rhythmically broken without turning off `validateBassIdentity`. `vrbBlend.ts`, `riffVrbBlend.ts`, and BHL worlds are not part of this path. Polychord stacking is not implemented.

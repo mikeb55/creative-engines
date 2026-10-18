@@ -122,6 +122,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/piano/compose') {
       return ipcInvoke<T>('composer-os-api:compose-piano', body ?? {});
     }
+    if (path === '/harmony-lab') {
+      return ipcInvoke<T>('composer-os-api:harmony-lab', body ?? {});
+    }
     if (path === '/bhl/defaults') return ipcInvoke<T>('composer-os-api:bhl-defaults', body ?? {});
     if (path === '/bhl/inspect') return ipcInvoke<T>('composer-os-api:bhl-inspect', body ?? {});
     if (path === '/bhl/compose') return ipcInvoke<T>('composer-os-api:bhl-compose', body ?? {});
@@ -288,6 +291,18 @@ export const api = {
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
+  harmonyLab: (req: Record<string, unknown>) =>
+    post<{
+      ok: boolean;
+      error?: string;
+      musicXml?: string;
+      midiBase64?: string;
+      partIds?: string[];
+      noteCount?: number;
+      summary?: string;
+      lockStatus?: string;
+      intervalText?: string;
+    }>('/harmony-lab', req),
   composePiano: (req: Record<string, unknown>) =>
     post<{
       ok: boolean;

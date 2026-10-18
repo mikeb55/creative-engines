@@ -5,6 +5,7 @@
 
 import { orchestrate, type OrchestrateResult } from '../core/orchestrate/orchestrate';
 import type { E2PerformRequest } from '../core/orchestrate/e2Perform';
+import { runHarmonyLab, type HarmonyLabResult } from '../core/orchestrate/harmonyLab';
 import type { EnsembleTemplateId, OrchestrateRequest, SectionColourPlan } from '../core/orchestrate/types';
 
 const TEMPLATES: readonly EnsembleTemplateId[] = ['string_quartet', 'pierrot', 'wind_quintet', 'chamber_orchestra'];
@@ -67,4 +68,8 @@ export function apiOrchestrate(body: unknown): OrchestrateResult {
     seed: request.seed,
     preserveMelody: true,
   });
+}
+
+export function apiHarmonyLab(body: unknown): HarmonyLabResult | { ok: false; error: string } {
+  return runHarmonyLab(body);
 }

@@ -131,6 +131,7 @@ import { runPianoV11StageCTests } from './pianoV11StageC.test';
 import { runPianoV11StageDTests } from './pianoV11StageD.test';
 import { runE2HarmonicRealisationTests } from './e2HarmonicRealisation.test';
 import { runE2EnsembleAdapterTests } from './e2EnsembleAdapters.test';
+import { runHarmonyLabTests } from './harmonyLab.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
@@ -372,6 +373,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Piano V1.1 Stage D musical refinement', run: runPianoV11StageDTests },
   { label: 'V3.4 E2 C harmonic realisation', run: runE2HarmonicRealisationTests },
   { label: 'V3.4 E2 D ensemble adapters', run: runE2EnsembleAdapterTests },
+  { label: 'V3.4 E2 E+F Harmony Lab', run: runHarmonyLabTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {
