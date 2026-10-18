@@ -71,6 +71,16 @@ export function phraseIntentAt(bar: number): PianoPhraseIntent {
   return BAR_INTENT[bar - 1] ?? 'development';
 }
 
+/** Read-only two-bar regions. This is the existing plan, not a new musical control. */
+export function phraseRegionSummary(): { span: number; bars: [number, number]; intent: PianoPhraseIntent }[] {
+  const rows: { span: number; bars: [number, number]; intent: PianoPhraseIntent }[] = [];
+  for (let span = 0; span < BAR_INTENT.length / 2; span += 1) {
+    const start = span * 2 + 1;
+    rows.push({ span, bars: [start, start + 1], intent: phraseIntentAt(start) });
+  }
+  return rows;
+}
+
 export function phraseSpanIndex(bar: number): number {
   return Math.floor((bar - 1) / 2);
 }

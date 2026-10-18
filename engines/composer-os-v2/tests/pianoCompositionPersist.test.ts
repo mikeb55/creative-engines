@@ -106,6 +106,7 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
   const routeSource = fs.readFileSync(path.join(repo, 'scripts/pianoComposeRoute.ts'), 'utf8');
   const client = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/services/api.ts'), 'utf8');
   const page = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/pages/SoloPianoPage.tsx'), 'utf8');
+  const pianoEditor = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/pages/soloPianoV11Editor.ts'), 'utf8');
   const lanes = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/constants/generateProducerLanes.ts'), 'utf8');
   const router = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/router/appRouter.ts'), 'utf8');
   const appTsx = fs.readFileSync(path.join(repo, 'apps/composer-os-app/src/App.tsx'), 'utf8');
@@ -166,8 +167,8 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
     page.includes('General Piano Composition V1')
       && page.includes('Piano V1 fixture — 8 bars')
       && page.includes('Coffee Run — Variation — 24 bars')
-      && page.includes("body.generalPianoV1 = true")
-      && page.includes("body.metre = '4/4'")
+      && pianoEditor.includes('generalPianoV1: true')
+      && pianoEditor.includes("body.metre = '4/4'")
       && page.includes('data-testid="solo-piano-bars"')
       && page.includes('data-testid="solo-piano-tempo"')
       && page.includes('data-testid="solo-piano-centre"')
@@ -175,7 +176,7 @@ export async function runPianoCompositionPersistTests(): Promise<Row[]> {
       && page.includes('data-testid="solo-piano-download-xml"')
       && page.includes('data-testid="solo-piano-download-midi"')
       && page.includes('data-testid="solo-piano-validation-errors"')
-      && page.includes('api.composePiano(body)')
+      && page.includes('api.composePiano(request.body)')
       && !page.includes('api.generate(')
       && !page.includes('apiGenerate'),
   ));

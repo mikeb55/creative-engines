@@ -78,7 +78,9 @@ export function apiComposePianoV1(body: unknown): PianoComposeResult {
         return { ok: false, code: 'bad_request', error: 'Piano V1.1 options are malformed.' };
       }
       const resolved = resolvePianoV11(request.pianoV11 as PianoV11RequestBody, request.bars);
-      if ('error' in resolved) return { ok: false, code: 'bad_request', error: resolved.error };
+      if ('error' in resolved) {
+        return { ok: false, code: 'bad_request', error: resolved.error, fieldErrors: resolved.fieldErrors };
+      }
       return composeGeneralPianoV1({
         seed: request.seed,
         bars: request.bars as GeneralPianoBarCount,

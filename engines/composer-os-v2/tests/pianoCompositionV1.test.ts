@@ -17,6 +17,7 @@ import { validateStrictBarMath } from '../core/score-integrity/strictBarMath';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { comparePianoScoreToXml } from '../core/piano/pianoXmlOracle';
 import { pianoGrandStaffConfig } from '../core/piano/pianoTypes';
+import { pianoV11IsolatedOutput } from './pianoV11TestOutput';
 import {
   validateLhDevelopment,
   validatePianoIndependence,
@@ -361,7 +362,7 @@ export function runPianoCompositionV1Tests(): Row[] {
         && midi.pedal.length === 0,
     ));
 
-    const outDir = resolve(__dirname, '../../../.tmp-piano-v1');
+    const outDir = pianoV11IsolatedOutput('piano-composition-v1');
     mkdirSync(outDir, { recursive: true });
     writeFileSync(resolve(outDir, 'piano-v1-seed76018.musicxml'), composed.xml);
     writeFileSync(resolve(outDir, 'piano-v1-seed76019.musicxml'), other.xml);

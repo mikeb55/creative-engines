@@ -20,7 +20,10 @@ import {
   rejectNestedTuplet,
   spellStraight,
   spellTupletFragment,
+  subdivisionAttackCount,
+  supportedWindowExtent,
   tupletRatio,
+  type PianoSubdivision,
 } from './pianoExactTiming';
 import { findTimelineBar, type PianoTimelineBar } from './pianoMeterPlan';
 
@@ -36,14 +39,23 @@ export interface StraightSlot {
   durationQ?: ExactQuarter;
 }
 
+export type PianoPitchMaterial = 'parent-stack' | 'parent-repeated' | 'given-pitches';
+
 export interface PianoRhythmicWindow {
   id: string;
   start: ExactQuarter;
+  /** Quarter length of the window. Absent means one quarter, the Stage A size. */
+  extent?: ExactQuarter;
   hand: 'RH' | 'LH';
-  ratio: '3:2' | '5:4';
+  ratio: PianoSubdivision;
   rests?: boolean[];
   pitches?: number[];
-  against?: 'straight-eighths' | 'straight-sixteenths' | '3:2' | '5:4';
+  /**
+   * Explicit pitch source. Absent keeps the older id-based decoration
+   * so existing requests sound the same. A set policy ignores the id.
+   */
+  material?: PianoPitchMaterial;
+  against?: PianoSubdivision;
   againstPitches?: number[];
   againstRests?: boolean[];
   /** Optional complete stacks, one per attack. Index 0 is the simultaneous polychord. */
@@ -306,17 +318,31 @@ function subtractInterval(
   return out;
 }
 
+export function windowExtent(window: PianoRhythmicWindow): ExactQuarter {
+  return window.extent ?? q(1, 1);
+}
+
+function beamDepth(writtenType: string): number {
+  if (writtenType === 'eighth') return 1;
+  if (writtenType === '16th') return 2;
+  if (writtenType === '32nd') return 3;
+  if (writtenType === '64th') return 4;
+  if (writtenType === '128th') return 5;
+  return 0;
+}
+
 function windowLeaves(
   window: PianoRhythmicWindow,
   hand: 'RH' | 'LH',
-  ratio: '3:2' | '5:4' | 'straight-eighths' | 'straight-sixteenths',
+  ratio: PianoSubdivision,
   pitches: number[] | undefined,
   rests: boolean[] | undefined,
   stacks?: number[][],
   spellings?: { step: string; alter: number }[][],
 ): Leaf[] {
+  const extent = windowExtent(window);
   if (ratio === 'straight-eighths' || ratio === 'straight-sixteenths') {
-    const count = ratio === 'straight-eighths' ? 2 : 4;
+    const count = subdivisionAttackCount(ratio, extent) ?? 0;
     const duration = ratio === 'straight-eighths' ? q(1, 2) : q(1, 4);
     const written = ratio === 'straight-eighths' ? 'eighth' : '16th';
     const leaves: Leaf[] = [];
@@ -341,13 +367,15 @@ function windowLeaves(
     return leaves;
   }
   const spec = tupletRatio(ratio);
+  const sounding = qMul(extent, q(1, spec.count));
+  const spelled = spellTupletFragment(sounding, spec.actualNotes, spec.normalNotes);
   const leaves: Leaf[] = [];
   for (let index = 0; index < spec.count; index += 1) {
     const rest = rests?.[index] === true;
     const stack = stacks?.[index];
     leaves.push({
-      absStart: qAdd(window.start, qMul(spec.sounding, q(index, 1))),
-      duration: spec.sounding,
+      absStart: qAdd(window.start, qMul(sounding, q(index, 1))),
+      duration: sounding,
       midi: rest ? null : (stack?.[0] ?? pitches?.[index] ?? pitches?.[0] ?? null),
       ...(stack ? { pitches: stack } : {}),
       ...(spellings?.[index] ? { spellings: spellings[index] } : {}),
@@ -355,8 +383,8 @@ function windowLeaves(
       hand,
       motifRef: `${window.id}.${ratio}`,
       logicalEventId: `${window.id}:${hand}:${ratio}:${index}`,
-      writtenType: spec.writtenType,
-      dots: 0,
+      writtenType: spelled.type,
+      dots: spelled.dots,
       rest,
       tuplet: {
         actualNotes: spec.actualNotes,
@@ -400,12 +428,17 @@ function assignBeams(leaves: Leaf[], timeline: readonly PianoTimelineBar[]): voi
     groups.set(key, list);
   }
   for (const list of groups.values()) {
-    if (list.length < 2) continue;
     list.sort((a, b) => qCmp(a.absStart, b.absStart));
-    list.forEach((leaf, index) => {
-      const value = index === 0 ? 'begin' : index === list.length - 1 ? 'end' : 'continue';
-      leaf.beams = [{ number: 1, value }];
-    });
+    const depth = Math.max(...list.map((leaf) => beamDepth(leaf.writtenType)));
+    if (depth < 1 || list.length < 2) continue;
+    for (let level = 1; level <= depth; level += 1) {
+      const participating = list.filter((leaf) => beamDepth(leaf.writtenType) >= level);
+      if (participating.length < 2) continue;
+      participating.forEach((leaf, index) => {
+        const value = index === 0 ? 'begin' : index === participating.length - 1 ? 'end' : 'continue';
+        leaf.beams = [...(leaf.beams ?? []), { number: level, value }];
+      });
+    }
   }
 }
 
@@ -494,17 +527,47 @@ export function realiseStageA(input: {
   for (const window of windows) {
     const nested = rejectNestedTuplet(window);
     if (nested) errors.push(nested);
-    if (window.ratio !== '3:2' && window.ratio !== '5:4') errors.push(`unsupported tuplet ${String(window.ratio)}`);
-    const spec = window.ratio === '3:2' || window.ratio === '5:4' ? tupletRatio(window.ratio) : null;
-    if (window.rests && spec && window.rests.length !== spec.count) {
-      errors.push(`window ${window.id} rest mask must contain ${spec?.count ?? 0} flags`);
+    const ratio = window.ratio;
+    if (ratio !== '3:2' && ratio !== '5:4' && ratio !== 'straight-eighths' && ratio !== 'straight-sixteenths') {
+      errors.push(`window ${window.id} subdivision is unsupported`);
     }
-    const end = qAdd(window.start, q(1, 1));
+    if (window.against && window.against !== '3:2' && window.against !== '5:4' && window.against !== 'straight-eighths' && window.against !== 'straight-sixteenths') {
+      errors.push(`window ${window.id} against subdivision is unsupported`);
+    }
+    const extent = window.extent ?? q(1, 1);
+    if (!supportedWindowExtent(extent)) {
+      errors.push(`window ${window.id} extent ${extent.n}/${extent.d} has no supported notation`);
+    }
+    const attacks = ratio === '3:2' || ratio === '5:4' || ratio === 'straight-eighths' || ratio === 'straight-sixteenths'
+      ? subdivisionAttackCount(ratio, extent)
+      : null;
+    if (attacks === null && supportedWindowExtent(extent)) {
+      errors.push(`window ${window.id} subdivision does not resolve inside its extent`);
+    }
+    if (window.rests && attacks !== null && window.rests.length !== attacks) {
+      errors.push(`window ${window.id} rest mask must contain ${attacks} flags`);
+    }
+    if (window.against && supportedWindowExtent(extent)) {
+      const againstAttacks = subdivisionAttackCount(window.against, extent);
+      if (againstAttacks === null) errors.push(`window ${window.id} against subdivision does not resolve`);
+      else if (window.againstRests && window.againstRests.length !== againstAttacks) {
+        errors.push(`window ${window.id} against rest mask must contain ${againstAttacks} flags`);
+      }
+    }
+    const end = qAdd(window.start, extent);
     const last = input.timeline[input.timeline.length - 1];
     if (!last || qCmp(window.start, q(0, 1)) < 0 || qCmp(end, qAdd(last.start, last.span)) > 0) {
       errors.push(`window ${window.id} does not fit the timeline`);
     }
     if (!findTimelineBar(input.timeline, window.start)) errors.push(`window ${window.id} does not start inside a bar`);
+    if (ratio === '3:2' || ratio === '5:4') {
+      try {
+        const spec = tupletRatio(ratio);
+        spellTupletFragment(qMul(extent, q(1, spec.count)), spec.actualNotes, spec.normalNotes);
+      } catch (err) {
+        errors.push(`window ${window.id} notation is unsupported: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
   }
   for (let i = 0; i < windows.length; i += 1) {
     for (let j = i + 1; j < windows.length; j += 1) {
@@ -515,7 +578,7 @@ export function realiseStageA(input: {
       const bHands = new Set<string>([b.hand, b.against ? (b.hand === 'RH' ? 'LH' : 'RH') : '']);
       const share = [...aHands].some((hand) => hand && bHands.has(hand));
       if (!share) continue;
-      const overlap = qCmp(qAdd(a.start, q(1, 1)), b.start) > 0 && qCmp(qAdd(b.start, q(1, 1)), a.start) > 0;
+      const overlap = qCmp(qAdd(a.start, windowExtent(a)), b.start) > 0 && qCmp(qAdd(b.start, windowExtent(b)), a.start) > 0;
       if (overlap) errors.push(`windows ${a.id} and ${b.id} overlap on one hand`);
     }
   }
@@ -528,30 +591,39 @@ export function realiseStageA(input: {
   }
   for (const window of windows) {
     const other = window.hand === 'RH' ? 'LH' : 'RH';
-    leaves = subtractInterval(leaves, window.start, qAdd(window.start, q(1, 1)), window.hand, input.timeline, fragments);
+    const occupied = qAdd(window.start, windowExtent(window));
+    leaves = subtractInterval(leaves, window.start, occupied, window.hand, input.timeline, fragments);
     if (window.against) {
-      leaves = subtractInterval(leaves, window.start, qAdd(window.start, q(1, 1)), other, input.timeline, fragments);
+      leaves = subtractInterval(leaves, window.start, occupied, other, input.timeline, fragments);
     }
     leaves.push(...windowLeaves(window, window.hand, window.ratio, window.pitches, window.rests, window.pitchStacks, window.stackSpellings));
     if (window.against) {
       leaves.push(...windowLeaves(window, other, window.against, window.againstPitches, window.againstRests, window.againstPitchStacks, window.againstStackSpellings));
     }
   }
-  leaves = leaves.flatMap((leaf) => {
-    const bar = findTimelineBar(input.timeline, leaf.absStart);
-    const endBar = findTimelineBar(input.timeline, qSub(leafEnd(leaf), q(1, 1000000)));
-    if (bar && endBar && bar.bar === endBar.bar && qCmp(leafEnd(leaf), qAdd(bar.start, bar.span)) <= 0) {
-      return leaf.tuplet ? [leaf] : [leaf];
-    }
-    return splitAtBars(leaf, input.timeline);
-  });
+  try {
+    leaves = leaves.flatMap((leaf) => {
+      const bar = findTimelineBar(input.timeline, leaf.absStart);
+      const endBar = findTimelineBar(input.timeline, qSub(leafEnd(leaf), q(1, 1000000)));
+      if (bar && endBar && bar.bar === endBar.bar && qCmp(leafEnd(leaf), qAdd(bar.start, bar.span)) <= 0) {
+        return [leaf];
+      }
+      return splitAtBars(leaf, input.timeline);
+    });
+  } catch (err) {
+    return { events: new Map(), fragments, errors: [`unsupported notation resolution: ${err instanceof Error ? err.message : String(err)}`] };
+  }
   assignBrackets(leaves);
   assignBeams(leaves, input.timeline);
   for (const leaf of leaves) {
     if (!leaf.rest && leaf.midi === null) errors.push(`window leaf ${leaf.logicalEventId} has no pitch`);
   }
   if (errors.length > 0) return { events: new Map(), fragments, errors };
-  leaves = fillRests(leaves, input.timeline);
+  try {
+    leaves = fillRests(leaves, input.timeline);
+  } catch (err) {
+    return { events: new Map(), fragments, errors: [err instanceof Error ? err.message : String(err)] };
+  }
 
   const rationals: ExactQuarter[] = [];
   for (const bar of input.timeline) rationals.push(bar.span, bar.start);

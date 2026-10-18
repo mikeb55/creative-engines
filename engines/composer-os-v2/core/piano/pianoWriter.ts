@@ -74,12 +74,23 @@ export interface PianoCompositionPlan {
     returnIntervals: number[];
     developmentDurations: number[];
     phraseDevelopment?: {
+      evidence?: 'planning-level';
       opening: { onset: number; duration: number; midi: number | null }[];
       spans: { span: number; bars: number[]; intent: string; chosen: string; candidates: { id: string; score: number }[] }[];
       returnDurations: number[];
       climaxRhMax: number;
     };
-    polychords?: { bar: number; display: string; upper: number[]; lower: number[] }[];
+    polychords?: { bar: number; display: string; sourceSymbol?: string; upper: number[]; lower: number[] }[];
+    finalEvents?: {
+      evidence: 'final-realised-score';
+      disclaimer: string;
+      opening: { bar: number; pitch: number; onset: number; duration: number; voice: number }[];
+      bar21Return: { bar: number; pitch: number; onset: number; duration: number; voice: number }[];
+      phraseRestBars: number[];
+      climax: { bars: number[]; highestPitch: number | null; soundingNotes: number; notesPerQuarter: number };
+      repetition: { repeatedIntervals: number; intervals: number };
+      contour: { up: number; down: number; same: number };
+    };
   };
 }
 
@@ -103,6 +114,7 @@ export interface PianoComposeFailure {
   ok: false;
   code: 'disabled' | 'bad_request' | 'unsupported_lock' | 'playability' | 'validation' | 'parity';
   error: string;
+  fieldErrors?: { field: string; message: string }[];
 }
 
 export type PianoComposeResult = PianoComposeSuccess | PianoComposeFailure;

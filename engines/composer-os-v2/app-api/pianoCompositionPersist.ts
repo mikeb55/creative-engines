@@ -44,6 +44,7 @@ export type PianoPersistFailure = {
   ok: false;
   code: string;
   error: string;
+  fieldErrors?: { field: string; message: string }[];
 };
 
 export type PianoPersistResult = PianoPersistSuccess | PianoPersistFailure;
@@ -70,7 +71,12 @@ function pieceSlug(body: unknown): 'piano-v1-fixture' | 'coffee-run-variation' |
 export function persistPianoComposition(body: unknown, outputDir: string): PianoPersistResult {
   const composed = apiComposePianoV1(body);
   if (!composed.ok) {
-    return { ok: false, code: composed.code, error: composed.error };
+    return {
+      ok: false,
+      code: composed.code,
+      error: composed.error,
+      ...(composed.fieldErrors ? { fieldErrors: composed.fieldErrors } : {}),
+    };
   }
 
   const request = body as {

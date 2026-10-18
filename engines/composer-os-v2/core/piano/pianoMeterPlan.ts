@@ -49,20 +49,26 @@ export function spanQuarters(numerator: number, denominator: number): ExactQuart
 
 export function validatePianoMeterPlan(plan: readonly PianoMeterBarPlan[], barCount: number): string[] {
   const errors: string[] = [];
+  if (!Array.isArray(plan)) return ['meter plan must be an array'];
   if (!Number.isInteger(barCount) || barCount < 1) errors.push('bar count must be a positive integer');
-  const seen = new Map<number, string>();
+  const seen = new Set<number>();
   for (const bar of plan) {
+    if (!bar || typeof bar !== 'object') {
+      errors.push('meter plan entries must be objects');
+      continue;
+    }
     if (!Number.isInteger(bar.bar) || bar.bar < 1) {
       errors.push('meter plan bar numbers must be positive integers');
       continue;
     }
-    const key = `${bar.numerator}/${bar.denominator}|${bar.groups.join('+')}`;
-    const previous = seen.get(bar.bar);
-    if (previous !== undefined && previous !== key) {
-      errors.push(`bar ${bar.bar} has conflicting meter metadata`);
+    if (seen.has(bar.bar)) errors.push(`bar ${bar.bar} is duplicated`);
+    else seen.add(bar.bar);
+    if (!Number.isInteger(bar.numerator) || bar.numerator <= 0) {
+      errors.push(`bar ${bar.bar} numerator must be a positive integer`);
     }
-    seen.set(bar.bar, key);
-    if (!meterSupported(bar.numerator, bar.denominator)) {
+    if (!Number.isInteger(bar.denominator) || bar.denominator <= 0) {
+      errors.push(`bar ${bar.bar} denominator must be a positive integer`);
+    } else if (!meterSupported(bar.numerator, bar.denominator)) {
       errors.push(`unsupported meter ${bar.numerator}/${bar.denominator}`);
     }
     if (!Array.isArray(bar.groups) || bar.groups.length === 0 || bar.groups.some((group) => !Number.isInteger(group) || group <= 0)) {

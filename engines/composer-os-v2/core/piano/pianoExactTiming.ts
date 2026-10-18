@@ -193,6 +193,28 @@ export function tupletRatio(ratio: '3:2' | '5:4'): TupletRatioSpec {
   throw new Error(`unsupported tuplet ratio ${String(ratio)}`);
 }
 
+export type PianoSubdivision = '3:2' | '5:4' | 'straight-eighths' | 'straight-sixteenths';
+
+/** One quarter, one half-quarter, or two quarters. Other extents are rejected. */
+export function supportedWindowExtent(extent: ExactQuarter): boolean {
+  const reduced = q(extent.n, extent.d);
+  return (
+    (reduced.n === 1 && reduced.d === 1)
+    || (reduced.n === 1 && reduced.d === 2)
+    || (reduced.n === 2 && reduced.d === 1)
+  );
+}
+
+export function subdivisionAttackCount(subdivision: PianoSubdivision, extent: ExactQuarter): number | null {
+  if (!supportedWindowExtent(extent)) return null;
+  if (subdivision === '3:2') return 3;
+  if (subdivision === '5:4') return 5;
+  const unit = subdivision === 'straight-eighths' ? q(1, 2) : q(1, 4);
+  const count = q(extent.n * unit.d, extent.d * unit.n);
+  if (count.d !== 1 || count.n < 1 || count.n > 32) return null;
+  return count.n;
+}
+
 export function rejectNestedTuplet(spec: { nested?: boolean; inner?: unknown }): string | null {
   if (spec.nested === true || spec.inner !== undefined) return 'nested tuplets are unsupported';
   return null;

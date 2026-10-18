@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { apiComposePianoV1 } from '../app-api/pianoCompositionApp';
 import { persistPianoComposition } from '../app-api/pianoCompositionPersist';
+import { pianoV11IsolatedOutput } from './pianoV11TestOutput';
 import { composeGeneralPianoV1 } from '../core/piano/generalPianoWriter';
 import { pianoMidiNotes, writePianoScoreMidi } from '../core/piano/pianoMidi';
 import { cyclePlan, uniformPlan } from '../core/piano/pianoMeterPlan';
@@ -225,7 +226,8 @@ if (combined.ok) {
   row('bar 12 3:2 is present', combined.xml.includes('bar12-3-2') || combined.score.parts[0]?.measures[11]?.events.some((event) => event.kind === 'note' && event.pianoExact?.tuplet?.actualNotes === 3) === true);
   const openingDurations = combined.plan.general?.phraseDevelopment?.opening.filter((event) => event.midi !== null).map((event) => event.duration) ?? [];
   row('combined return keeps rhythm', openingDurations.join(',') === (combined.plan.general?.phraseDevelopment?.returnDurations ?? []).join(','));
-  const outDir = join(__dirname, '..', '..', '..', '.tmp-piano-v1.1-stage-b', 'acceptance');
+  const stageRoot = pianoV11IsolatedOutput('stage-b');
+  const outDir = join(stageRoot, 'acceptance');
   mkdirSync(outDir, { recursive: true });
   const xmlPath = join(outDir, 'piano-v11-stage-b-combined-seed76018-24bars.musicxml');
   const midiPath = join(outDir, 'piano-v11-stage-b-combined-seed76018-24bars.mid');
@@ -256,7 +258,7 @@ if (combined.ok) {
     physicalPlayability: 'PENDING',
   };
   writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  const pack = join(__dirname, '..', '..', '..', '.tmp-piano-v1.1-stage-b', 'comparison');
+  const pack = join(stageRoot, 'comparison');
   mkdirSync(pack, { recursive: true });
   const pieces = [
     ['01-general-v1', plain],

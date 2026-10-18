@@ -6,8 +6,8 @@
 
 import { triadAt } from '../hexatonic/tertianTriadUniverse';
 import type { VaultTriadQuality } from '../wwh/wps/wpsTonalityVaultRecord';
-import type { ExactQuarter } from '../score-model/scoreModelTypes';
-import { qAdd } from './pianoExactTiming';
+import type { ExactQuarter, NoteEvent } from '../score-model/scoreModelTypes';
+import { q, qAdd, subdivisionAttackCount } from './pianoExactTiming';
 import type { PianoTimelineBar } from './pianoMeterPlan';
 import type { PianoRhythmicWindow } from './pianoV11Realise';
 
@@ -333,30 +333,34 @@ export function decoratePolychordWindow(
 ): PianoRhythmicWindow {
   const primary = window.hand === 'RH' ? upper : lower;
   const against = window.hand === 'RH' ? lower : upper;
+  const extent = window.extent ?? q(1, 1);
   const cycle = (voiced: VoicedTriad, count: number): number[] => (
     Array.from({ length: count }, (_, index) => voiced.ordered[index % voiced.ordered.length]!.midi)
   );
+  const againstCount = window.againstPitches?.length
+    ?? (window.against ? subdivisionAttackCount(window.against, extent) ?? undefined : undefined);
   const next: PianoRhythmicWindow = { ...window };
   if (mode === 'repeated') {
     const tone = primary.ordered[0]!.midi;
-    next.pitches = (window.pitches ?? [tone]).map(() => tone);
+    const primaryCount = window.pitches?.length ?? subdivisionAttackCount(window.ratio, extent) ?? 1;
+    next.pitches = Array.from({ length: primaryCount }, () => tone);
     next.pitchStacks = undefined;
     next.stackSpellings = undefined;
     next.againstPitchStacks = undefined;
     next.againstStackSpellings = undefined;
-    if (window.againstPitches) {
+    if (againstCount) {
       const other = against.ordered[0]!.midi;
-      next.againstPitches = window.againstPitches.map(() => other);
+      next.againstPitches = Array.from({ length: againstCount }, () => other);
     }
     return next;
   }
-  const count = window.pitches?.length ?? (window.ratio === '5:4' ? 5 : 3);
+  const count = window.pitches?.length ?? subdivisionAttackCount(window.ratio, extent) ?? (window.ratio === '5:4' ? 5 : 3);
   next.pitches = cycle(primary, count);
   next.pitches[0] = primary.ordered[0]!.midi;
   next.pitchStacks = [primary.ordered.map((member) => member.midi)];
   next.stackSpellings = [stackSpellings(primary)];
-  if (window.againstPitches) {
-    next.againstPitches = cycle(against, window.againstPitches.length);
+  if (againstCount) {
+    next.againstPitches = cycle(against, againstCount);
     next.againstPitches[0] = against.ordered[0]!.midi;
     next.againstPitchStacks = [against.ordered.map((member) => member.midi)];
     next.againstStackSpellings = [stackSpellings(against)];
@@ -379,5 +383,31 @@ export function bar12TripletWindow(timeline: readonly PianoTimelineBar[], upper:
     hand: 'RH',
     ratio: '3:2',
     pitches,
+    material: 'parent-stack',
   }, upper, upper, 'stack');
+}
+
+export function parentMemberLetters(root: string, quality: PianoTriadQuality): string | null {
+  const members = spellTriadMembers(root, quality);
+  if (typeof members === 'string') return null;
+  return members.map((member) => `${member.step}${member.alter === 1 ? '#' : member.alter === -1 ? 'b' : ''}`).join(', ');
+}
+
+/** Parent-member notes take the triad spelling. Other explicit spellings stay. MIDI is unchanged. */
+export function applyParentMemberSpellings(events: readonly NoteEvent[], upper: VoicedTriad, lower: VoicedTriad): void {
+  for (const event of events) {
+    const members = (event.voice ?? 1) === 3 ? lower.ordered : upper.ordered;
+    const listed = event.pitches ?? [];
+    const pitches = listed.length > 1 ? [event.pitch, ...listed.slice(1)] : [event.pitch];
+    const chosen = pitches.map((midi, index) => {
+      const parent = members.find((member) => member.pc === ((midi % 12) + 12) % 12);
+      if (parent) return { step: parent.step, alter: parent.alter };
+      return event.stackSpellings?.[index] ?? (index === 0 ? event.spelling : undefined);
+    });
+    const primary = chosen[0];
+    if (primary) event.spelling = primary;
+    if (pitches.length > 1 && chosen.some((item) => item)) {
+      event.stackSpellings = chosen.map((item, index) => item ?? event.stackSpellings?.[index] ?? { step: '', alter: 0 });
+    }
+  }
 }

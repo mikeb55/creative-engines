@@ -21,6 +21,7 @@ import { exportResolution, q, requiredPpq } from '../core/piano/pianoExactTiming
 import { fragmentSlotsToSpan, realiseStageA, releaseUnjoinedTies } from '../core/piano/pianoV11Realise';
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import { DIVISIONS } from '../core/score-model/scoreModelTypes';
+import { pianoV11IsolatedOutput } from './pianoV11TestOutput';
 
 type Row = { name: string; ok: boolean; detail?: string };
 const rows: Row[] = [];
@@ -220,7 +221,7 @@ if (acceptance.ok) {
   row('9/16 grouping is written', acceptance.xml.includes('<beats>4</beats><beat-type>16</beat-type><beats>2</beats><beat-type>16</beat-type><beats>3</beats><beat-type>16</beat-type>'));
   const restTuplet = /<note><rest\/>[\s\S]*?<actual-notes>3<\/actual-notes>[\s\S]*?<\/note>/.test(acceptance.xml);
   row('tuplet rest keeps the 3:2 ratio', restTuplet);
-  const outDir = join(__dirname, '..', '..', '..', '.tmp-piano-v1.1-stage-a', 'acceptance');
+  const outDir = join(pianoV11IsolatedOutput('stage-a'), 'acceptance');
   mkdirSync(outDir, { recursive: true });
   const xmlPath = join(outDir, 'piano-v11-stage-a-seed76018-24bars.musicxml');
   const midiPath = join(outDir, 'piano-v11-stage-a-seed76018-24bars.mid');
@@ -337,7 +338,7 @@ const coffee = apiComposePianoV1({ pianoCompositionV1: true, seed: 76018, filmCu
 if (!general.ok || !piano.ok || !coffee.ok) {
   row('legacy composers still run', false);
 } else {
-  const midiDir = join(__dirname, '..', '..', '..', '.tmp-piano-v1.1-stage-a');
+  const midiDir = pianoV11IsolatedOutput('stage-a-legacy');
   mkdirSync(midiDir, { recursive: true });
   const files = [
     ['general-8', general],

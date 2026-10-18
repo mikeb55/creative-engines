@@ -56,6 +56,7 @@ import {
   type PianoRhythmicWindow,
 } from './pianoV11Realise';
 import {
+  applyParentMemberSpellings,
   bar12TripletWindow,
   decoratePolychordWindow,
   regionAt,
@@ -64,7 +65,9 @@ import {
   voiceTriad,
   type PianoPolychordRegion,
   type VoicedPolychord,
+  type VoicedTriad,
 } from './pianoV11Polychord';
+import { finalRealisedDiagnostics } from './pianoV11Diagnostics';
 import {
   choosePhraseSpan,
   eventsForPhraseBar,
@@ -617,6 +620,22 @@ function repeatedPitch(chord: ParsedPianoChord, hand: 'RH' | 'LH', count: number
   return Array.from({ length: count }, () => handPitch(chord, hand, pc));
 }
 
+function decorateOwnedWindow(
+  window: PianoRhythmicWindow,
+  upper: VoicedTriad,
+  lower: VoicedTriad,
+  atChange: boolean,
+  acceptance: boolean,
+): PianoRhythmicWindow {
+  if (window.material === 'given-pitches') return window;
+  if (window.material === 'parent-stack') return decoratePolychordWindow(window, upper, lower, 'stack');
+  if (window.material === 'parent-repeated') return decoratePolychordWindow(window, upper, lower, 'repeated');
+  const named = acceptance
+    ? window.id === 'rh-3-2' || window.id === 'rh-5-4' || window.id === 'bar12-3-2' || window.id.startsWith('gui-')
+    : window.id.startsWith('gui-') || window.id === 'rh-3-2' || window.id === 'rh-5-4';
+  return decoratePolychordWindow(window, upper, lower, atChange || named ? 'stack' : 'repeated');
+}
+
 function sharedPc(a: ParsedPianoChord, b: ParsedPianoChord): number | null {
   return a.tones.find((pc) => b.tones.includes(pc)) ?? null;
 }
@@ -980,8 +999,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         if (!voiced) return window;
         const region = host ? regionAt(input.polychords ?? [], host.bar) : null;
         const atChange = Boolean(region && host && region.startBar === host.bar && qEq(window.start, host.start));
-        const named = window.id === 'rh-3-2' || window.id === 'rh-5-4' || window.id === 'bar12-3-2' || window.id.startsWith('gui-');
-        return decoratePolychordWindow(window, voiced.upper, voiced.lower, atChange || named ? 'stack' : 'repeated');
+        return decorateOwnedWindow(window, voiced.upper, voiced.lower, atChange, true);
       });
     }
   } else if (input.polychords && stageA && windows.length > 0) {
@@ -991,8 +1009,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       if (!voiced) return window;
       const region = host ? regionAt(input.polychords ?? [], host.bar) : null;
       const atChange = Boolean(region && host && region.startBar === host.bar && qEq(window.start, host.start));
-      const named = window.id.startsWith('gui-') || window.id === 'rh-3-2' || window.id === 'rh-5-4';
-      return decoratePolychordWindow(window, voiced.upper, voiced.lower, atChange || named ? 'stack' : 'repeated');
+      return decorateOwnedWindow(window, voiced.upper, voiced.lower, atChange, false);
     });
   }
   const realised = stageA
@@ -1087,6 +1104,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       developmentDurations,
       ...(input.phraseDevelopmentV11 ? {
         phraseDevelopment: {
+          evidence: 'planning-level' as const,
           opening: openingEvents.map((event) => ({ ...event })),
           spans: [...spanChoices.values()].map((choice) => ({
             span: choice.span,
@@ -1103,12 +1121,23 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         polychords: voicedByBar.map((voiced, index) => voiced ? {
           bar: index + 1,
           display: voiced.display,
+          sourceSymbol: harmonyBars[index] ?? '',
           upper: voiced.upper.ordered.map((member) => member.midi),
           lower: voiced.lower.ordered.map((member) => member.midi),
-        } : null).filter((item): item is { bar: number; display: string; upper: number[]; lower: number[] } => item !== null),
+        } : null).filter((item): item is { bar: number; display: string; sourceSymbol: string; upper: number[]; lower: number[] } => item !== null),
       } : {}),
     },
   };
+
+  for (const measure of score.parts[0]?.measures ?? []) {
+    const voiced = voicedByBar[measure.index - 1];
+    if (!voiced) continue;
+    const notes = measure.events.filter((event): event is NoteEvent => event.kind === 'note');
+    applyParentMemberSpellings(notes, voiced.upper, voiced.lower);
+  }
+  if (plan.general && (input.phraseDevelopmentV11 || input.polychords || input.timing?.enabled)) {
+    plan.general.finalEvents = finalRealisedDiagnostics(score);
+  }
 
   const lockSnapshot = snapshotOf(plan, locks);
   const beforeEvents = ownedSignature(score);
