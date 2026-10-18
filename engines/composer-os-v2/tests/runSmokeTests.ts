@@ -5,7 +5,7 @@
  *
  * When you add/remove suites or change row counts: run `npm run test:composer-smoke` from repo root, read
  * `Passed: N rows (M suites)` in the smoke summary, then sync **N** + **M** into `CLAUDE.md` and `docs/COMPOSER_OS_ROADMAP.md`
- * Current (see roadmap § **Smoke tier — maintenance checklist**): full **1067** PASS rows, **150** suites; fast subset unchanged until refreshed.
+ * Current (see roadmap § **Smoke tier — maintenance checklist**): full **1109** PASS rows, **151** suites; fast subset unchanged until refreshed.
  *
  * **Fast subset:** `COMPOSER_OS_SMOKE_TIER=fast` or `npm run test:composer-smoke-fast` — skips `SMOKE_FAST_EXCLUDE` suites (local dev).
  * **Full tier (default / CI):** unset or `COMPOSER_OS_SMOKE_TIER=full` — all suites in `smokeSuites`.
@@ -126,6 +126,7 @@ import { runV34E1PhrasePlannerTests } from './v34E1PhrasePlanner.test';
 import { runV34E1Checkpoint3bTests } from './v34E1Checkpoint3b.test';
 import { runBartokB1NativeAksakTests } from './bartokB1NativeAksak.test';
 import { runPianoV11StageATests } from './pianoV11StageA.test';
+import { runPianoV11StageBTests } from './pianoV11StageB.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
@@ -362,6 +363,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'V3.4 E1 checkpoint 3B voice relations', run: runV34E1Checkpoint3bTests },
   { label: 'V3.4 Bartók B1 native 9/16', run: runBartokB1NativeAksakTests },
   { label: 'Piano V1.1 Stage A exact timing', run: runPianoV11StageATests },
+  { label: 'Piano V1.1 Stage B phrase and polychords', run: runPianoV11StageBTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

@@ -31,6 +31,7 @@ export interface StraightSlot {
   pitches?: number[];
   tie?: 'start' | 'stop' | 'continue';
   motifRef?: string;
+  spellings?: { step: string; alter: number }[];
   startQ?: ExactQuarter;
   durationQ?: ExactQuarter;
 }
@@ -45,6 +46,11 @@ export interface PianoRhythmicWindow {
   against?: 'straight-eighths' | 'straight-sixteenths' | '3:2' | '5:4';
   againstPitches?: number[];
   againstRests?: boolean[];
+  /** Optional complete stacks, one per attack. Index 0 is the simultaneous polychord. */
+  pitchStacks?: number[][];
+  stackSpellings?: { step: string; alter: number }[][];
+  againstPitchStacks?: number[][];
+  againstStackSpellings?: { step: string; alter: number }[][];
   nested?: boolean;
   inner?: unknown;
 }
@@ -70,6 +76,7 @@ interface Leaf {
   dots: 0 | 1 | 2;
   tuplet?: PianoExactTiming['tuplet'];
   tie?: 'start' | 'stop' | 'continue';
+  spellings?: { step: string; alter: number }[];
   rest: boolean;
   beams?: PianoExactTiming['beams'];
 }
@@ -299,7 +306,15 @@ function subtractInterval(
   return out;
 }
 
-function windowLeaves(window: PianoRhythmicWindow, hand: 'RH' | 'LH', ratio: '3:2' | '5:4' | 'straight-eighths' | 'straight-sixteenths', pitches: number[] | undefined, rests: boolean[] | undefined): Leaf[] {
+function windowLeaves(
+  window: PianoRhythmicWindow,
+  hand: 'RH' | 'LH',
+  ratio: '3:2' | '5:4' | 'straight-eighths' | 'straight-sixteenths',
+  pitches: number[] | undefined,
+  rests: boolean[] | undefined,
+  stacks?: number[][],
+  spellings?: { step: string; alter: number }[][],
+): Leaf[] {
   if (ratio === 'straight-eighths' || ratio === 'straight-sixteenths') {
     const count = ratio === 'straight-eighths' ? 2 : 4;
     const duration = ratio === 'straight-eighths' ? q(1, 2) : q(1, 4);
@@ -307,10 +322,13 @@ function windowLeaves(window: PianoRhythmicWindow, hand: 'RH' | 'LH', ratio: '3:
     const leaves: Leaf[] = [];
     for (let index = 0; index < count; index += 1) {
       const rest = rests?.[index] === true;
+      const stack = stacks?.[index];
       leaves.push({
         absStart: qAdd(window.start, qMul(duration, q(index, 1))),
         duration,
-        midi: rest ? null : (pitches?.[index] ?? pitches?.[0] ?? null),
+        midi: rest ? null : (stack?.[0] ?? pitches?.[index] ?? pitches?.[0] ?? null),
+        ...(stack ? { pitches: stack } : {}),
+        ...(spellings?.[index] ? { spellings: spellings[index] } : {}),
         voice: voiceFor(hand),
         hand,
         motifRef: `${window.id}.straight`,
@@ -326,10 +344,13 @@ function windowLeaves(window: PianoRhythmicWindow, hand: 'RH' | 'LH', ratio: '3:
   const leaves: Leaf[] = [];
   for (let index = 0; index < spec.count; index += 1) {
     const rest = rests?.[index] === true;
+    const stack = stacks?.[index];
     leaves.push({
       absStart: qAdd(window.start, qMul(spec.sounding, q(index, 1))),
       duration: spec.sounding,
-      midi: rest ? null : (pitches?.[index] ?? pitches?.[0] ?? null),
+      midi: rest ? null : (stack?.[0] ?? pitches?.[index] ?? pitches?.[0] ?? null),
+      ...(stack ? { pitches: stack } : {}),
+      ...(spellings?.[index] ? { spellings: spellings[index] } : {}),
       voice: voiceFor(hand),
       hand,
       motifRef: `${window.id}.${ratio}`,
@@ -446,6 +467,7 @@ function slotsToLeaves(slots: readonly (StraightSlot & { startQ?: ExactQuarter; 
       duration,
       midi: slot.pitch,
       pitches: slot.pitches,
+      ...(slot.spellings ? { spellings: slot.spellings } : {}),
       voice: voiceFor(hand),
       hand,
       motifRef: slot.motifRef,
@@ -510,9 +532,9 @@ export function realiseStageA(input: {
     if (window.against) {
       leaves = subtractInterval(leaves, window.start, qAdd(window.start, q(1, 1)), other, input.timeline, fragments);
     }
-    leaves.push(...windowLeaves(window, window.hand, window.ratio, window.pitches, window.rests));
+    leaves.push(...windowLeaves(window, window.hand, window.ratio, window.pitches, window.rests, window.pitchStacks, window.stackSpellings));
     if (window.against) {
-      leaves.push(...windowLeaves(window, other, window.against, window.againstPitches, window.againstRests));
+      leaves.push(...windowLeaves(window, other, window.against, window.againstPitches, window.againstRests, window.againstPitchStacks, window.againstStackSpellings));
     }
   }
   leaves = leaves.flatMap((leaf) => {
@@ -573,6 +595,7 @@ export function realiseStageA(input: {
           voice: leaf.voice,
           pianoExact: exact,
           ...(leaf.pitches ? { pitches: leaf.pitches } : {}),
+          ...(leaf.spellings?.[0] ? { spelling: leaf.spellings[0], stackSpellings: leaf.spellings } : {}),
           ...(leaf.motifRef ? { motifRef: leaf.motifRef } : {}),
           ...(leaf.tie ? { notation: { tie: leaf.tie } } : {}),
         };

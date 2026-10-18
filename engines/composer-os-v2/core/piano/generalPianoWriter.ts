@@ -36,10 +36,11 @@ import {
   validatePianoTies,
 } from './pianoValidation';
 import type { PianoComposeResult, PianoCompositionPlan, PianoLhTexture, PianoLockSnapshot } from './pianoWriter';
-import { dyadicQuarter, q, qAdd, qCmp, qToNumber } from './pianoExactTiming';
+import { dyadicQuarter, q, qAdd, qCmp, qEq, qToNumber } from './pianoExactTiming';
 import {
   barMeterMapFromPlan,
   buildPianoTimeline,
+  findTimelineBar,
   isGroupBoundary,
   timelineTotals,
   validatePianoMeterPlan,
@@ -54,6 +55,24 @@ import {
   type PianoFragmentRecord,
   type PianoRhythmicWindow,
 } from './pianoV11Realise';
+import {
+  bar12TripletWindow,
+  decoratePolychordWindow,
+  regionAt,
+  validatePolychordRegions,
+  voicePolychordPair,
+  voiceTriad,
+  type PianoPolychordRegion,
+  type VoicedPolychord,
+} from './pianoV11Polychord';
+import {
+  choosePhraseSpan,
+  eventsForPhraseBar,
+  phraseIntentAt,
+  phraseSpanIndex,
+  rhythmSignature,
+  type PhraseSpanChoice,
+} from './pianoV11Phrase';
 
 const C_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const A_SCALE = [9, 11, 0, 2, 4, 5, 7] as const;
@@ -110,6 +129,7 @@ interface Slot {
   pitches?: number[];
   tie?: 'start' | 'stop' | 'continue';
   motifRef?: string;
+  spellings?: { step: string; alter: number }[];
 }
 
 type Phase = 'statement' | 'sequence' | 'development' | 'contrast' | 'return' | 'approach' | 'ending';
@@ -131,6 +151,12 @@ export interface GeneralPianoComposeInput {
   lockedEvents?: PianoLockedEvent[];
   /** Omit, or leave unset, for legacy 4/4 output. */
   timing?: PianoV11StageAContract;
+  /** Opt-in. Default off. Requires 24 bars. */
+  phraseDevelopmentV11?: boolean;
+  /** Structured upper/lower triads. Absent keeps slash-chord and symbol harmony. */
+  polychords?: PianoPolychordRegion[];
+  /** Adds a 3:2 inside bar 12 when that bar is 9/16. */
+  groupedNineSixteenTriplet?: boolean;
 }
 
 function roundBeat(value: number): number {
@@ -197,6 +223,21 @@ function closestPc(midi: number, pcs: readonly number[]): number {
   return best;
 }
 
+function closestAllowedMidi(target: number, allowed: readonly number[], low: number, high: number): number {
+  let best = low;
+  let bestDist = Infinity;
+  for (const pc of allowed) {
+    const midi = midiInWindow(pc, target, low, high);
+    if (midi < low || midi > high) continue;
+    const dist = Math.abs(midi - target);
+    if (dist < bestDist) {
+      best = midi;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
 function repairEvents(
   events: readonly MotifNoteEvent[],
   chordTones: readonly number[],
@@ -204,14 +245,19 @@ function repairEvents(
   high: number,
   anchor: number,
   strongAt?: (onset: number) => boolean,
+  strict = false,
+  aim = false,
 ): MotifNoteEvent[] {
   let previous = anchor;
+  const target = anchor;
   return events.map((event) => {
     if (event.midi === null) return { ...event };
     const strong = strongAt ? strongAt(event.onset) : Math.abs(event.onset % 2) < 1e-6;
-    const allowed = strong ? chordTones : [...new Set([...FIELD, ...chordTones])];
+    const allowed = strong || strict ? chordTones : [...new Set([...FIELD, ...chordTones])];
     const pc = allowed.includes(mod12(event.midi)) ? mod12(event.midi) : closestPc(event.midi, allowed);
-    const midi = midiInWindow(pc, previous, low, high);
+    const midi = aim
+      ? closestAllowedMidi(target, allowed, low, Math.min(high, previous + 12))
+      : midiInWindow(pc, previous, low, high);
     previous = midi;
     return { ...event, midi };
   });
@@ -292,6 +338,7 @@ function fillVoice(slots: Slot[], voice: number): ScoreEvent[] {
       duration: slot.duration,
       voice,
       ...(slot.pitches ? { pitches: slot.pitches } : {}),
+      ...(slot.spellings ? { spelling: slot.spellings[0], stackSpellings: slot.spellings } : {}),
       ...(slot.motifRef ? { motifRef: slot.motifRef } : {}),
       ...(slot.tie ? { notation: { tie: slot.tie } } : {}),
     };
@@ -322,6 +369,45 @@ function phaseAt(bar: number, bars: number): Phase {
     ],
   };
   return map[bars as GeneralPianoBarCount][bar - 1] ?? 'sequence';
+}
+
+function phaseFromIntent(intent: string): Phase {
+  if (intent === 'statement') return 'statement';
+  if (intent === 'development' || intent === 'climax') return 'development';
+  if (intent === 'contrast' || intent === 'dialogue') return 'contrast';
+  if (intent === 'preparation') return 'sequence';
+  if (intent === 'return') return 'return';
+  if (intent === 'ending') return 'ending';
+  return 'sequence';
+}
+
+function stampPolychord(slots: Slot[], ordered: { midi: number; step: string; alter: number }[]): Slot[] {
+  if (ordered.length !== 3) return slots;
+  const sorted = [...slots].sort((a, b) => a.start - b.start);
+  const duration = sorted.length > 0 && sorted[0]!.start < 1e-6
+    ? sorted[0]!.duration
+    : Math.min(sorted[0]?.start ?? 1, 1);
+  if (duration <= 1e-6) return slots;
+  const spellings = ordered.map((item) => ({ step: item.step, alter: item.alter }));
+  const stack: Slot = {
+    start: 0,
+    duration,
+    pitch: ordered[0]!.midi,
+    pitches: ordered.map((item) => item.midi),
+    spellings,
+    motifRef: 'polychord',
+  };
+  const rest = sorted.filter((slot) => slot.start >= duration - 1e-6).map((slot) => {
+    const nearest = ordered.reduce((best, item) => (
+      Math.abs(item.midi - slot.pitch) < Math.abs(best.midi - slot.pitch) ? item : best
+    ));
+    return {
+      ...slot,
+      pitch: nearest.midi,
+      spellings: [{ step: nearest.step, alter: nearest.alter }],
+    };
+  });
+  return [stack, ...rest];
 }
 
 function returnBarFor(bars: number): number {
@@ -461,6 +547,28 @@ function lhTie(pitches: number[], tie: 'start' | 'stop', motifRef: string, durat
   };
 }
 
+function handsShareTriad(score: ScoreModel, bar: number, upper: readonly number[], lower: readonly number[]): boolean {
+  const measure = score.parts[0]?.measures.find((item) => item.index === bar);
+  if (!measure) return false;
+  const notes = measure.events.filter((event): event is NoteEvent => event.kind === 'note');
+  const pcs = (event: NoteEvent) => [event.pitch, ...(event.pitches ?? [])].map((pitch) => mod12(pitch));
+  const rh = notes.filter((event) => (event.voice ?? 1) === 1);
+  const lh = notes.filter((event) => (event.voice ?? 1) === 3);
+  for (const right of rh) {
+    for (const left of lh) {
+      const start = Math.max(right.startBeat, left.startBeat);
+      const end = Math.min(right.startBeat + right.duration, left.startBeat + left.duration);
+      if (end <= start + 1e-6) continue;
+      const activeRh = rh.filter((event) => event.startBeat <= start + 1e-6 && event.startBeat + event.duration > start + 1e-6);
+      const activeLh = lh.filter((event) => event.startBeat <= start + 1e-6 && event.startBeat + event.duration > start + 1e-6);
+      const gotRh = new Set(activeRh.flatMap(pcs));
+      const gotLh = new Set(activeLh.flatMap(pcs));
+      if (upper.every((pc) => gotRh.has(pc)) && lower.every((pc) => gotLh.has(pc))) return true;
+    }
+  }
+  return false;
+}
+
 function ownedSignature(score: ScoreModel): string {
   return JSON.stringify(score.parts[0]?.measures.map((measure) => measure.events.map((event) => (
     event.kind === 'note'
@@ -545,6 +653,13 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   if (input.tonalCentre !== 'C' && input.tonalCentre !== 'Am') {
     return { ok: false, code: 'bad_request', error: 'General piano V1 tonal centre must be C or Am.' };
   }
+  if (input.phraseDevelopmentV11 === true && input.bars !== 24) {
+    return { ok: false, code: 'bad_request', error: 'Phrase development V1.1 needs the 24-bar form.' };
+  }
+  if (input.polychords) {
+    const regionError = validatePolychordRegions(input.polychords, input.bars);
+    if (regionError) return { ok: false, code: 'bad_request', error: regionError };
+  }
   if (!Array.isArray(input.harmony) || input.harmony.length !== input.bars) {
     return { ok: false, code: 'bad_request', error: 'General piano V1 needs one chord symbol for every bar.' };
   }
@@ -595,6 +710,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   const phases: Phase[] = [];
   const textures: PianoLhTexture[] = [];
   let previousRh = input.tonalCentre === 'C' ? 72 : 69;
+  let previousLhPitch = 48;
   let devOrdinal = 0;
   let contrastOrdinal = 0;
   let openTie: number[] | null = null;
@@ -604,24 +720,84 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   const fragments: PianoFragmentRecord[] = [];
   let stageA: { timeline: PianoTimelineBar[] } | null = null;
   if (input.timing?.enabled === true) {
-    if ('phraseDevelopment' in input.timing || 'polychord' in input.timing) {
-      return { ok: false, code: 'bad_request', error: 'Stage B phrase development and polychords are outside Stage A.' };
-    }
     const meterErrors = validatePianoMeterPlan(input.timing.meterPlan, input.bars);
     if (meterErrors.length > 0) return { ok: false, code: 'bad_request', error: meterErrors.join('; ') };
     stageA = { timeline: buildPianoTimeline(input.timing.meterPlan) };
   }
+  const voicedByBar: (VoicedPolychord | null)[] = [];
+  if (input.polychords) {
+    let rhAnchor = input.tonalCentre === 'C' ? 72 : 69;
+    let lhAnchor = 48;
+    let previousUpper: number[] | null = null;
+    let previousLower: number[] | null = null;
+    for (let bar = 1; bar <= input.bars; bar += 1) {
+      const region = regionAt(input.polychords, bar);
+      if (!region) {
+        voicedByBar.push(null);
+        continue;
+      }
+      const anchor = input.phraseDevelopmentV11 && phraseIntentAt(bar) === 'climax'
+        ? Math.min(RH_HIGH - 3, rhAnchor + 7)
+        : rhAnchor;
+      const voiced = voicePolychordPair({
+        chord: region.polychord,
+        rhLow: RH_LOW,
+        rhHigh: RH_HIGH,
+        lhLow: LH_LOW,
+        lhHigh: LH_HIGH,
+        rhAnchor: anchor,
+        lhAnchor,
+        previousRh: previousUpper,
+        previousLh: previousLower,
+      });
+      if (!voiced.ok) return { ok: false, code: 'validation', error: `Bar ${bar}: ${voiced.diagnostic}` };
+      voicedByBar.push(voiced.voiced);
+      previousUpper = voiced.voiced.upper.ordered.map((member) => member.midi);
+      previousLower = voiced.voiced.lower.ordered.map((member) => member.midi);
+      rhAnchor = previousUpper[0]!;
+      lhAnchor = previousLower[0]!;
+    }
+  }
+  const spanChoices = new Map<number, PhraseSpanChoice & { events: MotifNoteEvent[] }>();
+  let realisedMotif: Motif | null = null;
 
   for (let bar = 1; bar <= input.bars; bar += 1) {
     const stageBar = stageA?.timeline[bar - 1] ?? null;
     const stageSpan = stageBar?.span ?? null;
-    const phase = phaseAt(bar, input.bars);
+    const phase = input.phraseDevelopmentV11 ? phaseFromIntent(phraseIntentAt(bar)) : phaseAt(bar, input.bars);
+    const rhEntry = previousRh;
+    const lhEntry = previousLhPitch;
     phases.push(phase);
     const chord = chords[bar - 1]!;
+    const voiced = voicedByBar[bar - 1] ?? null;
+    const rhTones = voiced ? voiced.upper.pcs : chord.tones;
+    const handChord: ParsedPianoChord = voiced
+      ? {
+        display: chord.display,
+        rootPc: voiced.lower.ordered[0]!.pc,
+        bassPc: voiced.lower.ordered[0]!.pc,
+        tones: voiced.lower.pcs,
+      }
+      : chord;
     const next = chords[bar];
     let line: MotifNoteEvent[] = [];
     let motifRef = root.id;
-    if (phase === 'statement') {
+    if (input.phraseDevelopmentV11 && realisedMotif && bar > 1) {
+      const span = phraseSpanIndex(bar);
+      const intent = phraseIntentAt(bar);
+      if (!spanChoices.has(span)) {
+        spanChoices.set(span, choosePhraseSpan(span, phraseIntentAt(span * 2 + 1), realisedMotif, previousRh));
+      }
+      const choice = spanChoices.get(span)!;
+      const picked = eventsForPhraseBar(
+        intent,
+        realisedMotif,
+        choice.events,
+        midiInWindow(tonic, previousRh, RH_LOW, RH_HIGH),
+      );
+      line = fitMotif(picked.events, stageSpan, fragments, bar);
+      motifRef = `phrase.${picked.id}`;
+    } else if (phase === 'statement') {
       line = fitMotif(root.events, stageSpan, fragments, bar);
       motifRef = root.id;
     } else if (phase === 'sequence') {
@@ -657,68 +833,109 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       motifRef = 'm1.cadence';
     }
     if (phase !== 'ending') {
+      const climax = input.phraseDevelopmentV11 === true && phraseIntentAt(bar) === 'climax';
+      if (climax) previousRh = Math.min(RH_HIGH - 2, previousRh + 12);
+      const ceiling = input.phraseDevelopmentV11 && !climax ? RH_HIGH - 5 : RH_HIGH;
       const strongAt = stageBar
         ? (onset: number) => isGroupBoundary(dyadicQuarter(onset), stageBar)
         : undefined;
-      line = repairEvents(line, chord.tones, RH_LOW, RH_HIGH, previousRh, strongAt);
+      line = repairEvents(line, rhTones, RH_LOW, ceiling, previousRh, strongAt, voiced !== null, climax);
       line = shiftRegister(line, previousRh);
+      if (line.some((event) => event.midi !== null && (event.midi < RH_LOW || event.midi > ceiling))) {
+        line = repairEvents(line, rhTones, RH_LOW, ceiling, previousRh, strongAt, voiced !== null, climax);
+      }
     }
     const lastRh = [...line].reverse().find((event) => event.midi !== null);
     if (lastRh?.midi) previousRh = lastRh.midi;
-    if (bar === 1) openingEvents = line.map((event) => ({ ...event }));
+    if (bar === 1) {
+      openingEvents = line.map((event) => ({ ...event }));
+      realisedMotif = { id: 'm1.realised', field: FIELD, events: openingEvents.map((event) => ({ ...event })) };
+    }
     if (bar === returnBar) returnEvents = line.map((event) => ({ ...event }));
     if (phase === 'development' && developmentDurations.length === 0) {
       developmentDurations = line.filter((event) => event.midi !== null).map((event) => event.duration);
     }
     rh.set(bar, slotsFrom(line, motifRef));
+    if (voiced && regionAt(input.polychords ?? [], bar)?.startBar === bar) {
+      const locked = locks.some((lock) => lock.bar === bar && (lock.voice === 1 || lock.voice === 3) && lock.startBeat < 1e-6);
+      if (locked) {
+        return { ok: false, code: 'unsupported_lock', error: `Polychord bar ${bar} cannot sound a complete triad without moving a locked event.` };
+      }
+      const upper = voiceTriad({
+        members: voiced.upper.ordered.map((member) => ({ step: member.step, alter: member.alter, pc: member.pc })),
+        low: RH_LOW,
+        high: RH_HIGH,
+        anchor: rhEntry,
+        previous: [rhEntry],
+        preferExtreme: 'high',
+        avoid: new Set<number>(),
+        label: voiced.display,
+      });
+      if (!upper.ok) return { ok: false, code: 'validation', error: `Bar ${bar}: ${upper.diagnostic}` };
+      const lower = voiceTriad({
+        members: voiced.lower.ordered.map((member) => ({ step: member.step, alter: member.alter, pc: member.pc })),
+        low: LH_LOW,
+        high: LH_HIGH,
+        anchor: lhEntry,
+        previous: [lhEntry],
+        preferExtreme: 'low',
+        avoid: new Set(upper.voiced.ordered.map((member) => member.midi)),
+        label: voiced.display,
+      });
+      if (!lower.ok) return { ok: false, code: 'validation', error: `Bar ${bar}: ${lower.diagnostic}` };
+      voicedByBar[bar - 1] = { ...voiced, upper: upper.voiced, lower: lower.voiced };
+      rh.set(bar, stampPolychord(rh.get(bar) ?? [], upper.voiced.ordered));
+      const stamped = [...(rh.get(bar) ?? [])].reverse().find((slot) => Number.isFinite(slot.pitch));
+      if (stamped) previousRh = stamped.pitch;
+    }
 
     const level = getDensityForBar(density, bar);
     const tieBar = phase === 'approach' || (phase === 'return' && bar === input.bars - 1);
     let texture: PianoLhTexture['texture'] = 'sustained';
     if (phase === 'ending') {
       if (openTie) {
-        const releasePool = chordPool(chord, openTie[0]! + 2).filter((pitch) => !openTie!.includes(pitch));
-        const release = releasePool[0] ?? midiInWindow(chord.rootPc, openTie[0]! + 3, LH_LOW, LH_HIGH);
+        const releasePool = chordPool(handChord, openTie[0]! + 2).filter((pitch) => !openTie!.includes(pitch));
+        const release = releasePool[0] ?? midiInWindow(handChord.rootPc, openTie[0]! + 3, LH_LOW, LH_HIGH);
         lh.set(bar, [
           lhTie(openTie, 'stop', 'lh.tie', 2, 0),
           { start: 2, duration: 2, pitch: release === openTie[0] ? openTie[0]! : release, motifRef: 'lh.cadence' },
         ]);
         openTie = null;
       } else {
-        lh.set(bar, lhSustain(chord, 'lh.cadence'));
+        lh.set(bar, lhSustain(handChord, 'lh.cadence'));
       }
       texture = 'tied-stack';
     } else if (tieBar) {
-      const pitches = tiePitches(chord, next);
+      const pitches = tiePitches(handChord, next ? { ...next, tones: voicedByBar[bar]?.lower.pcs ?? next.tones } : undefined);
       if (pitches) {
         openTie = pitches;
         const held = phase === 'approach'
-          ? [lhTie(pitches, 'start', 'lh.tie', 2, 2), ...lhSparse(chord).filter((slot) => slot.start < 2)]
+          ? [lhTie(pitches, 'start', 'lh.tie', 2, 2), ...lhSparse(handChord).filter((slot) => slot.start < 2)]
           : [lhTie(pitches, 'start', 'lh.tie', 4, 0)];
         lh.set(bar, held);
         texture = 'tied-stack';
       } else if (phase === 'development' || level === 'medium') {
-        lh.set(bar, lhBroken(chord, bar, input.seed));
+        lh.set(bar, lhBroken(handChord, bar, input.seed));
         texture = 'broken';
       } else {
-        lh.set(bar, lhSustain(chord, 'lh.sustain'));
+        lh.set(bar, lhSustain(handChord, 'lh.sustain'));
         texture = 'sustained';
       }
     } else if (phase === 'development') {
-      lh.set(bar, lhBroken(chord, bar, input.seed));
+      lh.set(bar, lhBroken(handChord, bar, input.seed));
       texture = 'broken';
     } else if (phase === 'contrast') {
       const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: contrastOrdinal });
-      lh.set(bar, lhResponse(chord, answered.step.toId, answered.motif.events));
+      lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
       texture = 'response';
     } else if (level === 'sparse' && bar % 2 === 0) {
-      lh.set(bar, lhSparse(chord));
+      lh.set(bar, lhSparse(handChord));
       texture = 'sparse';
     } else if (level === 'sparse') {
-      lh.set(bar, lhSustain(chord, 'lh.sustain'));
+      lh.set(bar, lhSustain(handChord, 'lh.sustain'));
       texture = 'sustained';
     } else {
-      lh.set(bar, lhBroken(chord, bar, input.seed));
+      lh.set(bar, lhBroken(handChord, bar, input.seed));
       texture = 'broken';
     }
     if (stageBar) {
@@ -728,6 +945,12 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       }
       lh.set(bar, fragmented.kept);
     }
+    if (voiced && regionAt(input.polychords ?? [], bar)?.startBar === bar) {
+      const placed = voicedByBar[bar - 1];
+      if (placed) lh.set(bar, stampPolychord(lh.get(bar) ?? [], placed.lower.ordered));
+    }
+    const lastLh = [...(lh.get(bar) ?? [])].reverse().find((slot) => Number.isFinite(slot.pitch));
+    if (lastLh) previousLhPitch = lastLh.pitch;
     textures.push({ bar, texture });
   }
 
@@ -738,9 +961,39 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
 
   let windows = input.timing?.enabled === true ? [...(input.timing.rhythmicWindows ?? [])] : [];
   if (input.timing?.acceptance && stageA) {
-    const shared = chords[4] && chords[5] && chords[4].tones.some((pc) => chords[5]!.tones.includes(pc));
+    const shared = input.polychords
+      ? true
+      : Boolean(chords[4] && chords[5] && chords[4].tones.some((pc) => chords[5]!.tones.includes(pc)));
     if (!shared) return { ok: false, code: 'bad_request', error: 'acceptance cross-bar tuplet needs a pitch shared by bars 5 and 6' };
     windows = acceptanceWindows(stageA.timeline, chords);
+    if (input.groupedNineSixteenTriplet) {
+      const upper = voicedByBar[11]?.upper;
+      if (!upper) return { ok: false, code: 'bad_request', error: 'bar 12 3:2 needs a polychord on that bar' };
+      const extra = bar12TripletWindow(stageA.timeline, upper);
+      if (typeof extra === 'string') return { ok: false, code: 'bad_request', error: extra };
+      windows = [...windows, extra];
+    }
+    if (input.polychords && stageA) {
+      windows = windows.map((window) => {
+        const host = findTimelineBar(stageA.timeline, window.start);
+        const voiced = host ? voicedByBar[host.bar - 1] : null;
+        if (!voiced) return window;
+        const region = host ? regionAt(input.polychords ?? [], host.bar) : null;
+        const atChange = Boolean(region && host && region.startBar === host.bar && qEq(window.start, host.start));
+        const named = window.id === 'rh-3-2' || window.id === 'rh-5-4' || window.id === 'bar12-3-2' || window.id.startsWith('gui-');
+        return decoratePolychordWindow(window, voiced.upper, voiced.lower, atChange || named ? 'stack' : 'repeated');
+      });
+    }
+  } else if (input.polychords && stageA && windows.length > 0) {
+    windows = windows.map((window) => {
+      const host = findTimelineBar(stageA.timeline, window.start);
+      const voiced = host ? voicedByBar[host.bar - 1] : null;
+      if (!voiced) return window;
+      const region = host ? regionAt(input.polychords ?? [], host.bar) : null;
+      const atChange = Boolean(region && host && region.startBar === host.bar && qEq(window.start, host.start));
+      const named = window.id.startsWith('gui-') || window.id === 'rh-3-2' || window.id === 'rh-5-4';
+      return decoratePolychordWindow(window, voiced.upper, voiced.lower, atChange || named ? 'stack' : 'repeated');
+    });
   }
   const realised = stageA
     ? realiseStageA({ timeline: stageA.timeline, rh, lh, windows })
@@ -778,6 +1031,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
           index: bar,
           chord,
           chordSymbol: chord,
+          ...(voicedByBar[index] ? { pianoPolychord: voicedByBar[index]!.export } : {}),
           ...(planned ? { measureBeatSpanQuarters: qToNumber(planned.span), pianoBeatGroups: [...planned.groups] } : {}),
           events: realised
             ? [...(realised.events.get(bar) ?? [])]
@@ -831,6 +1085,28 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       openingIntervals: intervalsOf(openingEvents),
       returnIntervals: intervalsOf(returnEvents),
       developmentDurations,
+      ...(input.phraseDevelopmentV11 ? {
+        phraseDevelopment: {
+          opening: openingEvents.map((event) => ({ ...event })),
+          spans: [...spanChoices.values()].map((choice) => ({
+            span: choice.span,
+            bars: [...choice.bars],
+            intent: choice.intent,
+            chosen: choice.chosen,
+            candidates: choice.candidates,
+          })),
+          returnDurations: rhythmSignature(returnEvents),
+          climaxRhMax: 0,
+        },
+      } : {}),
+      ...(input.polychords ? {
+        polychords: voicedByBar.map((voiced, index) => voiced ? {
+          bar: index + 1,
+          display: voiced.display,
+          upper: voiced.upper.ordered.map((member) => member.midi),
+          lower: voiced.lower.ordered.map((member) => member.midi),
+        } : null).filter((item): item is { bar: number; display: string; upper: number[]; lower: number[] } => item !== null),
+      } : {}),
     },
   };
 
@@ -838,7 +1114,31 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   const beforeEvents = ownedSignature(score);
   const kept = validateLockedEventsPresent(score, locks);
   if (!kept.ok) return { ok: false, code: 'unsupported_lock', error: kept.errors.join('; ') };
-  const playable = validatePianoPlayability(score, input.tempo);
+  if (input.polychords) {
+    for (const region of input.polychords) {
+      const voiced = voicedByBar[region.startBar - 1];
+      if (!voiced) continue;
+      if (!handsShareTriad(score, region.startBar, voiced.upper.pcs, voiced.lower.pcs)) {
+        return {
+          ok: false,
+          code: 'validation',
+          error: `Bar ${region.startBar}: ${voiced.display} does not sound both complete triads together`,
+        };
+      }
+    }
+  }
+  if (plan.general?.phraseDevelopment) {
+    let climaxRhMax = 0;
+    for (const measure of score.parts[0]?.measures ?? []) {
+      if (measure.index !== 19 && measure.index !== 20) continue;
+      for (const event of measure.events) {
+        if (event.kind !== 'note' || (event.voice ?? 1) !== 1) continue;
+        climaxRhMax = Math.max(climaxRhMax, event.pitch, ...(event.pitches ?? []));
+      }
+    }
+    plan.general.phraseDevelopment.climaxRhMax = climaxRhMax;
+  }
+  const playable = validatePianoPlayability(score, input.tempo, input.polychords ? 'v11-polychord' : 'legacy');
   if (!playable.ok) return { ok: false, code: 'playability', error: playable.errors.join('; ') };
   const independent = validatePianoIndependence(score);
   if (!independent.ok) return { ok: false, code: 'validation', error: independent.errors.join('; ') };
@@ -852,6 +1152,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     return { ok: false, code: 'validation', error: 'writer-owned piano events were overwritten' };
   }
   for (const measure of score.parts[0]?.measures ?? []) {
+    const owner = voicedByBar[measure.index - 1];
     const chord = chords[measure.index - 1];
     if (!chord) continue;
     for (const event of measure.events) {
@@ -863,15 +1164,18 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       const strong = planned
         ? isGroupBoundary(onsetQ ?? dyadicQuarter(event.startBeat), planned)
         : Math.abs(event.startBeat % 2) < 1e-6;
+      const rhAllow = owner ? owner.upper.pcs : chord.tones;
+      const lhAllow = owner ? owner.lower.pcs : chord.tones;
+      const weakAllow = owner ? owner.upper.pcs : [...new Set([...FIELD, ...chord.tones])];
       for (const pitch of pitches) {
         const pc = mod12(pitch);
-        if (voice === 3 && !chord.tones.includes(pc)) {
-          return { ok: false, code: 'validation', error: `LH pitch ${pitch} leaves ${chord.display} in bar ${measure.index}` };
+        if (voice === 3 && !lhAllow.includes(pc)) {
+          return { ok: false, code: 'validation', error: `LH pitch ${pitch} leaves ${owner?.display ?? chord.display} in bar ${measure.index}` };
         }
-        if (voice === 1 && strong && !chord.tones.includes(pc)) {
-          return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves ${chord.display} on a strong beat in bar ${measure.index}` };
+        if (voice === 1 && strong && !rhAllow.includes(pc)) {
+          return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves ${owner?.display ?? chord.display} on a strong beat in bar ${measure.index}` };
         }
-        if (voice === 1 && !strong && !chord.tones.includes(pc) && !FIELD.includes(pc as (typeof FIELD)[number])) {
+        if (voice === 1 && !strong && !weakAllow.includes(pc)) {
           return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves the field in bar ${measure.index}` };
         }
       }

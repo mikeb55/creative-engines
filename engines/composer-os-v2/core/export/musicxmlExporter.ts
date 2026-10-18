@@ -16,6 +16,7 @@ import type {
 } from '../score-model/scoreModelTypes';
 import { DIVISIONS, MEASURE_DIVISIONS } from '../score-model/scoreModelTypes';
 import { buildHarmonyXmlLine } from './chordSymbolMusicXml';
+import { pianoPolychordHarmonyXml } from '../piano/pianoV11Polychord';
 import {
   v34NoteDirections,
   v34NotationsXml,
@@ -1746,7 +1747,9 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             isBigBandPianoPart(part) ||
             isStringQuartetPianoPart(part) ||
             part.pianoGrandStaff != null);
-        if (writesLeadSheetHarmony) {
+        if (m.pianoPolychord) {
+          xml += pianoPolychordHarmonyXml(m.pianoPolychord);
+        } else if (writesLeadSheetHarmony) {
           if (
             part.id === 'guitar' &&
             assertLocked &&

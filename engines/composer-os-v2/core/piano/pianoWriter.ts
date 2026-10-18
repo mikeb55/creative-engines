@@ -73,6 +73,13 @@ export interface PianoCompositionPlan {
     openingIntervals: number[];
     returnIntervals: number[];
     developmentDurations: number[];
+    phraseDevelopment?: {
+      opening: { onset: number; duration: number; midi: number | null }[];
+      spans: { span: number; bars: number[]; intent: string; chosen: string; candidates: { id: string; score: number }[] }[];
+      returnDurations: number[];
+      climaxRhMax: number;
+    };
+    polychords?: { bar: number; display: string; upper: number[]; lower: number[] }[];
   };
 }
 

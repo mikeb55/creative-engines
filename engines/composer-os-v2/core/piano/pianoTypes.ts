@@ -25,6 +25,11 @@ export const PIANO_LH_WINDOW = { low: 36, high: 60 } as const;
 export const PIANO_MAX_HAND_SPAN = 12;
 export const PIANO_MAX_KEYS_PER_HAND = 4;
 export const PIANO_MAX_KEYS_COMBINED = 6;
+/** Unchanged legacy cap. V1.1 polychords do not rewrite this number. */
+export const PIANO_LEGACY_COMBINED_KEY_LIMIT = PIANO_MAX_KEYS_COMBINED;
+/** V1.1 polychord profile: three right-hand keys and three left-hand keys. */
+export const PIANO_V11_POLYCHORD_KEYS_PER_HAND = 3;
+export const PIANO_V11_POLYCHORD_COMBINED_KEYS = 6;
 export const PIANO_RELOCATION_SEMITONES = 12;
 export const PIANO_RELOCATION_SECONDS = 0.5;
 export const PIANO_V1_BARS = 8;

@@ -43,6 +43,13 @@ function mergeNotations(tieNotations: string, other: string): string {
   return `<notations>${inner(tieNotations)}${inner(other)}</notations>`;
 }
 
+function spelledMidi(note: NoteEvent, midi: number, index: number, preferFlats: boolean): { step: string; alter: number; octave: number } {
+  const listed = note.stackSpellings?.[index];
+  if (listed) return pitchPartsForExport(midi, preferFlats, listed);
+  if (index === 0 && note.spelling) return pitchPartsForExport(midi, preferFlats, note.spelling);
+  return midiToPitch(midi, preferFlats);
+}
+
 function stackFollowers(note: NoteEvent): number[] {
   const listed = note.pitches ?? [];
   if (listed.length > 1) return listed.slice(1).filter((pitch) => pitch !== note.pitch);
@@ -150,9 +157,7 @@ function pianoExactGrandStaffXml(
         const ties = segmentTies(0, 1, cross);
         for (let pi = 0; pi < pitches.length; pi += 1) {
           const midi = pitches[pi]!;
-          const spelled = pi === 0 && event.spelling
-            ? pitchPartsForExport(midi, preferFlats, event.spelling)
-            : midiToPitch(midi, preferFlats);
+          const spelled = spelledMidi(event, midi, pi, preferFlats);
           const alterEl = spelled.alter !== 0 ? `<alter>${spelled.alter}</alter>` : '';
           const pitchXml = `<pitch><step>${spelled.step}</step>${alterEl}<octave>${spelled.octave}</octave></pitch>`;
           const notation = pi === 0 ? exactNotation(event.pianoExact!, number, ties.notations.replace(/^<notations>|<\/notations>$/g, '')) : '';
@@ -275,9 +280,7 @@ export function pianoGrandStaffEventsToXml(
           const ties = segmentTies(segment, parts.length, cross);
           for (let pi = 0; pi < pitches.length; pi += 1) {
             const midi = pitches[pi]!;
-            const spelled = pi === 0 && event.spelling
-              ? pitchPartsForExport(midi, preferFlats, event.spelling)
-              : midiToPitch(midi, preferFlats);
+            const spelled = spelledMidi(event, midi, pi, preferFlats);
             const alterEl = spelled.alter !== 0 ? `<alter>${spelled.alter}</alter>` : '';
             const pitchXml = `<pitch><step>${spelled.step}</step>${alterEl}<octave>${spelled.octave}</octave></pitch>`;
             const notations = pi === 0 && segment === 0 ? mergeNotations(ties.notations, art) : ties.notations;

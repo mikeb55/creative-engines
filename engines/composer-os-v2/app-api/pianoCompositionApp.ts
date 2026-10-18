@@ -5,6 +5,7 @@
 
 import { composeCoffeeRunVariation } from '../core/piano/coffeeRunVariation';
 import { composeGeneralPianoV1 } from '../core/piano/generalPianoWriter';
+import { resolvePianoV11, type PianoV11RequestBody } from '../core/piano/pianoV11Request';
 import { composePianoV1, type PianoComposeResult } from '../core/piano/pianoWriter';
 import type { GeneralPianoBarCount, GeneralPianoCentre, PianoLockedEvent } from '../core/piano/pianoTypes';
 import { PIANO_V1_BARS } from '../core/piano/pianoTypes';
@@ -36,6 +37,7 @@ export function apiComposePianoV1(body: unknown): PianoComposeResult {
     metre?: unknown;
     meter?: unknown;
     timeSignature?: unknown;
+    pianoV11?: unknown;
   };
   if (typeof request.seed !== 'number' || !Number.isInteger(request.seed)) {
     return { ok: false, code: 'bad_request', error: 'Piano composition V1 needs an integer seed.' };
@@ -70,6 +72,22 @@ export function apiComposePianoV1(body: unknown): PianoComposeResult {
     }
     if (!Array.isArray(request.harmony) || request.harmony.some((symbol) => typeof symbol !== 'string')) {
       return { ok: false, code: 'bad_request', error: 'General piano V1 needs one chord symbol for every bar.' };
+    }
+    if (request.pianoV11 !== undefined) {
+      if (!request.pianoV11 || typeof request.pianoV11 !== 'object') {
+        return { ok: false, code: 'bad_request', error: 'Piano V1.1 options are malformed.' };
+      }
+      const resolved = resolvePianoV11(request.pianoV11 as PianoV11RequestBody, request.bars);
+      if ('error' in resolved) return { ok: false, code: 'bad_request', error: resolved.error };
+      return composeGeneralPianoV1({
+        seed: request.seed,
+        bars: request.bars as GeneralPianoBarCount,
+        tempo: typeof request.tempo === 'number' ? request.tempo : Number.NaN,
+        tonalCentre: request.tonalCentre as GeneralPianoCentre,
+        harmony: request.harmony,
+        lockedEvents: request.lockedEvents as PianoLockedEvent[] | undefined,
+        ...resolved,
+      });
     }
     return composeGeneralPianoV1({
       seed: request.seed,

@@ -10,6 +10,7 @@ import { writePianoScoreMidi } from '../core/piano/pianoMidi';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { resolveComposerLibraryRoot } from './composerOsOutputPaths';
 import { apiComposePianoV1 } from './pianoCompositionApp';
+import { PIANO_V11_ALGORITHM, PIANO_V11_OUTPUT_FOLDER, pianoV11FileBase } from '../core/piano/pianoV11Output';
 
 export const PIANO_FIXTURE_SEED_EFFECT =
   'Seed parity changes the left-hand bar 4 figure and the inner-voice pitch.';
@@ -72,15 +73,42 @@ export function persistPianoComposition(body: unknown, outputDir: string): Piano
     return { ok: false, code: composed.code, error: composed.error };
   }
 
-  const request = body as { seed?: unknown; innerVoice?: unknown; filmCue?: unknown; generalPianoV1?: unknown };
+  const request = body as {
+    seed?: unknown;
+    innerVoice?: unknown;
+    filmCue?: unknown;
+    generalPianoV1?: unknown;
+    pianoV11?: unknown;
+    bars?: unknown;
+    tempo?: unknown;
+    tonalCentre?: unknown;
+    harmony?: unknown;
+  };
   const seed = request.seed;
   const innerVoice = request.innerVoice !== false;
   const piece = pieceSlug(body);
   const libraryRoot = resolveComposerLibraryRoot(outputDir);
-  const outputDirectory = path.resolve(libraryRoot, PIANO_OUTPUT_FOLDER_NAME);
-  const base = piece === 'general-piano-v1'
-    ? `general-piano-v1-seed${String(seed)}-${barCount(composed.score)}bars-${composed.score.tempo ?? 0}bpm`
-    : `${piece}-seed${String(seed)}-${innerVoice ? 'inner' : 'no-inner'}`;
+  const v11 = request.generalPianoV1 === true && request.pianoV11 && typeof request.pianoV11 === 'object';
+  const outputDirectory = path.resolve(libraryRoot, v11 ? PIANO_V11_OUTPUT_FOLDER : PIANO_OUTPUT_FOLDER_NAME);
+  const base = v11
+    ? pianoV11FileBase({
+      seed: Number(seed),
+      tempo: composed.score.tempo ?? (Number(request.tempo) || 0),
+      bars: barCount(composed.score),
+      tonalCentre: typeof request.tonalCentre === 'string' ? request.tonalCentre : 'C',
+      payload: {
+        algorithm: PIANO_V11_ALGORITHM,
+        seed,
+        tempo: request.tempo,
+        bars: request.bars,
+        tonalCentre: request.tonalCentre,
+        harmony: request.harmony,
+        pianoV11: request.pianoV11,
+      },
+    })
+    : piece === 'general-piano-v1'
+      ? `general-piano-v1-seed${String(seed)}-${barCount(composed.score)}bars-${composed.score.tempo ?? 0}bpm`
+      : `${piece}-seed${String(seed)}-${innerVoice ? 'inner' : 'no-inner'}`;
   const filepath = path.join(outputDirectory, `${base}.musicxml`);
   const midiFilepath = path.join(outputDirectory, `${base}.mid`);
   const xmlPartial = `${filepath}.partial`;
@@ -103,6 +131,20 @@ export function persistPianoComposition(body: unknown, outputDir: string): Piano
     }
     fs.renameSync(xmlPartial, filepath);
     fs.renameSync(midiPartial, midiFilepath);
+    if (v11) {
+      fs.writeFileSync(path.join(outputDirectory, `${base}.manifest.json`), `${JSON.stringify({
+        algorithm: PIANO_V11_ALGORITHM,
+        seed,
+        tempo: request.tempo,
+        bars: request.bars,
+        tonalCentre: request.tonalCentre,
+        harmony: request.harmony,
+        pianoV11: request.pianoV11,
+        listening: 'PENDING',
+        notationInspection: 'PENDING',
+        physicalPlayability: 'PENDING',
+      }, null, 2)}\n`);
+    }
     return {
       ok: true,
       code: 'ok',

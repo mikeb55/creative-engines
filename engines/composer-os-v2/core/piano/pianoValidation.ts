@@ -12,6 +12,8 @@ import {
   PIANO_MAX_HAND_SPAN,
   PIANO_MAX_KEYS_COMBINED,
   PIANO_MAX_KEYS_PER_HAND,
+  PIANO_V11_POLYCHORD_COMBINED_KEYS,
+  PIANO_V11_POLYCHORD_KEYS_PER_HAND,
   PIANO_RELOCATION_SECONDS,
   PIANO_RELOCATION_SEMITONES,
   PIANO_RH_WINDOW,
@@ -76,7 +78,11 @@ function soundingNotes(score: ScoreModel): Sounding[] {
   return out;
 }
 
-export function validatePianoPlayability(score: ScoreModel, tempo = 64): PianoCheckResult {
+export function validatePianoPlayability(
+  score: ScoreModel,
+  tempo = 64,
+  profile: 'legacy' | 'v11-polychord' = 'legacy',
+): PianoCheckResult {
   const errors: string[] = [];
   const part = score.parts.find((item) => item.pianoGrandStaff);
   if (!part) return { ok: false, errors: ['Piano playability requires pianoGrandStaff'] };
@@ -100,7 +106,8 @@ export function validatePianoPlayability(score: ScoreModel, tempo = 64): PianoCh
     const active = notes.filter((note) => note.start <= time + 1e-6 && note.end > time + 1e-6);
     for (const hand of ['RH', 'LH'] as const) {
       const pitches = [...new Set(active.filter((note) => note.hand === hand).map((note) => note.pitch))].sort((a, b) => a - b);
-      if (pitches.length > PIANO_MAX_KEYS_PER_HAND) {
+      const handLimit = profile === 'v11-polychord' ? PIANO_V11_POLYCHORD_KEYS_PER_HAND : PIANO_MAX_KEYS_PER_HAND;
+      if (pitches.length > handLimit) {
         errors.push(`${hand} holds ${pitches.length} keys at beat ${time}`);
       }
       if (pitches.length > 1 && pitches[pitches.length - 1]! - pitches[0]! > PIANO_MAX_HAND_SPAN) {
@@ -110,7 +117,8 @@ export function validatePianoPlayability(score: ScoreModel, tempo = 64): PianoCh
     const rh = new Set(active.filter((note) => note.hand === 'RH').map((note) => note.pitch));
     const lh = new Set(active.filter((note) => note.hand === 'LH').map((note) => note.pitch));
     const combined = new Set([...rh, ...lh]);
-    if (combined.size > PIANO_MAX_KEYS_COMBINED) {
+    const combinedLimit = profile === 'v11-polychord' ? PIANO_V11_POLYCHORD_COMBINED_KEYS : PIANO_MAX_KEYS_COMBINED;
+    if (combined.size > combinedLimit) {
       errors.push(`combined held keys ${combined.size} at beat ${time}`);
     }
     for (const pitch of rh) {

@@ -4,6 +4,9 @@ import { api, isDesktopIpc } from '../services/api';
 type PieceId = 'fixture' | 'coffee-run' | 'general';
 type BarCount = 8 | 16 | 24;
 type TonalCentre = 'C' | 'Am';
+type TriadQuality = 'major' | 'minor' | 'augmented' | 'diminished';
+type MeterMode = 'legacy' | 'uniform' | 'cycle';
+type Polyrhythm = 'off' | '3:2' | '5:4' | 'both';
 
 type ComposeResult = {
   ok: boolean;
@@ -30,6 +33,51 @@ const GENERAL_SEED_BEHAVIOUR =
 
 const CYCLE_C = ['Cmaj7', 'Am7', 'Dm7', 'G7', 'Fmaj7', 'Em7', 'Dm7', 'Cmaj7'] as const;
 const CYCLE_A = ['Am7', 'Dm7', 'E7', 'Am7', 'Fmaj7', 'Cmaj7', 'Dm7', 'E7'] as const;
+
+const V11_METRES = [
+  { id: '4/4', numerator: 4, denominator: 4, groups: [2, 2] },
+  { id: '3/4', numerator: 3, denominator: 4, groups: [1, 1, 1] },
+  { id: '5/4', numerator: 5, denominator: 4, groups: [3, 2] },
+  { id: '6/8', numerator: 6, denominator: 8, groups: [3, 3] },
+  { id: '7/8', numerator: 7, denominator: 8, groups: [2, 2, 3] },
+  { id: '9/16', numerator: 9, denominator: 16, groups: [4, 2, 3] },
+] as const;
+
+function meterPlanFor(mode: MeterMode, bars: BarCount, uniformId: string) {
+  if (mode === 'legacy') return undefined;
+  if (mode === 'cycle') {
+    return Array.from({ length: bars }, (_, index) => {
+      const meter = V11_METRES[index % V11_METRES.length]!;
+      return { bar: index + 1, numerator: meter.numerator, denominator: meter.denominator, groups: [...meter.groups] };
+    });
+  }
+  const meter = V11_METRES.find((item) => item.id === uniformId) ?? V11_METRES[0]!;
+  return Array.from({ length: bars }, (_, index) => ({
+    bar: index + 1,
+    numerator: meter.numerator,
+    denominator: meter.denominator,
+    groups: [...meter.groups],
+  }));
+}
+
+function acceptancePolychords() {
+  const row = (startBar: number, endBar: number, upper: string, upperQuality: TriadQuality, lower: string, lowerQuality: TriadQuality) => ({
+    startBar,
+    endBar,
+    polychord: {
+      upper: { root: upper, quality: upperQuality },
+      lower: { root: lower, quality: lowerQuality },
+      assignment: { upper: 'RH' as const, lower: 'LH' as const },
+    },
+  });
+  return [
+    row(1, 6, 'C', 'major', 'D', 'minor'),
+    row(7, 12, 'D', 'major', 'C', 'minor'),
+    row(13, 18, 'F', 'major', 'D', 'minor'),
+    row(19, 20, 'Eb', 'major', 'A', 'minor'),
+    row(21, 24, 'C', 'major', 'D', 'minor'),
+  ];
+}
 
 function defaultHarmony(bars: BarCount, centre: TonalCentre): string[] {
   const source = centre === 'Am' ? CYCLE_A : CYCLE_C;
@@ -104,6 +152,16 @@ export function SoloPianoPage() {
   const [tempo, setTempo] = useState(64);
   const [tonalCentre, setTonalCentre] = useState<TonalCentre>('C');
   const [harmony, setHarmony] = useState<string[]>(() => defaultHarmony(8, 'C'));
+  const [advanced, setAdvanced] = useState(false);
+  const [phraseDevelopment, setPhraseDevelopment] = useState<'off' | 'on'>('off');
+  const [polychordMode, setPolychordMode] = useState<'off' | 'acceptance' | 'single'>('off');
+  const [upperRoot, setUpperRoot] = useState('C');
+  const [upperQuality, setUpperQuality] = useState<TriadQuality>('major');
+  const [lowerRoot, setLowerRoot] = useState('D');
+  const [lowerQuality, setLowerQuality] = useState<TriadQuality>('minor');
+  const [meterMode, setMeterMode] = useState<MeterMode>('legacy');
+  const [uniformMeter, setUniformMeter] = useState('4/4');
+  const [polyrhythm, setPolyrhythm] = useState<Polyrhythm>('off');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<ComposeResult | null>(null);
@@ -123,7 +181,29 @@ export function SoloPianoPage() {
       body.tempo = tempo;
       body.tonalCentre = tonalCentre;
       body.harmony = harmony.map((symbol) => symbol.trim());
-      body.metre = '4/4';
+      if (!advanced) body.metre = '4/4';
+      if (advanced) {
+        const meterPlan = meterPlanFor(meterMode, bars, uniformMeter);
+        const polychords = polychordMode === 'acceptance'
+          ? acceptancePolychords()
+          : polychordMode === 'single'
+            ? [{
+              startBar: 1,
+              endBar: bars,
+              polychord: {
+                upper: { root: upperRoot.trim(), quality: upperQuality },
+                lower: { root: lowerRoot.trim(), quality: lowerQuality },
+                assignment: { upper: 'RH' as const, lower: 'LH' as const },
+              },
+            }]
+            : undefined;
+        body.pianoV11 = {
+          phraseDevelopment: phraseDevelopment === 'on',
+          ...(polychords ? { polychords } : {}),
+          ...(meterPlan ? { meterPlan } : {}),
+          polyrhythm,
+        };
+      }
     } else {
       body.innerVoice = innerVoice;
       if (piece === 'coffee-run') body.filmCue = 'coffee-run-variation';
@@ -163,6 +243,15 @@ export function SoloPianoPage() {
     }
   }
 
+  const advancedError = piece !== 'general' || !advanced ? ''
+    : phraseDevelopment === 'on' && bars !== 24 ? 'Phrase development needs 24 bars.'
+    : polychordMode === 'acceptance' && bars !== 24 ? 'Acceptance polychord regions need 24 bars.'
+    : meterMode === 'cycle' && bars !== 24 ? 'The six-metre cycle needs 24 bars.'
+    : polyrhythm !== 'off' && meterMode === 'legacy' ? 'Polyrhythm windows need a V1.1 metre plan.'
+    : polyrhythm === 'both' && bars < 3 ? '3:2 and 5:4 together need at least 3 bars.'
+    : phraseDevelopment === 'off' && polychordMode === 'off' && meterMode === 'legacy'
+      ? 'Advanced mode needs phrase development, polychords, or a metre plan.'
+      : '';
   const seedBehaviour = piece === 'coffee-run'
     ? COFFEE_SEED_BEHAVIOUR
     : piece === 'general'
@@ -236,7 +325,9 @@ export function SoloPianoPage() {
           />
 
           <p data-testid="solo-piano-metre" style={{ marginTop: '1rem', marginBottom: 0 }}>
-            Metre: 4/4. Fixed for General Piano Composition V1.
+            {advanced && meterMode !== 'legacy'
+              ? 'Metre: Piano V1.1 plan below. General Piano V1 stays 4/4 until advanced mode is on.'
+              : 'Metre: 4/4. Fixed for General Piano Composition V1.'}
           </p>
 
           <label htmlFor="solo-piano-centre" style={{ display: 'block', marginTop: '1rem' }}>
@@ -273,6 +364,69 @@ export function SoloPianoPage() {
               ))}
             </div>
           </fieldset>
+
+          <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+            <input
+              data-testid="solo-piano-v11-advanced"
+              type="checkbox"
+              checked={advanced}
+              onChange={(event) => setAdvanced(event.target.checked)}
+            />
+            Piano V1.1 advanced
+          </label>
+          {advanced && (
+            <fieldset data-testid="solo-piano-v11-controls" style={{ marginTop: '0.75rem', border: '1px solid var(--border, #444)', padding: '0.75rem' }}>
+              <legend>V1.1 — phrase, polychords, metre, tuplets</legend>
+              <label htmlFor="solo-piano-v11-phrase" style={{ display: 'block', marginTop: '0.5rem' }}>Phrase development</label>
+              <select id="solo-piano-v11-phrase" data-testid="solo-piano-v11-phrase" value={phraseDevelopment} onChange={(event) => setPhraseDevelopment(event.target.value as 'off' | 'on')}>
+                <option value="off">OFF</option>
+                <option value="on">ON</option>
+              </select>
+              <label htmlFor="solo-piano-v11-polychord" style={{ display: 'block', marginTop: '0.75rem' }}>Structured upper/lower polychords</label>
+              <select id="solo-piano-v11-polychord" data-testid="solo-piano-v11-polychord" value={polychordMode} onChange={(event) => setPolychordMode(event.target.value as 'off' | 'acceptance' | 'single')}>
+                <option value="off">OFF</option>
+                <option value="acceptance">Acceptance regions (24 bars)</option>
+                <option value="single">One polychord for every bar</option>
+              </select>
+              {polychordMode === 'single' && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  <input aria-label="Upper root" data-testid="solo-piano-v11-upper-root" value={upperRoot} onChange={(event) => setUpperRoot(event.target.value)} style={{ width: '4rem' }} />
+                  <select aria-label="Upper quality" data-testid="solo-piano-v11-upper-quality" value={upperQuality} onChange={(event) => setUpperQuality(event.target.value as TriadQuality)}>
+                    <option value="major">major</option>
+                    <option value="minor">minor</option>
+                    <option value="augmented">augmented</option>
+                    <option value="diminished">diminished</option>
+                  </select>
+                  <input aria-label="Lower root" data-testid="solo-piano-v11-lower-root" value={lowerRoot} onChange={(event) => setLowerRoot(event.target.value)} style={{ width: '4rem' }} />
+                  <select aria-label="Lower quality" data-testid="solo-piano-v11-lower-quality" value={lowerQuality} onChange={(event) => setLowerQuality(event.target.value as TriadQuality)}>
+                    <option value="major">major</option>
+                    <option value="minor">minor</option>
+                    <option value="augmented">augmented</option>
+                    <option value="diminished">diminished</option>
+                  </select>
+                </div>
+              )}
+              <label htmlFor="solo-piano-v11-meter" style={{ display: 'block', marginTop: '0.75rem' }}>Per-bar metre plan</label>
+              <select id="solo-piano-v11-meter" data-testid="solo-piano-v11-meter" value={meterMode} onChange={(event) => setMeterMode(event.target.value as MeterMode)}>
+                <option value="legacy">Legacy 4/4</option>
+                <option value="uniform">One metre for every bar</option>
+                <option value="cycle">Six-metre cycle</option>
+              </select>
+              {meterMode === 'uniform' && (
+                <select aria-label="Uniform metre" data-testid="solo-piano-v11-uniform" value={uniformMeter} onChange={(event) => setUniformMeter(event.target.value)} style={{ marginLeft: '0.5rem' }}>
+                  {V11_METRES.map((meter) => <option key={meter.id} value={meter.id}>{meter.id} [{meter.groups.join(',')}]</option>)}
+                </select>
+              )}
+              <label htmlFor="solo-piano-v11-polyrhythm" style={{ display: 'block', marginTop: '0.75rem' }}>Polyrhythm windows</label>
+              <select id="solo-piano-v11-polyrhythm" data-testid="solo-piano-v11-polyrhythm" value={polyrhythm} onChange={(event) => setPolyrhythm(event.target.value as Polyrhythm)}>
+                <option value="off">OFF</option>
+                <option value="3:2">3:2</option>
+                <option value="5:4">5:4</option>
+                <option value="both">3:2 and 5:4</option>
+              </select>
+              {advancedError && <p data-testid="solo-piano-v11-error" style={{ color: 'var(--danger, #a33)' }}>{advancedError}</p>}
+            </fieldset>
+          )}
         </div>
       )}
 
@@ -302,7 +456,7 @@ export function SoloPianoPage() {
       )}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-        <button type="button" data-testid="solo-piano-generate" onClick={() => void compose()} disabled={busy}>
+        <button type="button" data-testid="solo-piano-generate" onClick={() => void compose()} disabled={busy || advancedError !== ''}>
           {busy ? 'Generating…' : 'Generate'}
         </button>
         <button

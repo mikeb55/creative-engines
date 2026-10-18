@@ -142,6 +142,11 @@ export interface NoteEvent {
    */
   spelling?: { step: string; alter: number };
   /**
+   * Spellings aligned with [pitch, ...stack followers].
+   * Absent leaves stack followers on the key-signature spelling.
+   */
+  stackSpellings?: { step: string; alter: number }[];
+  /**
    * V3.4 optional notation. Absent means the existing articulation export is unchanged.
    */
   notation?: NoteNotationV34;
@@ -236,6 +241,15 @@ export interface MeasureModel {
    * note stay one sounding attack. Absent leaves the existing eighth seal unchanged.
    */
   b1PulsePreserve?: true;
+  /**
+   * Piano V1.1 polychord. Two MusicXML 3.1 harmony elements plus a words fallback.
+   * Absent leaves the single chord-symbol harmony unchanged.
+   */
+  pianoPolychord?: {
+    upper: { step: string; alter: number; kind: 'major' | 'minor' | 'augmented' | 'diminished' };
+    lower: { step: string; alter: number; kind: 'major' | 'minor' | 'augmented' | 'diminished' };
+    display: string;
+  };
 }
 
 /** Duo-electric / arrangement shaping (optional; golden-path Indie separate route uses this first). */
