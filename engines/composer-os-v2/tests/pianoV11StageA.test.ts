@@ -2,8 +2,9 @@
  * Piano V1.1 Stage A. Legacy piano output stays on the unchanged writer path.
  */
 
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { apiComposePianoV1 } from '../app-api/pianoCompositionApp';
 import { composeGeneralPianoV1 } from '../core/piano/generalPianoWriter';
@@ -11,6 +12,8 @@ import { pianoMidiNotes, writePianoScoreMidi } from '../core/piano/pianoMidi';
 import { provePianoTupletRatios } from '../core/piano/pianoXmlOracle';
 import {
   cyclePlan,
+  formatTimeXml,
+  PIANO_V11_METRES,
   stageAAcceptanceExpectation,
   timelineTotals,
   buildPianoTimeline,
@@ -218,7 +221,16 @@ if (acceptance.ok) {
   row('cross-bar 5:4 split is 24 and 72 ticks', acceptance.xml.includes('<duration>24</duration>') && acceptance.xml.includes('<duration>72</duration>'));
   row('tuplet brackets exist', acceptance.xml.includes('<tuplet type="start"') && acceptance.xml.includes('<tuplet type="stop"'));
   row('beams exist', acceptance.xml.includes('<beam number="1">begin</beam>') && acceptance.xml.includes('<beam number="1">end</beam>'));
-  row('9/16 grouping is written', acceptance.xml.includes('<beats>4</beats><beat-type>16</beat-type><beats>2</beats><beat-type>16</beat-type><beats>3</beats><beat-type>16</beat-type>'));
+  const expectedTimes = Array.from({ length: 24 }, (_, index) => {
+    const meter = PIANO_V11_METRES[index % PIANO_V11_METRES.length]!;
+    return formatTimeXml(meter.numerator, meter.denominator, meter.groups);
+  });
+  const writtenTimes = [...acceptance.xml.matchAll(/<time>[\s\S]*?<\/time>/g)].map((item) => item[0]);
+  row('each bar writes one total time signature', writtenTimes.length === 24 && writtenTimes.every((time, index) => time === expectedTimes[index]));
+  row('additive component pairs are not serialised', !acceptance.xml.includes('<beats>4</beats><beat-type>16</beat-type><beats>2</beats><beat-type>16</beat-type><beats>3</beats><beat-type>16</beat-type>'));
+  const groupLine = acceptance.score.parts[0]?.measures.map((measure) => measure.pianoBeatGroups?.join('+')).join(',');
+  const expectedGroups = Array.from({ length: 24 }, (_, index) => PIANO_V11_METRES[index % PIANO_V11_METRES.length]!.groups.join('+')).join(',');
+  row('groupings stay on the score model', groupLine === expectedGroups, groupLine);
   const restTuplet = /<note><rest\/>[\s\S]*?<actual-notes>3<\/actual-notes>[\s\S]*?<\/note>/.test(acceptance.xml);
   row('tuplet rest keeps the 3:2 ratio', restTuplet);
   const outDir = join(pianoV11IsolatedOutput('stage-a'), 'acceptance');
@@ -355,6 +367,48 @@ if (!general.ok || !piano.ok || !coffee.ok) {
 
 const exported = acceptance.ok ? exportScoreModelToMusicXml(acceptance.score) : null;
 row('direct export matches composer xml', exported?.success === true && exported.xml === acceptance.xml);
+
+const MSCORE = '/Applications/MuseScore 4.app/Contents/MacOS/mscore';
+function sixBarMeterXml(): string {
+  const measures = PIANO_V11_METRES.map((meter, index) => {
+    const ticks = (meter.numerator * 4 * 480) / meter.denominator;
+    const time = formatTimeXml(meter.numerator, meter.denominator, meter.groups);
+    const attributes = index === 0
+      ? `<divisions>480</divisions>${time}<staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef>`
+      : time;
+    return `<measure number="${index + 1}"><attributes>${attributes}</attributes><note><rest measure="yes"/><duration>${ticks}</duration><voice>1</voice><staff>1</staff></note><backup><duration>${ticks}</duration></backup><note><rest measure="yes"/><duration>${ticks}</duration><voice>3</voice><staff>2</staff></note></measure>`;
+  }).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?><score-partwise version="3.1"><part-list><score-part id="piano"><part-name>Piano</part-name></score-part></part-list><part id="piano">${measures}</part></score-partwise>`;
+}
+const metreDir = pianoV11IsolatedOutput('stage-a-printed-metre');
+const sixXmlPath = join(metreDir, 'six-bar-total.musicxml');
+const sixMscxPath = join(metreDir, 'six-bar-total.mscx');
+writeFileSync(sixXmlPath, sixBarMeterXml());
+if (!existsSync(MSCORE)) {
+  row('renderer prints the six total metres', false, 'MuseScore Studio 4.7.5 binary missing');
+} else {
+  const home = join(metreDir, 'mscore-home');
+  const tmp = join(metreDir, 'mscore-tmp');
+  mkdirSync(home, { recursive: true });
+  mkdirSync(tmp, { recursive: true });
+  const env = { ...process.env, HOME: home, TMPDIR: tmp };
+  delete env.QT_QPA_PLATFORM;
+  const child = spawnSync('arch', ['-arm64', MSCORE, '-o', sixMscxPath, sixXmlPath], {
+    cwd: metreDir,
+    encoding: 'utf8',
+    timeout: 180000,
+    env,
+  });
+  const code = child.status ?? -1;
+  const saved = existsSync(sixMscxPath) ? readFileSync(sixMscxPath, 'utf8') : '';
+  const sigs = [...saved.matchAll(/<sigN>(\d+)<\/sigN>\s*<sigD>(\d+)<\/sigD>/g)].map((item) => `${item[1]}/${item[2]}`);
+  const printed = sigs.slice(0, 6).join(',');
+  row(
+    'renderer prints the six total metres',
+    printed === '4/4,3/4,5/4,6/8,7/8,9/16',
+    `exit ${code} signal ${child.signal ?? 'none'} printed ${printed || 'none'}`,
+  );
+}
 
 if (process.argv[1]?.includes('pianoV11StageA.test')) {
   for (const item of rows) console.log(`${item.ok ? 'PASS' : 'FAIL'} ${item.name}${item.detail ? ` — ${item.detail}` : ''}`);

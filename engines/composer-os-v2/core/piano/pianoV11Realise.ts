@@ -25,7 +25,7 @@ import {
   tupletRatio,
   type PianoSubdivision,
 } from './pianoExactTiming';
-import { findTimelineBar, type PianoTimelineBar } from './pianoMeterPlan';
+import { findTimelineBar, groupBoundaries, type PianoTimelineBar } from './pianoMeterPlan';
 
 export interface StraightSlot {
   start: number;
@@ -416,6 +416,28 @@ function assignBrackets(leaves: Leaf[]): void {
   }
 }
 
+function beamContiguous(group: Leaf[]): void {
+  if (group.length < 2) return;
+  const depth = Math.max(...group.map((leaf) => beamDepth(leaf.writtenType)));
+  for (let level = 1; level <= depth; level += 1) {
+    let run: Leaf[] = [];
+    const flush = () => {
+      if (run.length >= 2) {
+        run.forEach((leaf, index) => {
+          const value = index === 0 ? 'begin' : index === run.length - 1 ? 'end' : 'continue';
+          leaf.beams = [...(leaf.beams ?? []), { number: level, value }];
+        });
+      }
+      run = [];
+    };
+    for (const leaf of group) {
+      if (beamDepth(leaf.writtenType) >= level) run.push(leaf);
+      else flush();
+    }
+    flush();
+  }
+}
+
 function assignBeams(leaves: Leaf[], timeline: readonly PianoTimelineBar[]): void {
   const groups = new Map<string, Leaf[]>();
   for (const leaf of leaves) {
@@ -429,16 +451,46 @@ function assignBeams(leaves: Leaf[], timeline: readonly PianoTimelineBar[]): voi
   }
   for (const list of groups.values()) {
     list.sort((a, b) => qCmp(a.absStart, b.absStart));
-    const depth = Math.max(...list.map((leaf) => beamDepth(leaf.writtenType)));
-    if (depth < 1 || list.length < 2) continue;
-    for (let level = 1; level <= depth; level += 1) {
-      const participating = list.filter((leaf) => beamDepth(leaf.writtenType) >= level);
-      if (participating.length < 2) continue;
-      participating.forEach((leaf, index) => {
-        const value = index === 0 ? 'begin' : index === participating.length - 1 ? 'end' : 'continue';
-        leaf.beams = [...(leaf.beams ?? []), { number: level, value }];
-      });
+    beamContiguous(list);
+  }
+}
+
+/** Straight notes beam inside the preserved group. Tuplets keep their own beams. */
+function assignOrdinaryBeams(leaves: Leaf[], timeline: readonly PianoTimelineBar[]): void {
+  const buckets = new Map<string, Leaf[]>();
+  for (const leaf of leaves) {
+    if (leaf.tuplet || leaf.rest || beamDepth(leaf.writtenType) < 1) continue;
+    const bar = findTimelineBar(timeline, leaf.absStart);
+    if (!bar) continue;
+    const local = qSub(leaf.absStart, bar.start);
+    const marks = groupBoundaries(bar);
+    let group = 0;
+    for (let index = 0; index < marks.length - 1; index += 1) {
+      if (qCmp(local, marks[index]!) >= 0 && qCmp(local, marks[index + 1]!) < 0) {
+        group = index;
+        break;
+      }
     }
+    const key = `${bar.bar}|${leaf.hand}|${group}`;
+    const list = buckets.get(key) ?? [];
+    list.push(leaf);
+    buckets.set(key, list);
+  }
+  for (const list of buckets.values()) {
+    list.sort((a, b) => qCmp(a.absStart, b.absStart));
+    const runs: Leaf[][] = [];
+    let run: Leaf[] = [];
+    let cursor: ExactQuarter | null = null;
+    for (const leaf of list) {
+      if (cursor && !qEq(leaf.absStart, cursor)) {
+        if (run.length) runs.push(run);
+        run = [];
+      }
+      run.push(leaf);
+      cursor = qAdd(leaf.absStart, leaf.duration);
+    }
+    if (run.length) runs.push(run);
+    for (const group of runs) beamContiguous(group);
   }
 }
 
@@ -615,6 +667,7 @@ export function realiseStageA(input: {
   }
   assignBrackets(leaves);
   assignBeams(leaves, input.timeline);
+  assignOrdinaryBeams(leaves, input.timeline);
   for (const leaf of leaves) {
     if (!leaf.rest && leaf.midi === null) errors.push(`window leaf ${leaf.logicalEventId} has no pitch`);
   }

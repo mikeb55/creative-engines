@@ -127,16 +127,20 @@ export function isGroupBoundary(onset: ExactQuarter, bar: PianoTimelineBar): boo
   return groupBoundaries(bar).some((mark) => qEq(mark, onset));
 }
 
+/**
+ * One performing-score time signature.
+ * Group numbers stay on the score (`pianoBeatGroups`) and in beaming.
+ * They are not written as a separate beats/beat-type pair per component.
+ * MuseScore Studio 4.7.5 prints only the last pair of an additive time element.
+ */
 export function formatTimeXml(numerator: number, denominator: number, groups?: readonly number[]): string {
-  if (!groups || groups.length === 0) {
-    return `<time><beats>${numerator}</beats><beat-type>${denominator}</beat-type></time>`;
+  if (groups && groups.length > 0) {
+    const sum = groups.reduce((total, group) => total + group, 0);
+    if (sum !== numerator) {
+      throw new Error(`Piano V1.1 grouping ${groups.join('+')} does not equal ${numerator}`);
+    }
   }
-  const sum = groups.reduce((total, group) => total + group, 0);
-  if (sum !== numerator) {
-    throw new Error(`Piano V1.1 grouping ${groups.join('+')} does not equal ${numerator}`);
-  }
-  const body = groups.map((group) => `<beats>${group}</beats><beat-type>${denominator}</beat-type>`).join('');
-  return `<time>${body}</time>`;
+  return `<time><beats>${numerator}</beats><beat-type>${denominator}</beat-type></time>`;
 }
 
 export function cyclePlan(repeats: number): PianoMeterBarPlan[] {
