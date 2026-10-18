@@ -318,6 +318,8 @@ export interface GenerationMetadata {
   /** V3.4 E1 checkpoint 3B. Absent unless the request sets `e1VoiceRelations`. */
   e1VoiceRelations?: boolean;
   e1VoiceRelationsReceipt?: import('./song-mode/e1Checkpoint3bPitchMembership').E1VoiceRelationsReceipt;
+  /** V3.4 E1 checkpoint 3C. Absent unless the request sets `e1ComposerLanguage`. */
+  e1ComposerLanguageReceipt?: import('./phrase/e1Checkpoint3cComposerLanguage').E1ComposerLanguageReceipt;
   /**
    * V3.4 Bartók B1. Absent unless the request sets `bartokB1Aksak`.
    * Does not select `sq_vrb_bartok` and does not run when the flag is off.

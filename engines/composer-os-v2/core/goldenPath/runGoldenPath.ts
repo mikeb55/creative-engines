@@ -85,6 +85,8 @@ import {
 } from '../score-model/scoreModelAssembler';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { applyE1SharedPhrasePlanner } from '../phrase/e1SharedPhrasePlanner';
+import { applyE1ComposerLanguage, validateE1ComposerLanguageFinalOutput } from '../phrase/e1Checkpoint3cComposerLanguage';
+import { isProtectedBar } from '../score-integrity/identityLock';
 import {
   assertExportTruth,
   buildSpineSymbolsForExportTruth,
@@ -1330,6 +1332,11 @@ export interface RunGoldenPathOptions {
    * Omitted or false leaves those note events unchanged. Pärt M/T is not gated by this flag.
    */
   e1VoiceRelations?: boolean;
+  /**
+   * V3.4 E1 checkpoint 3C — Herrmann, Ravel, and Dutilleux note grammars.
+   * Omitted or false leaves existing note events unchanged.
+   */
+  e1ComposerLanguage?: boolean;
   /**
    * V3.4 Bartók B1 — opt-in 9/16 `4+2+3` sixteenth attacks on `bartokB1Bars`.
    * Omitted or false leaves the 4/4 Song Mode line unchanged.
@@ -3591,6 +3598,37 @@ export function runGoldenPathOnce(seed: number, options?: RunGoldenPathOptions):
       if (!plannedMath.valid) {
         errors.push(...plannedMath.errors);
       }
+    }
+  }
+  if (options?.e1ComposerLanguage === true) {
+    const protectedBars: number[] = [];
+    const languageBars = score.parts[0]?.measures.length ?? 0;
+    for (let bar = 1; bar <= languageBars; bar++) {
+      if (isProtectedBar(bar, appliedContext)) protectedBars.push(bar);
+    }
+    const blendStatus = appliedContext.generationMetadata?.composerProfileBlend?.status;
+    const language = applyE1ComposerLanguage(score, {
+      seed,
+      songwriterId: appliedContext.generationMetadata?.songwriterStyleId,
+      leadSheetLocked:
+        (options.songModeLeadSheetMelodyAnchors?.length ?? 0) > 0 ||
+        (appliedContext.generationMetadata?.songModeLeadSheetMelodyAnchors?.length ?? 0) > 0,
+      blendBlocked: blendStatus === 'phrase_block' || blendStatus === 'secondary_authoritative',
+      protectedBars,
+    });
+    score = language.score;
+    appliedContext.generationMetadata = {
+      ...appliedContext.generationMetadata,
+      e1ComposerLanguageReceipt: language.receipt,
+    };
+    if (language.receipt.status === 'applied') {
+      const languageMath = validateStrictBarMath(score);
+      if (!languageMath.valid) errors.push(...languageMath.errors);
+      const languageOutput = validateE1ComposerLanguageFinalOutput(score, {
+        guitarBehaviour: plans.guitarBehaviour,
+        bassBehaviour: plans.bassBehaviour,
+      });
+      if (!languageOutput.valid) errors.push(...languageOutput.errors);
     }
   }
   const barMeterForMusicXml =

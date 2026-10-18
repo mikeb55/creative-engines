@@ -38,7 +38,7 @@
 | **Bacharach / Monk / Joni / SY / Zappa (premium-melody roster)** | **Registry placeholders only** â€” Song Mode slices **shipped**; premium-melody **not started** |
 | **V88 â€” BartÃ³k CLE pitch scoring** | **FROZEN** â€” eval **8.0/10** seed **61234**; **`bartokClePitchScoringGoldenMaster`** in smoke |
 | **Musician shell (desktop v1)** | **SHIPPED** â€” default **`Composer-OS.exe`** plain HTML UI; **32-bar Song Mode**; registry-driven composer list; **`COMPOSER_OS_FULL_UI=1`** â†’ React Generate |
-| **Smoke tier** | **`npm run test:composer-smoke`** — **1188** PASS rows / **156** suites (2026-10-18; E2 E+F Harmony Lab). Known fail **5** (tracked). Unexpected fail **0**. |
+| **Smoke tier** | **`npm run test:composer-smoke`** — **1202** PASS rows / **157** suites (2026-10-18; E1 checkpoint 3C). Known fail **5** (tracked). Unexpected fail **0**. |
 | **V3.4 E2 E+F Harmony Lab** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — Ensemble workspace writes polychords, triad pairs, and dyad pairs through `performE2`. Big band, string quartet, and ECM duo. Existing preview, playback, MusicXML, and MIDI. |
 | **Piano V1.1 Stage D** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — opt-in phrase variation, climax contour, return head, ending tail, and written/MIDI dynamics on the existing writer. Default off. Stage C demonstration stays the 223-note baseline when the flag is off. Listening and physical play remain open. This is not V3.4 orchestration Stage D. |
 | **Piano V1.1 Stage C** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — public rhythmic windows, Solo Piano advanced editor, demonstration preset, and request save/reload. Default off. 24 bars, 83 quarters, 39,840 ticks, PPQ 480, 103.75 seconds, 223 sounding notes. Listening, Sibelius import, and physical play remain open. This is not V3.4 orchestration Stage C. |
@@ -49,6 +49,7 @@
 | **V3.4 E1 checkpoint 3A** | **PARTIAL** — Strayhorn unlocked ii–V–I roots are tritone-defused; `custom_locked` symbols stay exact. Bartók aksak `[4, 2, 3]` (nine 16ths) is not placed in the 4/4 duo. |
 | **V3.4 Bartók B1** | **PASS** — opt-in `bartokB1Aksak` writes `4+2+3` sixteenths as real 9/16 Song Mode attacks. Flag off stays 4/4. |
 | **V3.4 E1 checkpoint 3B** | **PARTIAL** — Debussy and Messiaen pitch membership is opt-in and default off. Pärt M/T stays blocked by Song Mode motif and bass-identity gates. |
+| **V3.4 E1 checkpoint 3C** | **TECHNICAL PASS, NOT MUSICAL ACCEPTANCE** — opt-in Herrmann, Ravel, and Dutilleux note grammars on the existing motif operators. Default off. Evidence: `docs/v3.4-e1-checkpoint3c/`. |
 | **V3.4 Stage A** | **SHIPPED** — instrument catalogue, opt-in MusicXML notation, full transposition, tempo map, evaluation roles. |
 | **V3.4 Stage C** | **SHIPPED** — opt-in chamber Orchestrate writes string quartet, Pierrot (flute, B-flat clarinet, violin, cello, piano), wind quintet, and chamber orchestra parts. Piano hard range is sounding A0–C8. Spec: `docs/V3.4-ADVANCED-ARRANGING-ORCHESTRATION-SPEC.md`. |
 | **V3.4 Stage D** | **SHIPPED** — Song Mode phrase-block composer-profile blend, BPM passthrough, Duo songwriter rejection, Metheny Duo bass-cell repair. Ravel harmony stays unsupported. Polychords not in this stage. |

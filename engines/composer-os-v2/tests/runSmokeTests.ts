@@ -124,6 +124,7 @@ import { runV34StageCTests } from './v34StageC.test';
 import { runV34StageDProfileBlendTests } from './v34StageDProfileBlend.test';
 import { runV34E1PhrasePlannerTests } from './v34E1PhrasePlanner.test';
 import { runV34E1Checkpoint3bTests } from './v34E1Checkpoint3b.test';
+import { runV34E1Checkpoint3cTests } from './v34E1Checkpoint3c.test';
 import { runBartokB1NativeAksakTests } from './bartokB1NativeAksak.test';
 import { runPianoV11StageATests } from './pianoV11StageA.test';
 import { runPianoV11StageBTests } from './pianoV11StageB.test';
@@ -366,6 +367,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'V3.4 Stage D profile blending', run: runV34StageDProfileBlendTests },
   { label: 'V3.4 E1 shared phrase planner', run: runV34E1PhrasePlannerTests },
   { label: 'V3.4 E1 checkpoint 3B voice relations', run: runV34E1Checkpoint3bTests },
+  { label: 'V3.4 E1 checkpoint 3C composer languages', run: runV34E1Checkpoint3cTests },
   { label: 'V3.4 Bartók B1 native 9/16', run: runBartokB1NativeAksakTests },
   { label: 'Piano V1.1 Stage A exact timing', run: runPianoV11StageATests },
   { label: 'Piano V1.1 Stage B phrase and polychords', run: runPianoV11StageBTests },

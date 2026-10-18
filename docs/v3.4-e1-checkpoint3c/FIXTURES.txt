@@ -1,0 +1,41 @@
+E1 checkpoint 3C fixtures
+16 bars, 4/4, quarter = 72, clean electric guitar and upright bass.
+Guitar voice 2 is the inner layer. These files are technical evidence, not musical approval.
+
+bernard_herrmann seed 3340
+motif [0, 1, 4, 6]
+operators: expand-intervals, fragment-head, displace, register-lift, liquidate
+harmony: Gm | Gm | Gm | Gm(add2) | Gdim | Gdim | Gaug | Gm | C#dim7/G | C#dim7/G | C#dim7/G | Gaug | Gm | Gm | Gm(add2) | Gm
+- cell [0,1,4,6] on G, stated, then delayed by an eighth
+- bar 3 keeps the head; intervals widen by one semitone
+- bar 4 melody drops out over the pedal
+- bars 7–8 lift the cell, then break it
+- bars 9–12 semitone ostinato accumulates; bass bar 11 leaps a tritone
+- bars 13–14 guitar is silent and the pedal releases
+- bar 15 states the opening cell again; bar 16 holds its first tone
+
+bernard_herrmann seed 3341 keeps the same operators (expand-intervals, fragment-head, displace, register-lift, liquidate) and changes the sounding line.
+
+ravel seed 3340
+motif [0, 2, 4, 6]
+operators: transpose-in-field
+harmony: Amaj9 | Amaj9 | C#maj7 | C#maj7 | Dmaj7#11 | Dmaj9 | F#m11 | F#m9 | E9sus | Dmaj7 | Dmaj9 | Abm9 | C#maj7 | Dmaj7#11 | Amaj9 | Amaj7
+- lydian cell on A, then one field degree higher
+- harmony moves by common tone: maj9, mediant maj7, maj7#11, minor 11, suspended 9th
+- inner voice doubles a tenth and a sixth, and only on selected bars
+- bars 9–12 the guitar holds one colour tone and the bass takes the moving line
+- bars 13–16 recall the opening rhythm at the transposed field degree
+
+ravel seed 3341 keeps the same operators (transpose-in-field) and changes the sounding line.
+
+dutilleux seed 3340
+motif [0, 2, 3, 7]
+operators: invert, retrograde, fragment-head, displace
+harmony: Dmaj7 | Dmaj7 | Dmaj7#11 | Dmaj7#11 | Dm(maj7) | Dm(maj7) | Dm9 | Dm9 | Bbmaj7 | Bbmaj7 | Bm7 | Bm7 | Dmaj7#11 | Dmaj7#11 | Dmaj7 | Dmaj7
+- cell [0,2,3,7] on D; the first pitch is the pivot
+- bars 5–8 invert that cell around the pivot
+- bars 9–12 reverse the cell and keep the pivot
+- bars 13–16 return the first three pitches, displaced, not the whole cell
+
+dutilleux seed 3341 keeps the same operators (invert, retrograde, fragment-head, displace) and changes the sounding line.
+

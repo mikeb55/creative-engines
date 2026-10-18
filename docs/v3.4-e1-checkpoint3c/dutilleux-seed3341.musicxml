@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>E1 Dutilleux seed 3341</work-title></work>
+  <part-list>
+    <score-part id="guitar">
+      <part-name>Clean Electric Guitar</part-name>
+      <part-abbreviation>Gtr.</part-abbreviation>
+      <score-instrument id="P1-I1">
+        <instrument-name>Electric Guitar</instrument-name>
+        <instrument-sound>strings.guitar.electric</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="P1-I1">
+        <midi-channel>1</midi-channel>
+        <midi-program>28</midi-program>
+        <volume>80</volume>
+        <pan>0</pan>
+      </midi-instrument>
+    </score-part>
+    <score-part id="bass">
+      <part-name>Upright Bass</part-name>
+      <part-abbreviation>Bas.</part-abbreviation>
+      <score-instrument id="bass-I1"><instrument-name>Upright Bass</instrument-name>
+        <instrument-sound>strings.bass</instrument-sound></score-instrument>
+      <midi-instrument id="bass-I1">
+        <midi-program>33</midi-program>
+      </midi-instrument>
+    </score-part>
+  </part-list>
+  <part id="guitar">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>G</sign><line>2</line></clef>
+    </attributes>
+    <direction placement="above">
+      <direction-type>
+        <metronome>
+          <beat-unit>quarter</beat-unit>
+          <per-minute>72</per-minute>
+        </metronome>
+      </direction-type>
+      <sound tempo="72"/>
+    </direction>
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>720</duration><voice>1</voice><type>quarter</type><dot/><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="2">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>960</duration><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="3">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="4">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note dynamics="55.12"><pitch><step>G</step><octave>5</octave></pitch><duration>1440</duration><voice>1</voice><type>half</type><dot/><stem>up</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="5">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="m(maj7)">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>F</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>E</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>C</step><octave>5</octave></pitch><duration>960</duration><tie type="start"/><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>C</step><octave>5</octave></pitch><duration>240</duration><tie type="stop"/><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="6">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="m(maj7)">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>C</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>E</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>F</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="7">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>F</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>E</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="8">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="m9">minor-ninth</kind><degree print-object="no"><degree-value>9</degree-value><degree-alter>0</degree-alter><degree-type>add</degree-type></degree></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="9">
+    <harmony placement="above"><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="10">
+    <harmony placement="above"><root><root-step>E</root-step><root-alter>-1</root-alter></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>D</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="11">
+    <harmony placement="above"><root><root-step>E</root-step></root><kind text="m7">minor-seventh</kind></harmony>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>720</duration><voice>1</voice><type>quarter</type><dot/><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="12">
+    <harmony placement="above"><root><root-step>E</root-step></root><kind text="m7">minor-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>D</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>1440</duration><voice>1</voice><type>half</type><dot/><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="13">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note><rest/><duration>240</duration><voice>1</voice><type>eighth</type><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>5</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>720</duration><voice>1</voice><type>quarter</type><dot/><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="14">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7#11">other</kind><degree print-object="no"><degree-value>11</degree-value><degree-alter>1</degree-alter><degree-type>alter</degree-type></degree></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>240</duration><voice>1</voice><type>eighth</type><stem>up</stem><staff>1</staff></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="15">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="62.99"><pitch><step>G</step><octave>4</octave></pitch><duration>960</duration><voice>1</voice><type>half</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>4</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type><stem>up</stem><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  <measure number="16">
+    <harmony placement="above"><root><root-step>G</root-step></root><kind text="maj7">major-seventh</kind></harmony>
+        <note dynamics="50.39"><pitch><step>G</step><octave>4</octave></pitch><duration>1440</duration><voice>1</voice><type>half</type><dot/><stem>up</stem><staff>1</staff><notations><articulations><tenuto/></articulations></notations></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type><staff>1</staff></note>
+        <backup><duration>1920</duration></backup>
+        <note><rest/><duration>1920</duration><voice>2</voice><type>whole</type><staff>1</staff></note>
+  </measure>
+  </part>
+  <part id="bass">
+  <measure number="1">
+    <attributes>
+      <divisions>480</divisions>
+      <key><fifths>0</fifths><mode>major</mode></key>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <staves>1</staves>
+      <clef><sign>F</sign><line>4</line></clef>
+    </attributes>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  <measure number="2">
+        <note dynamics="62.99"><pitch><step>D</step><octave>3</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="3">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  <measure number="4">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="5">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>F</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>E</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>C</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  <measure number="6">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note dynamics="62.99"><pitch><step>C</step><octave>3</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="7">
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>1440</duration><voice>1</voice><type>half</type><dot/></note>
+  </measure>
+  <measure number="8">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="9">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>D</step><octave>3</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  <measure number="10">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="11">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>1920</duration><voice>1</voice><type>whole</type></note>
+  </measure>
+  <measure number="12">
+        <note dynamics="62.99"><pitch><step>D</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="13">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+  </measure>
+  <measure number="14">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="15">
+        <note><rest/><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>480</duration><voice>1</voice><type>quarter</type></note>
+        <note dynamics="62.99"><pitch><step>A</step><alter>1</alter><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  <measure number="16">
+        <note dynamics="62.99"><pitch><step>G</step><octave>2</octave></pitch><duration>960</duration><voice>1</voice><type>half</type></note>
+        <note><rest/><duration>960</duration><voice>1</voice><type>half</type></note>
+  </measure>
+  </part>
+</score-partwise>
