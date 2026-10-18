@@ -9,6 +9,8 @@ import { Midi } from '@tonejs/midi';
 import { writeScoreModelMidiFile } from '../export/midiScoreWriter';
 import type { MeasureModel, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
+import { integralTicks, q, qAdd } from './pianoExactTiming';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 
 function quarterSpan(score: ScoreModel, measure: MeasureModel): number {
   if (measure.measureBeatSpanQuarters != null && Number.isFinite(measure.measureBeatSpanQuarters)) {
@@ -63,8 +65,15 @@ function scoreWithSoundingTies(score: ScoreModel): ScoreModel {
         && (tie === 'stop' || tie === 'continue'),
       );
       if (prev && continues) {
-        prev.note.duration += item.note.duration;
-        prev.absEnd += item.note.duration;
+        if (prev.note.pianoExact && item.note.pianoExact) {
+          const durationQ = qAdd(prev.note.pianoExact.durationQ, item.note.pianoExact.durationQ);
+          prev.note.pianoExact = { ...prev.note.pianoExact, durationQ };
+          prev.note.duration = durationQ.n / durationQ.d;
+          prev.absEnd = item.absStart + item.note.duration;
+        } else {
+          prev.note.duration += item.note.duration;
+          prev.absEnd += item.note.duration;
+        }
         prev.note.notation = { ...prev.note.notation, tie };
         remove.add(item.note);
       } else {
@@ -110,7 +119,19 @@ export function writePianoScoreMidi(score: ScoreModel, outputPath: string): void
   const track = midi.tracks.find((item) => item.notes.length > 0);
   if (!track) throw new Error('Piano MIDI file has no notes.');
   for (const pedal of score.pianoPedal) {
-    const ticks = Math.round(((pedal.bar - 1) * 4 + pedal.beat) * DIVISIONS);
+    let ticks = Math.round(((pedal.bar - 1) * 4 + pedal.beat) * DIVISIONS);
+    if (score.pianoV11StageA?.enabled) {
+      const part = score.parts.find((item) => item.pianoGrandStaff) ?? score.parts[0];
+      let origin = q(0, 1);
+      for (const measure of [...(part?.measures ?? [])].sort((a, b) => a.index - b.index)) {
+        if (measure.index === pedal.bar) break;
+        origin = qAdd(origin, q(Math.round((measureBeatSpanQuartersOf(measure)) * 480), 480));
+      }
+      const at = qAdd(origin, q(Math.round(pedal.beat * 480), 480));
+      const exact = integralTicks(at, score.pianoV11StageA.divisions);
+      if (exact === null) throw new Error('Piano pedal offset is not integral at the Stage A PPQ.');
+      ticks = exact;
+    }
     track.addCC({
       number: 64,
       ticks,

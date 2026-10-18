@@ -3,6 +3,7 @@
  */
 
 import type { NoteEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
 import type { PianoLockedEvent } from './pianoTypes';
 import {
@@ -40,12 +41,23 @@ interface Sounding {
   end: number;
 }
 
+function measureOrigin(score: ScoreModel, index: number): number {
+  if (!score.pianoV11StageA?.enabled) return (index - 1) * 4;
+  const part = score.parts.find((item) => item.pianoGrandStaff) ?? score.parts[0];
+  let acc = 0;
+  for (const measure of [...(part?.measures ?? [])].sort((a, b) => a.index - b.index)) {
+    if (measure.index === index) return acc;
+    acc += measureBeatSpanQuartersOf(measure);
+  }
+  return acc;
+}
+
 function soundingNotes(score: ScoreModel): Sounding[] {
   const out: Sounding[] = [];
   const part = score.parts.find((item) => item.pianoGrandStaff);
   if (!part) return out;
   for (const measure of part.measures) {
-    const origin = (measure.index - 1) * 4;
+    const origin = measureOrigin(score, measure.index);
     for (const event of measure.events) {
       if (!isNote(event)) continue;
       const voice = event.voice ?? 1;
@@ -143,7 +155,7 @@ export function handAttacks(score: ScoreModel, hand: 'RH' | 'LH'): HandAttack[] 
   if (!part) return [];
   const attacks: HandAttack[] = [];
   for (const measure of part.measures) {
-    const origin = (measure.index - 1) * 4;
+    const origin = measureOrigin(score, measure.index);
     for (const event of measure.events) {
       if (!isNote(event)) continue;
       if (pianoHandForVoice(event.voice ?? 1) !== hand) continue;
@@ -264,7 +276,7 @@ export function validatePianoTies(score: ScoreModel): PianoCheckResult {
   }
   const atoms: Atom[] = [];
   for (const measure of part.measures) {
-    const origin = (measure.index - 1) * 4;
+    const origin = measureOrigin(score, measure.index);
     for (const event of measure.events) {
       if (!isNote(event)) continue;
       for (const pitch of notePitches(event)) {

@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Piano V1.1 Stage A — exact timing, mixed metres, tuplets.** Opt-in `timing` on `composeGeneralPianoV1`. Default off. Six metres (`4/4`, `3/4`, `5/4`, `6/8`, `7/8`, `9/16`) share one cumulative timeline. Independent 3:2 and 5:4 are real ticks at PPQ 480, including a cross-bar split that stays one sounding attack. A tie that stops short of the next onset keeps its written duration and loses the tie mark. Adaptive PPQ export and nested tuplets are rejected. Legacy piano XML and MIDI stay byte-identical when the contract is off. Smoke: **1067** PASS rows / **150** suites. Known fail **5**. Unexpected fail **0**.
+
 - **Composer OS V3.4 Bartók B1 native 9/16.** Opt-in `bartokB1Aksak` plus an explicit bar list writes cell B1 (`4+2+3` sixteenths) into Song Mode guitar and bass. Selected bars are real 9/16 (1080 ticks). The duo seal keeps a split dotted value as one tied sounding attack. Flag off stays on the existing 4/4 line. `sq_vrb_bartok` is not this switch. The 4/4 E1 planner is unchanged and refuses a score that contains a 9/16 bar. Smoke after the suite: **1014** PASS rows / **149** suites. Known fail **5**. Unexpected fail **0**.
 
 - **Composer OS V3.4 E1 checkpoint 2A — reconnect existing rules.** The opt-in planner now delays Andrew Hill's repeated cell by the existing `rhythmicDisplacementBias` (`round(bias × 2)` eighths; shipped 0.65 still waits one eighth). Flag-off output, harmony symbols, and the other five pilots stay as they were. Songwriter `intervalPreference` is still only a label, so pitches were not rewritten from it. Bartók aksak `[4, 2, 3]` is nine 16th pulses and is not forced into 4/4.

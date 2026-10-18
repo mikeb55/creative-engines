@@ -4,6 +4,7 @@
  */
 
 import type { ScoreModel } from '../score-model/scoreModelTypes';
+import { measureBeatSpanQuartersOf } from '../score-model/measureBeatSpan';
 
 export interface PianoXmlAtom {
   partId: string;
@@ -17,6 +18,13 @@ export interface PianoXmlAtom {
   tieStop: boolean;
   tiedStart: boolean;
   tiedStop: boolean;
+  writtenType?: string;
+  dots?: number;
+  actualNotes?: number;
+  normalNotes?: number;
+  normalType?: string;
+  tupletStart?: boolean;
+  tupletStop?: boolean;
 }
 
 export interface PianoSoundingEvent {
@@ -76,6 +84,11 @@ function parseNotes(partId: string, measureXml: string, measureStart: number, di
     const octave = Number(token.match(/<octave>(-?\d+)<\/octave>/)?.[1] ?? '0');
     const staff = Number(token.match(/<staff>(\d+)<\/staff>/)?.[1] ?? '0');
     const voice = Number(token.match(/<voice>(\d+)<\/voice>/)?.[1] ?? '1');
+    const writtenType = token.match(/<type>([^<]+)<\/type>/)?.[1];
+    const dots = token.match(/<dot\/>/g)?.length ?? 0;
+    const actualNotes = Number(token.match(/<actual-notes>(\d+)<\/actual-notes>/)?.[1] ?? '0') || undefined;
+    const normalNotes = Number(token.match(/<normal-notes>(\d+)<\/normal-notes>/)?.[1] ?? '0') || undefined;
+    const normalType = token.match(/<normal-type>([^<]+)<\/normal-type>/)?.[1];
     atoms.push({
       partId,
       staff,
@@ -88,6 +101,13 @@ function parseNotes(partId: string, measureXml: string, measureStart: number, di
       tieStop: /<tie type="stop"\/>/.test(token),
       tiedStart: /<tied type="start"\/>/.test(token),
       tiedStop: /<tied type="stop"\/>/.test(token),
+      ...(writtenType ? { writtenType } : {}),
+      ...(dots ? { dots } : {}),
+      ...(actualNotes ? { actualNotes } : {}),
+      ...(normalNotes ? { normalNotes } : {}),
+      ...(normalType ? { normalType } : {}),
+      ...( /<tuplet type="start"/.test(token) ? { tupletStart: true } : {}),
+      ...( /<tuplet type="stop"/.test(token) ? { tupletStop: true } : {}),
     });
   }
   return atoms;
@@ -100,22 +120,78 @@ export function parsePianoXmlAtoms(xml: string): { atoms: PianoXmlAtom[]; divisi
   const beatType = Number(xml.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '0');
   const tempo = Number(xml.match(/<per-minute>(\d+(?:\.\d+)?)<\/per-minute>/)?.[1] ?? xml.match(/<sound tempo="(\d+(?:\.\d+)?)"/)?.[1] ?? '0');
   if (divisions !== 480) errors.push(`divisions ${divisions}`);
-  if (beats !== 4 || beatType !== 4) errors.push(`meter ${beats}/${beatType}`);
+  if (!Number.isFinite(beats) || !Number.isFinite(beatType) || beats <= 0 || beatType <= 0) {
+    errors.push(`meter ${beats}/${beatType}`);
+  }
   const parts = [...xml.matchAll(/<part id="([^"]+)"[\s\S]*?<\/part>/g)];
   const atoms: PianoXmlAtom[] = [];
-  let measures = 0;
+  let totalQuarters = 0;
   for (const part of parts) {
     const partId = part[1] ?? '';
     const measureBlocks = [...part[0].matchAll(/<measure\b[^>]*number="(\d+)"[^>]*>([\s\S]*?)<\/measure>/g)];
-    measures = Math.max(measures, measureBlocks.length);
+    let carriedBeats = beats;
+    let carriedType = beatType;
+    let origin = 0;
     for (const measure of measureBlocks) {
-      const number = Number(measure[1]);
-      atoms.push(...parseNotes(partId, measure[2] ?? '', (number - 1) * (beats * (4 / beatType)), divisions));
+      const body = measure[2] ?? '';
+      const localBeats = Number(body.match(/<beats>(\d+)<\/beats>/)?.[1] ?? '');
+      const localType = Number(body.match(/<beat-type>(\d+)<\/beat-type>/)?.[1] ?? '');
+      if (Number.isFinite(localBeats) && localBeats > 0 && Number.isFinite(localType) && localType > 0) {
+        const groupBeats = [...body.matchAll(/<beats>(\d+)<\/beats>/g)].map((item) => Number(item[1]));
+        const groupTypes = [...body.matchAll(/<beat-type>(\d+)<\/beat-type>/g)].map((item) => Number(item[1]));
+        if (groupBeats.length > 1 && groupTypes.every((item) => item === groupTypes[0])) {
+          carriedBeats = groupBeats.reduce((sum, item) => sum + item, 0);
+          carriedType = groupTypes[0]!;
+        } else {
+          carriedBeats = localBeats;
+          carriedType = localType;
+        }
+      }
+      atoms.push(...parseNotes(partId, body, origin, divisions));
+      origin += carriedBeats * (4 / carriedType);
+    }
+    totalQuarters = Math.max(totalQuarters, origin);
+  }
+  const elapsedSeconds = tempo > 0 && totalQuarters > 0 ? totalQuarters * (60 / tempo) : null;
+  return { atoms, divisions, elapsedSeconds, errors };
+}
+
+const WRITTEN_QUARTERS: Record<string, number> = {
+  whole: 4,
+  half: 2,
+  quarter: 1,
+  eighth: 0.5,
+  '16th': 0.25,
+  '32nd': 0.125,
+  '64th': 0.0625,
+  '128th': 0.03125,
+};
+
+/** Sounding ticks already include the tuplet ratio. Do not scale them again. */
+export function provePianoTupletRatios(xml: string): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const divisions = Number(xml.match(/<divisions>(\d+)<\/divisions>/)?.[1] ?? '0');
+  const notes = xml.match(/<note\b[^>]*>[\s\S]*?<\/note>/g) ?? [];
+  for (const note of notes) {
+    const duration = Number(note.match(/<duration>(\d+)<\/duration>/)?.[1] ?? '0');
+    const type = note.match(/<type>([^<]+)<\/type>/)?.[1];
+    const dots = note.match(/<dot\/>/g)?.length ?? 0;
+    const actual = Number(note.match(/<actual-notes>(\d+)<\/actual-notes>/)?.[1] ?? '0');
+    const normal = Number(note.match(/<normal-notes>(\d+)<\/normal-notes>/)?.[1] ?? '0');
+    if (!type || !actual || !normal) continue;
+    const baseQuarters = WRITTEN_QUARTERS[type];
+    if (baseQuarters === undefined) {
+      errors.push(`unsupported written type ${type}`);
+      continue;
+    }
+    let written = baseQuarters * divisions;
+    if (dots >= 1) written += written / 2;
+    if (dots >= 2) written += baseQuarters * divisions / 4;
+    if (!Number.isInteger(written) || written * normal !== duration * actual) {
+      errors.push(`tuplet duration ${duration} does not match ${type} ${actual}:${normal}`);
     }
   }
-  const quarterBeats = beats * (4 / beatType);
-  const elapsedSeconds = tempo > 0 && measures > 0 ? measures * quarterBeats * (60 / tempo) : null;
-  return { atoms, divisions, elapsedSeconds, errors };
+  return { ok: errors.length === 0, errors };
 }
 
 function mergeSounding(atoms: PianoXmlAtom[]): PianoSoundingEvent[] {
@@ -187,11 +263,21 @@ function mergeSounding(atoms: PianoXmlAtom[]): PianoSoundingEvent[] {
   return sounding.sort((a, b) => a.voice - b.voice || a.onset - b.onset || (a.midi ?? -1) - (b.midi ?? -1));
 }
 
+function modelOrigin(score: ScoreModel, partMeasures: { index: number; measureBeatSpanQuarters?: number }[], index: number): number {
+  if (!score.pianoV11StageA?.enabled) return (index - 1) * 4;
+  let acc = 0;
+  for (const measure of [...partMeasures].sort((a, b) => a.index - b.index)) {
+    if (measure.index === index) return acc;
+    acc += measureBeatSpanQuartersOf(measure);
+  }
+  return acc;
+}
+
 function mergeModelTies(score: ScoreModel): PianoSoundingEvent[] {
   const atoms: PianoXmlAtom[] = [];
   for (const part of score.parts) {
     for (const measure of part.measures) {
-      const origin = (measure.index - 1) * 4;
+      const origin = modelOrigin(score, part.measures, measure.index);
       for (const event of measure.events) {
         const voice = event.voice ?? 1;
         const staff = part.pianoGrandStaff ? (voice === 3 ? 2 : 1) : 1;
@@ -243,6 +329,10 @@ function keyOf(event: PianoSoundingEvent): string {
 export function comparePianoScoreToXml(score: ScoreModel, xml: string): PianoOracleResult {
   const parsed = parsePianoXmlAtoms(xml);
   const errors = [...parsed.errors];
+  if (score.pianoV11StageA?.enabled) {
+    const ratios = provePianoTupletRatios(xml);
+    errors.push(...ratios.errors);
+  }
   const sounding = mergeSounding(parsed.atoms);
   const expected = mergeModelTies(score);
   const actualKeys = sounding.map(keyOf).sort();

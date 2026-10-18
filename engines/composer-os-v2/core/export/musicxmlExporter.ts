@@ -50,6 +50,7 @@ import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXm
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 import { pianoGrandStaffEventsToXml, pianoPedalDirectionXml } from './pianoGrandStaffXml';
+import { formatTimeXml } from '../piano/pianoMeterPlan';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
 import type { GuitarVoicing } from '../composer/guitarVoicingEngine';
 import { GUITAR_STANDARD_OPEN_STRING_MIDI } from '../composer/guitarVoicingEngine';
@@ -1657,6 +1658,7 @@ ${partList}
           const hideKey = ks?.hideKeySignature ?? false;
           const printAttr = hideKey ? ' print-object="no"' : '';
           const meter0 = resolveMeterForBar(1, opts.barMeterMap);
+          const groups0 = score.pianoV11StageA?.enabled ? m.pianoBeatGroups : undefined;
           const fullTranspose = score.exportPartTranspose?.[part.id];
           const transposeSemi = score.exportPartTransposeSemitones?.[part.id];
           const transposeXml = fullTranspose
@@ -1680,7 +1682,7 @@ ${partList}
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
-      <time><beats>${meter0.numerator}</beats><beat-type>${meter0.denominator}</beat-type></time>
+      ${formatTimeXml(meter0.numerator, meter0.denominator, groups0)}
 ${stavesAndClefXml}${transposeXml}    </attributes>
 `;
           if (part.instrumentIdentity === 'fela_afrobeat_drums') {
@@ -1690,8 +1692,9 @@ ${stavesAndClefXml}${transposeXml}    </attributes>
           }
         } else if (opts.barMeterMap && i >= 1 && adjacentBarsMeterDiffers(i, i + 1, opts.barMeterMap)) {
           const mm = resolveMeterForBar(i + 1, opts.barMeterMap);
+          const groupsN = score.pianoV11StageA?.enabled ? m.pianoBeatGroups : undefined;
           xml += `    <attributes>
-      <time><beats>${mm.numerator}</beats><beat-type>${mm.denominator}</beat-type></time>
+      ${formatTimeXml(mm.numerator, mm.denominator, groupsN)}
     </attributes>
 `;
         }

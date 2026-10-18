@@ -63,7 +63,12 @@ export interface PianoCompositionPlan {
   /** Present only on the opt-in general piano path. */
   general?: {
     tonalCentre: 'C' | 'Am';
-    metre: '4/4';
+    metre: '4/4' | 'mixed';
+    stageA?: {
+      quarters: { n: number; d: number };
+      ticks: number;
+      fragments: { bar: number; hand: 'RH' | 'LH'; motifRef?: string; omitted: { n: number; d: number }; reason: string }[];
+    };
     phases: string[];
     openingIntervals: number[];
     returnIntervals: number[];

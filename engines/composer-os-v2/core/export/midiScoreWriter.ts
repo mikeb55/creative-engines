@@ -14,6 +14,7 @@ import {
 } from '../rhythm/oddMeterQuantiser';
 import type { ChordEvent, MeasureModel, NoteEvent, PartModel, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { DIVISIONS } from '../score-model/scoreModelTypes';
+import { integralTicks } from '../piano/pianoExactTiming';
 import { GROOVE_DRUMS_INSTRUMENT_IDENTITY, GROOVE_DRUMS_PART_ID } from '../groove-scaffold/grooveScaffold';
 
 /** Pulses per quarter (aligned with MusicXML divisions / drum guide). */
@@ -211,8 +212,14 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
         const durationBeats = ev.duration;
         if (!Number.isFinite(startBeat) || !Number.isFinite(durationBeats)) continue;
 
-        const startTick = baseTick + Math.round(startBeat * SCORE_MIDI_PPQ);
-        let durTicks = Math.round(durationBeats * SCORE_MIDI_PPQ);
+        const exact = ev.kind === 'note' ? ev.pianoExact : undefined;
+        const exactStart = exact ? integralTicks(exact.onsetQ, SCORE_MIDI_PPQ) : null;
+        const exactDur = exact ? integralTicks(exact.durationQ, SCORE_MIDI_PPQ) : null;
+        if (exact && (exactStart === null || exactDur === null)) {
+          throw new Error(`MIDI PPQ ${SCORE_MIDI_PPQ} cannot represent piano exact timing ${exact.onsetQ.n}/${exact.onsetQ.d}`);
+        }
+        const startTick = exactStart !== null ? baseTick + exactStart : baseTick + Math.round(startBeat * SCORE_MIDI_PPQ);
+        let durTicks = exactDur !== null ? exactDur : Math.round(durationBeats * SCORE_MIDI_PPQ);
         if (durTicks < 1) durTicks = 1;
 
         const velRaw =

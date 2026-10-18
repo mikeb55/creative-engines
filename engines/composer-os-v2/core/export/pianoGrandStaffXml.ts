@@ -5,8 +5,9 @@
  * Every pitch of every decomposed segment receives sound ties and notation ties.
  */
 
-import { DIVISIONS, type MeasureModel, type NoteEvent, type PartModel, type PianoPedalEvent, type ScoreEvent } from '../score-model/scoreModelTypes';
+import { DIVISIONS, type MeasureModel, type NoteEvent, type PartModel, type PianoExactTiming, type PianoPedalEvent, type RestEvent, type ScoreEvent } from '../score-model/scoreModelTypes';
 import { pianoStaffForVoice } from '../piano/pianoTypes';
+import { PIANO_V11_EXPORT_PPQ, integralTicks } from '../piano/pianoExactTiming';
 import {
   beatSpanToTicks,
   tickSpecForLength,
@@ -48,6 +49,139 @@ function stackFollowers(note: NoteEvent): number[] {
   return listed.filter((pitch) => pitch !== note.pitch);
 }
 
+function exactTicks(exact: PianoExactTiming, label: string): { start: number; duration: number } {
+  const start = integralTicks(exact.onsetQ, PIANO_V11_EXPORT_PPQ);
+  const duration = integralTicks(exact.durationQ, PIANO_V11_EXPORT_PPQ);
+  if (start === null || duration === null || duration < 1) {
+    throw new Error(`Piano V1.1 exact export cannot represent ${label} at PPQ ${PIANO_V11_EXPORT_PPQ}`);
+  }
+  return { start, duration };
+}
+
+function exactTypeXml(exact: PianoExactTiming): string {
+  const dots = '<dot/>'.repeat(exact.dots);
+  const mod = exact.tuplet
+    ? `<time-modification><actual-notes>${exact.tuplet.actualNotes}</actual-notes><normal-notes>${exact.tuplet.normalNotes}</normal-notes><normal-type>${exact.tuplet.normalType}</normal-type></time-modification>`
+    : '';
+  return `<type>${exact.writtenType}</type>${dots}${mod}`;
+}
+
+function tupletNumber(events: readonly (NoteEvent | RestEvent)[], exact: PianoExactTiming): number {
+  if (!exact.tuplet) return 1;
+  const ids: string[] = [];
+  for (const event of events) {
+    const group = event.pianoExact?.tuplet?.groupId;
+    if (group && !ids.includes(group)) ids.push(group);
+  }
+  return ids.indexOf(exact.tuplet.groupId) + 1;
+}
+
+function exactNotation(exact: PianoExactTiming, number: number, ties: string): string {
+  const tuplet = exact.tuplet && exact.tuplet.bracket !== 'continue'
+    ? `<tuplet type="${exact.tuplet.bracket}" number="${number}" bracket="yes"/>`
+    : '';
+  const beams = (exact.beams ?? []).map((beam) => `<beam number="${beam.number}">${beam.value}</beam>`).join('');
+  const notations = ties || tuplet ? `<notations>${ties}${tuplet}</notations>` : '';
+  return `${beams}${notations}`;
+}
+
+/**
+ * Scoped exact path. Durations are already sounding ticks.
+ * time-modification is not applied again.
+ */
+function pianoExactGrandStaffXml(
+  measure: MeasureModel,
+  part: PartModel,
+  preferFlats: boolean,
+  measureCapacity: number,
+): string {
+  const contract = part.pianoGrandStaff;
+  if (!contract || contract.kind !== 'grand-staff-v1') {
+    throw new Error(`MusicXML export: part ${part.id} has no piano grand-staff contract`);
+  }
+  const voices = contract.innerVoiceEnabled ? [1, 2, 3] : [1, 3];
+  const allowed = new Set(voices);
+  const byVoice = new Map<number, (NoteEvent | RestEvent)[]>();
+  for (const voice of voices) byVoice.set(voice, []);
+  for (const event of measure.events) {
+    if (event.kind === 'chord') {
+      throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} chord events are unsupported on the piano grand staff`);
+    }
+    if (event.kind !== 'note' && event.kind !== 'rest') continue;
+    const voice = event.voice ?? 1;
+    if (!allowed.has(voice)) {
+      throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} is outside the piano contract`);
+    }
+    if (!event.pianoExact) {
+      throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} mixes exact and legacy piano timing`);
+    }
+    byVoice.get(voice)!.push(event);
+  }
+  let xml = '';
+  for (let layer = 0; layer < voices.length; layer += 1) {
+    const voice = voices[layer]!;
+    if (layer > 0) xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
+    const staffXml = `<staff>${pianoStaffForVoice(voice)}</staff>`;
+    const stem = stemXml(voice);
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => exactTicks(a.pianoExact!, 'onset').start - exactTicks(b.pianoExact!, 'onset').start);
+    let cursor = 0;
+    for (const event of voiceEvents) {
+      const ticks = exactTicks(event.pianoExact!, `${event.kind} bar ${measure.index}`);
+      if (ticks.start < cursor) {
+        throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} overlaps at tick ${ticks.start}`);
+      }
+      if (ticks.start !== cursor) {
+        throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} has an unspelled gap at tick ${cursor}`);
+      }
+      const number = tupletNumber(voiceEvents, event.pianoExact!);
+      const typeAndDots = exactTypeXml(event.pianoExact!);
+      if (event.kind === 'rest') {
+        const trailing = exactNotation(event.pianoExact!, number, '');
+        xml += noteXmlRestFragment({
+          durationTicks: ticks.duration,
+          voice,
+          typeAndDotsXml: typeAndDots,
+          staffXml,
+          trailingXml: trailing,
+        });
+      } else {
+        const pitches = [event.pitch, ...stackFollowers(event)];
+        const cross = event.notation?.tie;
+        const ties = segmentTies(0, 1, cross);
+        for (let pi = 0; pi < pitches.length; pi += 1) {
+          const midi = pitches[pi]!;
+          const spelled = pi === 0 && event.spelling
+            ? pitchPartsForExport(midi, preferFlats, event.spelling)
+            : midiToPitch(midi, preferFlats);
+          const alterEl = spelled.alter !== 0 ? `<alter>${spelled.alter}</alter>` : '';
+          const pitchXml = `<pitch><step>${spelled.step}</step>${alterEl}<octave>${spelled.octave}</octave></pitch>`;
+          const notation = pi === 0 ? exactNotation(event.pianoExact!, number, ties.notations.replace(/^<notations>|<\/notations>$/g, '')) : '';
+          const beam = pi === 0 ? (notation.match(/<beam\b[\s\S]*?<\/beam>/g) ?? []).join('') : '';
+          const notationsXml = pi === 0 ? (notation.match(/<notations>[\s\S]*<\/notations>/)?.[0] ?? '') : (ties.notations);
+          xml += noteXmlPitchedFragment({
+            dynamicsAttr: '',
+            chordXml: pi > 0 ? '<chord/>' : '',
+            pitchXml,
+            durationTicks: ticks.duration,
+            tieXml: ties.sound,
+            voice,
+            typeAndDotsXml: typeAndDots,
+            stemXml: stem,
+            staffXml,
+            beamXml: beam,
+            notationsXml,
+          });
+        }
+      }
+      cursor += ticks.duration;
+    }
+    if (cursor !== measureCapacity) {
+      throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice}: tick sum ${cursor} ≠ expected ${measureCapacity}`);
+    }
+  }
+  return xml;
+}
+
 export function pianoGrandStaffEventsToXml(
   measure: MeasureModel,
   measureIndex: number,
@@ -59,6 +193,9 @@ export function pianoGrandStaffEventsToXml(
   const contract = part.pianoGrandStaff;
   if (!contract || contract.kind !== 'grand-staff-v1') {
     throw new Error(`MusicXML export: part ${part.id} has no piano grand-staff contract`);
+  }
+  if (measure.events.some((event) => (event.kind === 'note' || event.kind === 'rest') && event.pianoExact)) {
+    return pianoExactGrandStaffXml(measure, part, preferFlats, measureCapacity);
   }
   const voices = contract.innerVoiceEnabled ? [1, 2, 3] : [1, 3];
   const allowed = new Set(voices);

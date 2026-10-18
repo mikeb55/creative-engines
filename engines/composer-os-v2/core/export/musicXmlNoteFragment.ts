@@ -156,9 +156,11 @@ export function noteXmlRestFragment(opts: {
   typeAndDotsXml: string;
   /** After type/dot: explicit staff for single-staff polyphony (never before <type>). */
   staffXml?: string;
+  /** Beam and notations after staff. Omitted by legacy callers. */
+  trailingXml?: string;
 }): string {
-  const { durationTicks, voice, typeAndDotsXml, staffXml = '' } = opts;
-  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${typeAndDotsXml}${staffXml}</note>\n`;
+  const { durationTicks, voice, typeAndDotsXml, staffXml = '', trailingXml = '' } = opts;
+  return `        <note><rest/><duration>${durationTicks}</duration><voice>${voice}</voice>${typeAndDotsXml}${staffXml}${trailingXml}</note>\n`;
 }
 
 /** Pitched note: pitch → duration → tie → voice → type (+ dots) → stem? → staff? → notations. */
@@ -175,6 +177,8 @@ export function noteXmlPitchedFragment(opts: {
   stemXml?: string;
   /** After stem: explicit staff for single-staff polyphony (Sibelius / GP8). */
   staffXml?: string;
+  /** Between staff and notations. Omitted by legacy callers. */
+  beamXml?: string;
   notationsXml: string;
 }): string {
   const {
@@ -187,7 +191,8 @@ export function noteXmlPitchedFragment(opts: {
     chordXml = '',
     stemXml = '',
     staffXml = '',
+    beamXml = '',
     notationsXml,
   } = opts;
-  return `        <note${dynamicsAttr}>${chordXml}${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${notationsXml}</note>\n`;
+  return `        <note${dynamicsAttr}>${chordXml}${pitchXml}<duration>${durationTicks}</duration>${tieXml}<voice>${voice}</voice>${typeAndDotsXml}${stemXml}${staffXml}${beamXml}${notationsXml}</note>\n`;
 }

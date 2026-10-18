@@ -93,6 +93,32 @@ export interface FeelProfile {
   driftTotalBeats: number;
 }
 
+/** Reduced rational in quarter-note units. */
+export interface ExactQuarter {
+  readonly n: number;
+  readonly d: number;
+}
+
+/**
+ * Piano V1.1 Stage A leaf. Sounding time is onsetQ/durationQ.
+ * Written type and tuplet ratio are notation, not a second scaling of duration.
+ */
+export interface PianoExactTiming {
+  onsetQ: ExactQuarter;
+  durationQ: ExactQuarter;
+  writtenType: string;
+  dots: 0 | 1 | 2;
+  tuplet?: {
+    actualNotes: number;
+    normalNotes: number;
+    normalType: string;
+    groupId: string;
+    bracket: 'start' | 'continue' | 'stop';
+  };
+  logicalEventId: string;
+  beams?: { number: number; value: 'begin' | 'continue' | 'end' | 'forward hook' | 'backward hook' }[];
+}
+
 /** Note event: pitch in MIDI, startBeat 0–4, duration in beats. */
 export interface NoteEvent {
   kind: 'note';
@@ -119,6 +145,11 @@ export interface NoteEvent {
    * V3.4 optional notation. Absent means the existing articulation export is unchanged.
    */
   notation?: NoteNotationV34;
+  /**
+   * Piano V1.1 Stage A exact timing. Absent leaves legacy beat export unchanged.
+   * `startBeat` / `duration` stay as derived floats and must agree with these rationals.
+   */
+  pianoExact?: PianoExactTiming;
 }
 
 /** Rest event. */
@@ -127,6 +158,8 @@ export interface RestEvent {
   startBeat: number;
   duration: number;
   voice?: number;
+  /** Piano V1.1 Stage A exact timing. Absent leaves legacy rest export unchanged. */
+  pianoExact?: PianoExactTiming;
 }
 
 /** Timed chord stack (multiple MIDI pitches, one rhythmic attack); exporter emits MusicXML `<chord/>` followers. */
@@ -193,6 +226,11 @@ export interface MeasureModel {
   measureBeatSpanQuarters?: number;
   /** Optional duo narrative tag (peak bar, handoff, final cadence). */
   momentTag?: MomentTag;
+  /**
+   * Piano V1.1 Stage A beat groups, in denominator-note units.
+   * Absent leaves MusicXML `<time>` as a single numerator.
+   */
+  pianoBeatGroups?: number[];
   /**
    * Bartók B1 opt-in only. Sixteenth snap for this bar, and undotted splits of one
    * note stay one sounding attack. Absent leaves the existing eighth seal unchanged.
@@ -313,6 +351,11 @@ export interface ScoreModel {
    * Absent leaves export unchanged.
    */
   pianoPedal?: PianoPedalEvent[];
+  /**
+   * Piano V1.1 Stage A exact timing. Absent keeps PPQ 480 legacy export.
+   * Adaptive PPQ above 480 is not an export mode.
+   */
+  pianoV11StageA?: { enabled: true; divisions: number };
   /**
    * V3.4 tempo map. Absent or empty keeps the single score tempo direction.
    */

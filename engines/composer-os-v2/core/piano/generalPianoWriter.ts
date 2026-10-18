@@ -14,7 +14,7 @@ import { buildChain } from '../motif-ops/developmentChain';
 import type { Motif, MotifNoteEvent } from '../motif-ops/types';
 import { mulberry32, randInt } from '../riff-generator/riffRandom';
 import { getInstrument } from '../instruments/instrumentCatalogue';
-import type { NoteEvent, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
+import type { ExactQuarter, NoteEvent, RestEvent, ScoreEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import { validateStrictBarMath } from '../score-integrity/strictBarMath';
 import { comparePianoScoreToXml } from './pianoXmlOracle';
@@ -36,6 +36,24 @@ import {
   validatePianoTies,
 } from './pianoValidation';
 import type { PianoComposeResult, PianoCompositionPlan, PianoLhTexture, PianoLockSnapshot } from './pianoWriter';
+import { dyadicQuarter, q, qAdd, qCmp, qToNumber } from './pianoExactTiming';
+import {
+  barMeterMapFromPlan,
+  buildPianoTimeline,
+  isGroupBoundary,
+  timelineTotals,
+  validatePianoMeterPlan,
+  type PianoMeterBarPlan,
+  type PianoTimelineBar,
+} from './pianoMeterPlan';
+import {
+  fragmentEventsToSpan,
+  fragmentSlotsToSpan,
+  realiseStageA,
+  releaseUnjoinedTies,
+  type PianoFragmentRecord,
+  type PianoRhythmicWindow,
+} from './pianoV11Realise';
 
 const C_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const A_SCALE = [9, 11, 0, 2, 4, 5, 7] as const;
@@ -96,6 +114,14 @@ interface Slot {
 
 type Phase = 'statement' | 'sequence' | 'development' | 'contrast' | 'return' | 'approach' | 'ending';
 
+export interface PianoV11StageAContract {
+  enabled: true;
+  meterPlan: PianoMeterBarPlan[];
+  rhythmicWindows?: PianoRhythmicWindow[];
+  /** Fills the 24-bar six-metre cycle with 3:2, 5:4, and one cross-bar tuplet. */
+  acceptance?: boolean;
+}
+
 export interface GeneralPianoComposeInput {
   seed: number;
   bars: GeneralPianoBarCount;
@@ -103,6 +129,8 @@ export interface GeneralPianoComposeInput {
   tonalCentre: GeneralPianoCentre;
   harmony: string[];
   lockedEvents?: PianoLockedEvent[];
+  /** Omit, or leave unset, for legacy 4/4 output. */
+  timing?: PianoV11StageAContract;
 }
 
 function roundBeat(value: number): number {
@@ -175,17 +203,36 @@ function repairEvents(
   low: number,
   high: number,
   anchor: number,
+  strongAt?: (onset: number) => boolean,
 ): MotifNoteEvent[] {
   let previous = anchor;
   return events.map((event) => {
     if (event.midi === null) return { ...event };
-    const strong = Math.abs(event.onset % 2) < 1e-6;
+    const strong = strongAt ? strongAt(event.onset) : Math.abs(event.onset % 2) < 1e-6;
     const allowed = strong ? chordTones : [...new Set([...FIELD, ...chordTones])];
     const pc = allowed.includes(mod12(event.midi)) ? mod12(event.midi) : closestPc(event.midi, allowed);
     const midi = midiInWindow(pc, previous, low, high);
     previous = midi;
     return { ...event, midi };
   });
+}
+
+function fitMotif(
+  events: readonly MotifNoteEvent[],
+  span: ExactQuarter | null,
+  fragments: PianoFragmentRecord[],
+  bar: number,
+): MotifNoteEvent[] {
+  if (!span) return fitToBar(events);
+  const fragmented = fragmentEventsToSpan(events, span);
+  if (qCmp(fragmented.omitted, q(0, 1)) > 0) {
+    fragments.push({ bar, hand: 'RH', motifRef: 'rh', omitted: fragmented.omitted, reason: 'bar-capacity' });
+  }
+  return fragmented.placed.map((event) => ({
+    onset: qToNumber(event.start),
+    duration: qToNumber(event.duration),
+    midi: event.midi,
+  }));
 }
 
 function fitToBar(events: readonly MotifNoteEvent[]): MotifNoteEvent[] {
@@ -454,6 +501,37 @@ function compiledSections(bars: number): { kind: 'verse' | 'bridge' | 'chorus'; 
   ];
 }
 
+function handPitch(chord: ParsedPianoChord, hand: 'RH' | 'LH', pc: number): number {
+  return midiInWindow(pc, hand === 'RH' ? 72 : 48, hand === 'RH' ? RH_LOW : LH_LOW, hand === 'RH' ? RH_HIGH : LH_HIGH);
+}
+
+function repeatedPitch(chord: ParsedPianoChord, hand: 'RH' | 'LH', count: number, pc = hand === 'RH' ? chord.rootPc : chord.bassPc): number[] {
+  return Array.from({ length: count }, () => handPitch(chord, hand, pc));
+}
+
+function sharedPc(a: ParsedPianoChord, b: ParsedPianoChord): number | null {
+  return a.tones.find((pc) => b.tones.includes(pc)) ?? null;
+}
+
+function acceptanceWindows(timeline: readonly PianoTimelineBar[], chords: ParsedPianoChord[]): PianoRhythmicWindow[] {
+  const startOf = (bar: number, offset: ExactQuarter) => qAdd(timeline[bar - 1]!.start, offset);
+  const bar5 = chords[4]!;
+  const bar6 = chords[5]!;
+  const shared = sharedPc(bar5, bar6);
+  if (shared === null) throw new Error('acceptance cross-bar tuplet needs a pitch shared by bars 5 and 6');
+  const crossRh = Array.from({ length: 3 }, () => handPitch(bar5, 'RH', shared));
+  const crossLh = Array.from({ length: 5 }, () => handPitch(bar5, 'LH', shared));
+  return [
+    { id: 'rh-3-2', start: startOf(1, q(0, 1)), hand: 'RH', ratio: '3:2', pitches: repeatedPitch(chords[0]!, 'RH', 3), against: 'straight-eighths', againstPitches: repeatedPitch(chords[0]!, 'LH', 2) },
+    { id: 'rest-3-2', start: startOf(2, q(0, 1)), hand: 'RH', ratio: '3:2', rests: [false, true, false], pitches: repeatedPitch(chords[1]!, 'RH', 3), against: 'straight-eighths', againstPitches: repeatedPitch(chords[1]!, 'LH', 2) },
+    { id: 'rh-5-4', start: startOf(3, q(0, 1)), hand: 'RH', ratio: '5:4', pitches: repeatedPitch(chords[2]!, 'RH', 5), against: 'straight-sixteenths', againstPitches: repeatedPitch(chords[2]!, 'LH', 4) },
+    { id: 'both-ratios', start: startOf(7, q(0, 1)), hand: 'RH', ratio: '3:2', pitches: repeatedPitch(chords[6]!, 'RH', 3), against: '5:4', againstPitches: repeatedPitch(chords[6]!, 'LH', 5) },
+    { id: 'lh-3-2', start: startOf(8, q(0, 1)), hand: 'LH', ratio: '3:2', pitches: repeatedPitch(chords[7]!, 'LH', 3), against: 'straight-eighths', againstPitches: repeatedPitch(chords[7]!, 'RH', 2) },
+    { id: 'cross-3-2', start: startOf(5, q(3, 1)), hand: 'RH', ratio: '3:2', pitches: crossRh },
+    { id: 'cross-5-4', start: startOf(5, q(13, 4)), hand: 'LH', ratio: '5:4', pitches: crossLh },
+  ];
+}
+
 export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoComposeResult {
   if (!Number.isInteger(input.seed)) {
     return { ok: false, code: 'bad_request', error: 'General piano V1 needs an integer seed.' };
@@ -523,8 +601,20 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   let openingEvents: MotifNoteEvent[] = [];
   let returnEvents: MotifNoteEvent[] = [];
   let developmentDurations: number[] = [];
+  const fragments: PianoFragmentRecord[] = [];
+  let stageA: { timeline: PianoTimelineBar[] } | null = null;
+  if (input.timing?.enabled === true) {
+    if ('phraseDevelopment' in input.timing || 'polychord' in input.timing) {
+      return { ok: false, code: 'bad_request', error: 'Stage B phrase development and polychords are outside Stage A.' };
+    }
+    const meterErrors = validatePianoMeterPlan(input.timing.meterPlan, input.bars);
+    if (meterErrors.length > 0) return { ok: false, code: 'bad_request', error: meterErrors.join('; ') };
+    stageA = { timeline: buildPianoTimeline(input.timing.meterPlan) };
+  }
 
   for (let bar = 1; bar <= input.bars; bar += 1) {
+    const stageBar = stageA?.timeline[bar - 1] ?? null;
+    const stageSpan = stageBar?.span ?? null;
     const phase = phaseAt(bar, input.bars);
     phases.push(phase);
     const chord = chords[bar - 1]!;
@@ -532,23 +622,23 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     let line: MotifNoteEvent[] = [];
     let motifRef = root.id;
     if (phase === 'statement') {
-      line = fitToBar(root.events);
+      line = fitMotif(root.events, stageSpan, fragments, bar);
       motifRef = root.id;
     } else if (phase === 'sequence') {
       let steps = ((bar + input.seed) % 5) - 2;
       if (steps === 0) steps = input.seed % 2 === 0 ? 1 : -1;
       const sequenced = applyOperator(root, 'sequence-tonal', { steps });
-      line = fitToBar(sequenced.motif.events);
+      line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
       motifRef = sequenced.step.toId;
     } else if (phase === 'development') {
       const sequenced = applyOperator(augmented, 'sequence-tonal', { steps: devOrdinal });
       devOrdinal += 1;
-      line = fitToBar(sequenced.motif.events);
+      line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
       motifRef = sequenced.step.toId;
     } else if (phase === 'contrast') {
       const sequenced = applyOperator(contrasted.motif, 'sequence-tonal', { steps: contrastOrdinal + 1 });
       contrastOrdinal += 1;
-      line = fitToBar(sequenced.motif.events);
+      line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
       motifRef = sequenced.step.toId;
     } else if (phase === 'return') {
       const delta = mod12(chord.rootPc - chords[0]!.rootPc);
@@ -556,18 +646,21 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       const transposed = root.events.map((event) => (
         event.midi === null ? { ...event } : { ...event, midi: event.midi + shift }
       ));
-      line = fitToBar(transposed);
+      line = fitMotif(transposed, stageSpan, fragments, bar);
       motifRef = 'm1.return';
     } else if (phase === 'approach') {
-      line = fitToBar(liquidated.motif.events);
+      line = fitMotif(liquidated.motif.events, stageSpan, fragments, bar);
       motifRef = liquidated.step.toId;
     } else {
       const pc = chord.tones.includes(tonic) ? tonic : chord.rootPc;
-      line = [{ onset: 0, duration: 4, midi: midiInWindow(pc, previousRh, RH_LOW, RH_HIGH) }];
+      line = fitMotif([{ onset: 0, duration: 4, midi: midiInWindow(pc, previousRh, RH_LOW, RH_HIGH) }], stageSpan, fragments, bar);
       motifRef = 'm1.cadence';
     }
     if (phase !== 'ending') {
-      line = repairEvents(line, chord.tones, RH_LOW, RH_HIGH, previousRh);
+      const strongAt = stageBar
+        ? (onset: number) => isGroupBoundary(dyadicQuarter(onset), stageBar)
+        : undefined;
+      line = repairEvents(line, chord.tones, RH_LOW, RH_HIGH, previousRh, strongAt);
       line = shiftRegister(line, previousRh);
     }
     const lastRh = [...line].reverse().find((event) => event.midi !== null);
@@ -628,14 +721,43 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       lh.set(bar, lhBroken(chord, bar, input.seed));
       texture = 'broken';
     }
+    if (stageBar) {
+      const fragmented = fragmentSlotsToSpan(lh.get(bar) ?? [], stageBar.span);
+      if (qCmp(fragmented.omitted, q(0, 1)) > 0) {
+        fragments.push({ bar, hand: 'LH', motifRef: 'lh', omitted: fragmented.omitted, reason: 'bar-capacity' });
+      }
+      lh.set(bar, fragmented.kept);
+    }
     textures.push({ bar, texture });
   }
+
+  if (stageA) {
+    releaseUnjoinedTies(stageA.timeline, lh);
+    releaseUnjoinedTies(stageA.timeline, rh);
+  }
+
+  let windows = input.timing?.enabled === true ? [...(input.timing.rhythmicWindows ?? [])] : [];
+  if (input.timing?.acceptance && stageA) {
+    const shared = chords[4] && chords[5] && chords[4].tones.some((pc) => chords[5]!.tones.includes(pc));
+    if (!shared) return { ok: false, code: 'bad_request', error: 'acceptance cross-bar tuplet needs a pitch shared by bars 5 and 6' };
+    windows = acceptanceWindows(stageA.timeline, chords);
+  }
+  const realised = stageA
+    ? realiseStageA({ timeline: stageA.timeline, rh, lh, windows })
+    : null;
+  if (realised && realised.errors.length > 0) {
+    return { ok: false, code: 'validation', error: realised.errors.join('; ') };
+  }
+  if (realised) fragments.push(...realised.fragments);
 
   const catalogue = getInstrument('piano');
   const score: ScoreModel = {
     title: `General Piano V1 seed ${input.seed}`,
     tempo: input.tempo,
-    timeSignature: { beats: 4, beatType: 4 },
+    ...(stageA ? { barMeterMap: barMeterMapFromPlan(stageA.timeline), pianoV11StageA: { enabled: true as const, divisions: 480 } } : {}),
+    timeSignature: stageA
+      ? { beats: stageA.timeline[0]!.numerator, beatType: stageA.timeline[0]!.denominator }
+      : { beats: 4, beatType: 4 },
     keySignature: {
       fifths: 0,
       mode: input.tonalCentre === 'C' ? 'major' : 'minor',
@@ -651,14 +773,18 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       pianoGrandStaff: pianoGrandStaffConfig(false),
       measures: harmonyBars.map((chord, index) => {
         const bar = index + 1;
+        const planned = stageA?.timeline[index];
         return {
           index: bar,
           chord,
           chordSymbol: chord,
-          events: [
-            ...fillVoice(rh.get(bar) ?? [], 1),
-            ...fillVoice(lh.get(bar) ?? [], 3),
-          ],
+          ...(planned ? { measureBeatSpanQuarters: qToNumber(planned.span), pianoBeatGroups: [...planned.groups] } : {}),
+          events: realised
+            ? [...(realised.events.get(bar) ?? [])]
+            : [
+              ...fillVoice(rh.get(bar) ?? [], 1),
+              ...fillVoice(lh.get(bar) ?? [], 3),
+            ],
         };
       }),
     }],
@@ -693,7 +819,14 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       .map((event) => ({ bar: 1, pitch: event.midi!, role: 'modal' as const })),
     general: {
       tonalCentre: input.tonalCentre,
-      metre: '4/4',
+      metre: stageA ? 'mixed' : '4/4',
+      ...(stageA ? {
+        stageA: {
+          quarters: timelineTotals(stageA.timeline).quarters,
+          ticks: timelineTotals(stageA.timeline).ticks,
+          fragments,
+        },
+      } : {}),
       phases,
       openingIntervals: intervalsOf(openingEvents),
       returnIntervals: intervalsOf(returnEvents),
@@ -725,7 +858,11 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       if (event.kind !== 'note') continue;
       const voice = event.voice ?? 1;
       const pitches = [event.pitch, ...(event.pitches ?? []).filter((pitch) => pitch !== event.pitch)];
-      const strong = Math.abs(event.startBeat % 2) < 1e-6;
+      const planned = stageA?.timeline[measure.index - 1];
+      const onsetQ = event.kind === 'note' ? event.pianoExact?.onsetQ : undefined;
+      const strong = planned
+        ? isGroupBoundary(onsetQ ?? dyadicQuarter(event.startBeat), planned)
+        : Math.abs(event.startBeat % 2) < 1e-6;
       for (const pitch of pitches) {
         const pc = mod12(pitch);
         if (voice === 3 && !chord.tones.includes(pc)) {
