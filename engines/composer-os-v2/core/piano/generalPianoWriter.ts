@@ -68,6 +68,7 @@ import {
   type VoicedTriad,
 } from './pianoV11Polychord';
 import { finalRealisedDiagnostics } from './pianoV11Diagnostics';
+import { applyStageDExpression, stageDVelocityContour } from './pianoV11StageD';
 import {
   choosePhraseSpan,
   eventsForPhraseBar,
@@ -160,6 +161,8 @@ export interface GeneralPianoComposeInput {
   polychords?: PianoPolychordRegion[];
   /** Adds a 3:2 inside bar 12 when that bar is 9/16. */
   groupedNineSixteenTriplet?: boolean;
+  /** Opt-in Stage D. Default off. Requires 24 bars. Absent leaves Stage C output unchanged. */
+  musicalRefinementV11?: boolean;
 }
 
 function roundBeat(value: number): number {
@@ -675,6 +678,9 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   if (input.phraseDevelopmentV11 === true && input.bars !== 24) {
     return { ok: false, code: 'bad_request', error: 'Phrase development V1.1 needs the 24-bar form.' };
   }
+  if (input.musicalRefinementV11 === true && input.bars !== 24) {
+    return { ok: false, code: 'bad_request', error: 'Stage D musical refinement needs the 24-bar form.' };
+  }
   if (input.polychords) {
     const regionError = validatePolychordRegions(input.polychords, input.bars);
     if (regionError) return { ok: false, code: 'bad_request', error: regionError };
@@ -805,7 +811,14 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       const span = phraseSpanIndex(bar);
       const intent = phraseIntentAt(bar);
       if (!spanChoices.has(span)) {
-        spanChoices.set(span, choosePhraseSpan(span, phraseIntentAt(span * 2 + 1), realisedMotif, previousRh));
+        const previousChosen = span > 0 ? spanChoices.get(span - 1)?.chosen : undefined;
+        spanChoices.set(span, choosePhraseSpan(
+          span,
+          phraseIntentAt(span * 2 + 1),
+          realisedMotif,
+          previousRh,
+          input.musicalRefinementV11 ? previousChosen : undefined,
+        ));
       }
       const choice = spanChoices.get(span)!;
       const picked = eventsForPhraseBar(
@@ -813,7 +826,10 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         realisedMotif,
         choice.events,
         midiInWindow(tonic, previousRh, RH_LOW, RH_HIGH),
+        input.musicalRefinementV11 === true,
+        bar,
       );
+      if (input.musicalRefinementV11 && (intent === 'return' || intent === 'ending')) choice.chosen = picked.id;
       line = fitMotif(picked.events, stageSpan, fragments, bar);
       motifRef = `phrase.${picked.id}`;
     } else if (phase === 'statement') {
@@ -853,15 +869,26 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     }
     if (phase !== 'ending') {
       const climax = input.phraseDevelopmentV11 === true && phraseIntentAt(bar) === 'climax';
-      if (climax) previousRh = Math.min(RH_HIGH - 2, previousRh + 12);
+      const refine = input.musicalRefinementV11 === true;
+      if (climax && !refine) previousRh = Math.min(RH_HIGH - 2, previousRh + 12);
       const ceiling = input.phraseDevelopmentV11 && !climax ? RH_HIGH - 5 : RH_HIGH;
+      const repairAnchor = climax && refine ? Math.min(RH_HIGH - 2, previousRh + 7) : previousRh;
       const strongAt = stageBar
         ? (onset: number) => isGroupBoundary(dyadicQuarter(onset), stageBar)
         : undefined;
-      line = repairEvents(line, rhTones, RH_LOW, ceiling, previousRh, strongAt, voiced !== null, climax);
-      line = shiftRegister(line, previousRh);
+      line = repairEvents(line, rhTones, RH_LOW, ceiling, repairAnchor, strongAt, voiced !== null, climax && !refine);
+      line = shiftRegister(line, repairAnchor);
       if (line.some((event) => event.midi !== null && (event.midi < RH_LOW || event.midi > ceiling))) {
-        line = repairEvents(line, rhTones, RH_LOW, ceiling, previousRh, strongAt, voiced !== null, climax);
+        line = repairEvents(line, rhTones, RH_LOW, ceiling, repairAnchor, strongAt, voiced !== null, climax && !refine);
+      }
+      if (climax && refine && bar === 20) {
+        const peak = [...line].reverse().find((event) => event.midi !== null);
+        if (peak?.midi) {
+          const higher = rhTones
+            .map((pc) => midiInWindow(pc, peak.midi! + 5, RH_LOW, ceiling))
+            .filter((midi) => midi >= peak.midi! + 3 && midi <= ceiling);
+          if (higher.length > 0) peak.midi = Math.max(...higher);
+        }
       }
     }
     const lastRh = [...line].reverse().find((event) => event.midi !== null);
@@ -941,8 +968,14 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         texture = 'sustained';
       }
     } else if (phase === 'development') {
-      lh.set(bar, lhBroken(handChord, bar, input.seed));
-      texture = 'broken';
+      if (input.musicalRefinementV11 && phraseIntentAt(bar) !== 'climax' && bar % 2 === 0) {
+        const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: bar });
+        lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
+        texture = 'response';
+      } else {
+        lh.set(bar, lhBroken(handChord, bar, input.seed));
+        texture = 'broken';
+      }
     } else if (phase === 'contrast') {
       const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: contrastOrdinal });
       lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
@@ -1135,8 +1168,18 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     const notes = measure.events.filter((event): event is NoteEvent => event.kind === 'note');
     applyParentMemberSpellings(notes, voiced.upper, voiced.lower);
   }
+  if (input.musicalRefinementV11) applyStageDExpression(score);
   if (plan.general && (input.phraseDevelopmentV11 || input.polychords || input.timing?.enabled)) {
     plan.general.finalEvents = finalRealisedDiagnostics(score);
+    if (input.musicalRefinementV11) {
+      const contour = stageDVelocityContour(score);
+      plan.general.stageD = {
+        enabled: true,
+        written: Object.entries(score.measureDynamicsMarkings ?? {}).map(([bar, mark]) => ({ bar: Number(bar), mark })),
+        rhVelocity: contour.rh,
+        lhVelocity: contour.lh,
+      };
+    }
   }
 
   const lockSnapshot = snapshotOf(plan, locks);

@@ -27,10 +27,13 @@ export interface PianoV11RequestBody {
   acceptance?: boolean;
   groupedNineSixteenTriplet?: boolean;
   rhythmicWindows?: unknown;
+  /** Stage D. Absent or false leaves the Stage C demonstration unchanged. */
+  musicalRefinement?: boolean;
 }
 
 export interface ResolvedPianoV11 {
   phraseDevelopmentV11?: boolean;
+  musicalRefinementV11?: boolean;
   polychords?: PianoPolychordRegion[];
   groupedNineSixteenTriplet?: boolean;
   timing?: {
@@ -154,7 +157,14 @@ export function resolvePianoV11(body: unknown, bars: number): ResolvedPianoV11 |
   if (raw.groupedNineSixteenTriplet !== undefined && typeof raw.groupedNineSixteenTriplet !== 'boolean') {
     errors.push({ field: 'pianoV11.groupedNineSixteenTriplet', message: 'must be true or false' });
   }
+  if (raw.musicalRefinement !== undefined && typeof raw.musicalRefinement !== 'boolean') {
+    errors.push({ field: 'pianoV11.musicalRefinement', message: 'must be true or false' });
+  }
   const phraseDevelopment = raw.phraseDevelopment === true;
+  const musicalRefinement = raw.musicalRefinement === true;
+  if (musicalRefinement && bars !== 24) {
+    errors.push({ field: 'pianoV11.musicalRefinement', message: 'needs 24 bars' });
+  }
   const acceptance = raw.acceptance === true;
   const groupedNineSixteenTriplet = raw.groupedNineSixteenTriplet === true;
   if (phraseDevelopment && bars !== 24) errors.push({ field: 'pianoV11.phraseDevelopment', message: 'needs 24 bars' });
@@ -239,11 +249,12 @@ export function resolvePianoV11(body: unknown, bars: number): ResolvedPianoV11 |
       ...(acceptance ? { acceptance: true as const } : {}),
     }
     : undefined;
-  if (!timing && !phraseDevelopment && !polychords) {
+  if (!timing && !phraseDevelopment && !polychords && !musicalRefinement) {
     return fail([{ field: 'pianoV11', message: 'needs phrase development, polychords, or a metre plan' }]);
   }
   return {
     ...(phraseDevelopment ? { phraseDevelopmentV11: true } : {}),
+    ...(musicalRefinement ? { musicalRefinementV11: true } : {}),
     ...(polychords ? { polychords } : {}),
     ...(groupedNineSixteenTriplet ? { groupedNineSixteenTriplet: true } : {}),
     ...(timing ? { timing } : {}),

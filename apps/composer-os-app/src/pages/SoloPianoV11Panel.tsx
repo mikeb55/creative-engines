@@ -148,6 +148,16 @@ export function SoloPianoV11Panel(props: {
         <option value="off">OFF</option>
         <option value="on">ON</option>
       </select>
+      <label htmlFor="solo-piano-v11-stage-d" style={{ display: 'block', marginTop: '0.75rem' }}>Stage D musical refinement</label>
+      <select
+        id="solo-piano-v11-stage-d"
+        data-testid="solo-piano-v11-stage-d"
+        value={form.musicalRefinement}
+        onChange={(event) => patch({ musicalRefinement: event.target.value as 'off' | 'on' })}
+      >
+        <option value="off">OFF — Stage C baseline</option>
+        <option value="on">ON — refined dynamics and phrase</option>
+      </select>
       {form.phraseDevelopment === 'on' && (
         <ol data-testid="solo-piano-v11-phrase-regions" style={{ margin: '0.5rem 0 0', paddingLeft: '1.2rem' }}>
           {phraseRegions().map((region) => (

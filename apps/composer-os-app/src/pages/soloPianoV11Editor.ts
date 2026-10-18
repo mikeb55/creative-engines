@@ -73,6 +73,7 @@ export interface SoloPianoFormState {
   harmony: string[];
   advanced: boolean;
   phraseDevelopment: 'off' | 'on';
+  musicalRefinement: 'off' | 'on';
   polychordMode: PolychordMode;
   upperRoot: string;
   upperQuality: TriadQuality;
@@ -201,9 +202,10 @@ export function acceptanceRegionDrafts(): PolychordDraft[] {
   return fullV11DemonstrationBody().polychords.map(regionDraft);
 }
 
-export function defaultV11Fields(bars: BarCount): Pick<SoloPianoFormState, 'phraseDevelopment' | 'polychordMode' | 'upperRoot' | 'upperQuality' | 'lowerRoot' | 'lowerQuality' | 'meterMode' | 'uniformMeter' | 'polyrhythm' | 'useExplicitWindows' | 'meterRows' | 'windows' | 'polychordRegions'> {
+export function defaultV11Fields(bars: BarCount): Pick<SoloPianoFormState, 'phraseDevelopment' | 'musicalRefinement' | 'polychordMode' | 'upperRoot' | 'upperQuality' | 'lowerRoot' | 'lowerQuality' | 'meterMode' | 'uniformMeter' | 'polyrhythm' | 'useExplicitWindows' | 'meterRows' | 'windows' | 'polychordRegions'> {
   return {
     phraseDevelopment: 'off',
+    musicalRefinement: 'off',
     polychordMode: 'off',
     upperRoot: 'C',
     upperQuality: 'major',
@@ -232,6 +234,7 @@ export function applyFullV11Demonstration(current: SoloPianoFormState): SoloPian
     harmony: canonicalStageBHarmony(24),
     advanced: true,
     phraseDevelopment: 'on',
+    musicalRefinement: 'off',
     polychordMode: 'acceptance',
     upperRoot: 'C',
     upperQuality: 'major',
@@ -319,6 +322,7 @@ export function pianoV11Payload(form: SoloPianoFormState): Record<string, unknow
   const rhythmicWindows = form.useExplicitWindows ? windowPayload(form.windows) : undefined;
   return {
     phraseDevelopment: form.phraseDevelopment === 'on',
+    ...(form.musicalRefinement === 'on' ? { musicalRefinement: true } : {}),
     ...(polychords ? { polychords } : {}),
     ...(meterPlan ? { meterPlan } : {}),
     ...(rhythmicWindows ? { rhythmicWindows } : {}),
@@ -513,6 +517,7 @@ function isForm(value: unknown): value is SoloPianoFormState {
     && form.harmony.every((symbol) => typeof symbol === 'string')
     && typeof form.advanced === 'boolean'
     && (form.phraseDevelopment === 'off' || form.phraseDevelopment === 'on')
+    && (form.musicalRefinement === undefined || form.musicalRefinement === 'off' || form.musicalRefinement === 'on')
     && (form.polychordMode === 'off' || form.polychordMode === 'acceptance' || form.polychordMode === 'single')
     && typeof form.upperRoot === 'string'
     && QUALITIES.has(form.upperQuality)
@@ -555,6 +560,7 @@ export function parseSoloPianoConfig(text: string): { ok: true; form: SoloPianoF
   if (!isForm(file.form)) {
     return fail([{ field: 'soloPianoConfig.form', message: 'is missing a complete editable piano configuration' }]);
   }
+  if (file.form.musicalRefinement !== 'on') file.form.musicalRefinement = 'off';
   if (file.form.harmony.length !== file.form.bars) {
     return fail([{ field: 'harmony', message: `needs ${file.form.bars} chord symbols and has ${file.form.harmony.length}` }]);
   }

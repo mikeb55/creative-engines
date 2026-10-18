@@ -157,11 +157,13 @@ export function choosePhraseSpan(
   intent: PianoPhraseIntent,
   opening: Motif,
   previousPitch: number,
+  avoidId?: string,
 ): PhraseSpanChoice & { events: MotifNoteEvent[] } {
   const candidates = phraseCandidates(opening);
   const scored = candidates.map((candidate) => ({
     id: candidate.id,
-    score: scorePhraseCandidate(intent, candidate.id, candidate.events, opening.events, previousPitch),
+    score: scorePhraseCandidate(intent, candidate.id, candidate.events, opening.events, previousPitch)
+      - (avoidId && candidate.id === avoidId && intent !== 'statement' ? 8 : 0),
     events: candidate.events,
   }));
   scored.sort((a, b) => b.score - a.score || candidates.findIndex((item) => item.id === a.id) - candidates.findIndex((item) => item.id === b.id));
@@ -181,7 +183,20 @@ export function eventsForPhraseBar(
   opening: Motif,
   chosenEvents: readonly MotifNoteEvent[],
   tonicMidi: number,
+  refinement = false,
+  bar = 0,
 ): { id: string; events: MotifNoteEvent[] } {
+  if (refinement && intent === 'return') {
+    return { id: 'return-head', events: applyOperator(opening, 'fragment-head', { count: 3 }).motif.events.map((event) => ({ ...event })) };
+  }
+  if (refinement && intent === 'continuation' && bar === 23) {
+    return { id: 'continuation-tail', events: applyOperator(opening, 'fragment-tail', { count: 2 }).motif.events.map((event) => ({ ...event })) };
+  }
+  if (refinement && intent === 'ending') {
+    const tail = applyOperator(opening, 'fragment-tail', { count: 2 });
+    const withRest = applyOperator(tail.motif, 'insert-rest', { index: 0, duration: 0.5 });
+    return { id: 'ending-tail', events: withRest.motif.events.map((event) => ({ ...event })) };
+  }
   if (intent === 'statement' || intent === 'return') {
     return { id: 'identity', events: opening.events.map((event) => ({ ...event })) };
   }

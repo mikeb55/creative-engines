@@ -55,7 +55,12 @@ describe('Solo Piano V1.1 editor', () => {
     fireEvent.click(screen.getByTestId('solo-piano-generate'));
     await waitFor(() => expect(composePiano).toHaveBeenCalledTimes(1));
     expect(composePiano.mock.calls[0][0]).toEqual(canonicalDemonstrationRequest());
+    expect((screen.getByTestId('solo-piano-v11-stage-d') as HTMLSelectElement).value).toBe('off');
     expect((await screen.findByTestId('solo-piano-result')).textContent).toContain('223 sounding attacks');
+    fireEvent.change(screen.getByTestId('solo-piano-v11-stage-d'), { target: { value: 'on' } });
+    fireEvent.click(screen.getByTestId('solo-piano-generate'));
+    await waitFor(() => expect(composePiano).toHaveBeenCalledTimes(2));
+    expect((composePiano.mock.calls[1][0] as { pianoV11: { musicalRefinement?: boolean } }).pianoV11.musicalRefinement).toBe(true);
     fireEvent.change(screen.getByTestId('solo-piano-seed'), { target: { value: '76019' } });
     expect(screen.queryByTestId('solo-piano-result')).toBeNull();
     expect(screen.getByTestId('solo-piano-stale').textContent).toMatch(/Stale Generate result discarded/);

@@ -128,6 +128,7 @@ import { runBartokB1NativeAksakTests } from './bartokB1NativeAksak.test';
 import { runPianoV11StageATests } from './pianoV11StageA.test';
 import { runPianoV11StageBTests } from './pianoV11StageB.test';
 import { runPianoV11StageCTests } from './pianoV11StageC.test';
+import { runPianoV11StageDTests } from './pianoV11StageD.test';
 import { runSqSwingRhythmTests } from './sqSwingRhythm.test';
 import { runPorterGershwinDistinctionTests } from './porterGershwinDistinction.test';
 import { runSqAntimetricRhythmTests } from './sqAntimetricRhythm.test';
@@ -366,6 +367,7 @@ const smokeSuites: { label: string; run: () => Row[] }[] = [
   { label: 'Piano V1.1 Stage A exact timing', run: runPianoV11StageATests },
   { label: 'Piano V1.1 Stage B phrase and polychords', run: runPianoV11StageBTests },
   { label: 'Piano V1.1 Stage C public windows', run: runPianoV11StageCTests },
+  { label: 'Piano V1.1 Stage D musical refinement', run: runPianoV11StageDTests },
 ];
 
 function toRows(results: { name: string; ok: boolean }[] | { ok: boolean; name: string }[]): Row[] {

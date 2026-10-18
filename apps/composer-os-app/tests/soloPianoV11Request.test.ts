@@ -88,6 +88,27 @@ describe('Piano V1.1 GUI request', () => {
     const windows = (built.body.pianoV11 as { rhythmicWindows: unknown[] }).rhythmicWindows;
     expect(windows).toHaveLength(8);
     expect((built.body.harmony as string[])[20]).toBe('Fmaj7');
+    expect(built.body.pianoV11).not.toHaveProperty('musicalRefinement');
+    expect(form.musicalRefinement).toBe('off');
+  });
+
+  it('saves and reloads Stage D without changing the demonstration preset', () => {
+    const form = applyFullV11Demonstration(baseForm());
+    expect(form.musicalRefinement).toBe('off');
+    const saved = parseSoloPianoConfig(serializeSoloPianoConfig({ ...form, musicalRefinement: 'on' }));
+    expect(saved.ok).toBe(true);
+    if (!saved.ok) return;
+    expect(saved.form.musicalRefinement).toBe('on');
+    const built = buildSoloPianoComposeBody(saved.form);
+    expect(built.ok).toBe(true);
+    if (!built.ok) return;
+    expect((built.body.pianoV11 as { musicalRefinement?: boolean }).musicalRefinement).toBe(true);
+    const file = JSON.parse(serializeSoloPianoConfig(form)) as { form: { musicalRefinement?: string } };
+    delete file.form.musicalRefinement;
+    const legacy = parseSoloPianoConfig(JSON.stringify(file));
+    expect(legacy.ok).toBe(true);
+    if (!legacy.ok) return;
+    expect(legacy.form.musicalRefinement).toBe('off');
   });
 
   it('names the invalid field', () => {

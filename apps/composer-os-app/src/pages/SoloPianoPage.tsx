@@ -160,6 +160,7 @@ export function SoloPianoPage() {
     setAdvanced(next.advanced);
     setV11({
       phraseDevelopment: next.phraseDevelopment,
+      musicalRefinement: next.musicalRefinement,
       polychordMode: next.polychordMode,
       upperRoot: next.upperRoot,
       upperQuality: next.upperQuality,

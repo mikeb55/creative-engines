@@ -81,6 +81,12 @@ export interface PianoCompositionPlan {
       climaxRhMax: number;
     };
     polychords?: { bar: number; display: string; sourceSymbol?: string; upper: number[]; lower: number[] }[];
+    stageD?: {
+      enabled: true;
+      written: { bar: number; mark: string }[];
+      rhVelocity: number[];
+      lhVelocity: number[];
+    };
     finalEvents?: {
       evidence: 'final-realised-score';
       disclaimer: string;
