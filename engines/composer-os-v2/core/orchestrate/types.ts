@@ -59,6 +59,54 @@ export interface PianoChamberCorrection {
   reviewConfirmed?: boolean;
   /** Musician asked to leave these source events out. Locked ids are refused. */
   omitEventIds?: string[];
+  /**
+   * V3.5 Phase 2. Omitted, or both controls disabled, leaves the Phase 1 arrangement.
+   * The request object itself is still echoed on the receipt, so byte identity of the
+   * score requires this field to be absent or both `enabled` flags false.
+   */
+  harmonicDevelopment?: PianoChamberHarmonicDevelopment;
+}
+
+export type HarmonicDeparture = 'mild' | 'strong';
+export type TensionPlacement = 'early' | 'mid' | 'late';
+export type ResolutionTiming = 'next-beat' | 'bar-end' | 'phrase-end';
+
+/** World B quadratonic colour on one inner line. Default off. */
+export interface BhlTensionReleaseControl {
+  enabled: boolean;
+  startBar: number;
+  endBar: number;
+  /** `countermelody`, `harmonic_support`, `inner`, or one chamber part id. */
+  target: string;
+  departure: HarmonicDeparture;
+  tensionPlacement: TensionPlacement;
+  resolutionTiming: ResolutionTiming;
+}
+
+export interface TriadParentSpec {
+  id: string;
+  quality: 'major' | 'minor';
+  notes: [string, string, string];
+  voices: [string, string, string];
+}
+
+/** Two named parents. Not a hexatonic scale. Default off. */
+export interface TriadPairDialogueControl {
+  enabled: boolean;
+  parentA: TriadParentSpec;
+  parentB: TriadParentSpec;
+  startBar: number;
+  endBar: number;
+  groups: [string[], string[]];
+  relation: 'alternation' | 'interlocking';
+  registerMin: number;
+  registerMax: number;
+  maxAttacks: number;
+}
+
+export interface PianoChamberHarmonicDevelopment {
+  bhl?: BhlTensionReleaseControl;
+  triadPair?: TriadPairDialogueControl;
 }
 
 export interface PianoChamberCommand {

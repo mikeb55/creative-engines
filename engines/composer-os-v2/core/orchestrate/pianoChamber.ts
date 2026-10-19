@@ -30,6 +30,7 @@ import { buildE2Score, quarterLength, type E2Assignment, type E2PartSpec } from 
 import type { E2RealisedPlacement } from './harmonicRealisation';
 import type { SpelledRegister } from './harmonicColourTypes';
 import type { EventLineage } from './sourceFoundation';
+import { applyPianoChamberHarmonic, type ScheduledHarmonicNote } from './pianoChamberHarmonic';
 import type {
   OrchestrateReceipt,
   OrchestrateRequest,
@@ -115,6 +116,18 @@ export interface PianoChamberFidelity {
   musicalQualityScore: null;
   musicallyApproved: false;
   listeningQuestions: string[];
+  /** Present only when a Phase 2 control wrote notes. */
+  harmonicDevelopment?: {
+    protectedEventIds: string[];
+    notes: Array<{
+      control: 'bhl' | 'triad-pair';
+      partId: string;
+      onset: number;
+      duration: number;
+      midi: number;
+      reason: string;
+    }>;
+  };
 }
 
 interface NoteRow {
@@ -527,9 +540,10 @@ function placeRow(
   origin: 'source' | 'derived',
   disposition: Placed['disposition'],
   op?: string,
+  writtenPitch?: SpelledRegister,
 ): void {
-  const midi = row.midi + shift;
-  const pitch = spellShift(row.event, midi, shift);
+  const midi = writtenPitch?.midi ?? row.midi + shift;
+  const pitch = writtenPitch ?? spellShift(row.event, midi, shift);
   const pieces = splitBars(row.onset, row.duration, barLen);
   pieces.forEach((piece, pieceIndex) => {
     const written = decompose(piece.duration);
@@ -942,6 +956,69 @@ export function realisePianoChamber(request: OrchestrateRequest):
     }
   }
 
+  const harmonicControl = correction.harmonicDevelopment;
+  const harmonicOn = harmonicControl?.bhl?.enabled === true || harmonicControl?.triadPair?.enabled === true;
+  let harmonicNotes: ScheduledHarmonicNote[] = [];
+  if (harmonicOn && harmonicControl) {
+    const bassCarrier = placed.find((note) => bassRows.some((row) => note.sourceIds.includes(row.event.id) && note.origin === 'source'))?.partId ?? null;
+    const harmonic = applyPianoChamberHarmonic({
+      seed: request.seed,
+      beats: validated.beats,
+      beatType: validated.beatType,
+      barQuarters: num(validated.barLen),
+      phrases: phrases.map((phrase) => ({ id: phrase.id, startBar: phrase.startBar, endBar: phrase.endBar })),
+      rows: rows.filter((row) => !omitted.has(row.event.id)).map((row) => ({
+        id: row.event.id,
+        bar: row.event.bar,
+        onset: num(row.onset),
+        duration: num(row.duration),
+        midi: row.midi,
+        role: row.role,
+      })),
+      busy,
+      foregroundByPhrase,
+      bassPartId: bassCarrier,
+      parts: resolved.parts,
+      control: harmonicControl,
+    });
+    if (!harmonic.ok) return fail(harmonic.error);
+    harmonicNotes = harmonic.notes;
+    for (const note of harmonicNotes) {
+      const part = resolved.parts.find((item) => item.partId === note.partId);
+      if (!part) return fail(`Harmonic line named an unknown part ${note.partId}.`);
+      const bar = Math.floor(num(note.onset) / num(validated.barLen) + 1e-9) + 1;
+      const fake: NoteRow = {
+        record: rows[0]!.record,
+        event: {
+          ...rows[0]!.event,
+          id: note.syntheticId,
+          written: null,
+          rest: false,
+          tieStart: false,
+          tieStop: false,
+          soundingMidi: note.pitch.midi,
+        },
+        onset: note.onset,
+        duration: note.duration,
+        midi: note.pitch.midi,
+        role: 'countermelody',
+        reason: note.reason,
+        confidence: 'medium',
+      };
+      try {
+        placeRow(placed, busy, fake, part, 0, validated.barLen, phraseOf(phrases, bar).id, 'derived', 'transformed', note.control, note.pitch);
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : 'The harmonic line overlapped a voice that was already placed.');
+      }
+      derivedEvents.push({
+        partId: note.partId,
+        lineageId: note.syntheticId,
+        ops: [note.control],
+        events: [{ sounding: note.pitch.midi, duration: num(note.duration), onset: num(note.onset) }],
+      });
+    }
+  }
+
   for (const id of locked) {
     const row = classification.get(id);
     if (!row || row.disposition === 'omitted' || row.disposition === 'transformed') {
@@ -1156,7 +1233,24 @@ export function realisePianoChamber(request: OrchestrateRequest):
       'Does the inferred melody still read as the theme after the instrument handover?',
       'Do the added answers sound necessary, or would the bar be clearer as silence?',
       'Does the ending release, or does an inner part keep the harmony spinning?',
+      ...(harmonicNotes.length ? [
+        'Does the new inner line change the harmony, or does it only double a note that was already there?',
+        'Can both triad parents still be recognised where a dialogue was asked for?',
+      ] : []),
     ],
+    ...(harmonicNotes.length ? {
+      harmonicDevelopment: {
+        protectedEventIds: [...locked],
+        notes: harmonicNotes.map((note) => ({
+          control: note.control,
+          partId: note.partId,
+          onset: num(note.onset),
+          duration: num(note.duration),
+          midi: note.pitch.midi,
+          reason: note.reason,
+        })),
+      },
+    } : {}),
   };
   const receipt: OrchestrateReceipt = {
     version: 'orchestrate-1',
@@ -1189,7 +1283,14 @@ export function realisePianoChamber(request: OrchestrateRequest):
       influenced: true,
       pitchClasses: [...new Set(rows.map((row) => pcOf(row.midi)))],
       detail: `Family ${family.family}. Density entries ${densityPlan.entries.length}. Texture entries ${texturePlan.entries.length}. Coherence patterns ${coherence.discovered.length}. Motif discovery on the piano is descriptive only.`,
-    }],
+    }, ...(harmonicNotes.some((note) => note.control === 'bhl') ? [{
+      source: 'bhl_world' as const,
+      param: 'B',
+      invoked: true,
+      influenced: true,
+      pitchClasses: [...new Set(harmonicNotes.filter((note) => note.control === 'bhl').map((note) => pcOf(note.pitch.midi)))],
+      detail: 'World B through buildBhlWorldField and planLiquidHarmony. The inner line is scheduled here. Locked melody, bass, and arrivals stay.',
+    }] : [])],
     planners: {
       family: 'chamber_orchestra',
       density: phrases.map((phrase) => ({ bar: phrase.startBar, requested: colourPlan.find((section) => section.section === phrase.id)?.density ?? 'medium', planner: getDensityForBar(densityCurve, phrase.startBar) })),
