@@ -46,6 +46,7 @@ import {
   resolveSymphonicSettings,
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
+import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt } from './symphonicDistribution';
 import type {
   OrchestrateReceipt,
   OrchestrateRequest,
@@ -139,6 +140,8 @@ export interface PianoChamberFidelity {
     timpaniTuning: number[];
     harpPedal: string;
     conventions: string[];
+    /** Present only for allocation phase-2. Phase 1 receipts omit it. */
+    distribution?: Phase2DistributionReceipt;
   };
   /** Present only when a Phase 2 control wrote notes. */
   harmonicDevelopment?: {
@@ -937,7 +940,13 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const openingCarrierRef: { id: string | null } = { id: null };
   const melodyRows = rows.filter((row) => row.role === 'melody' && !omitted.has(row.event.id));
   const highestMidi = melodyRows.reduce((best, row) => Math.max(best, row.midi), 0);
-  const phrasePlans = symphonic && symphonicSettings ? planSymphonicPhrases(
+  const phase2 = !!(symphonic && symphonicSettings && symphonicSettings.allocation === 'phase-2');
+  let phase2Distribution: Phase2DistributionReceipt | null = null;
+  let phase2Handovers: Record<string, boolean> = {};
+  const derivedEvents: OrchestrateReceipt['derivedLines'] = [];
+  const timpaniTuning: number[] = [];
+  let harpPedal = '';
+  let phrasePlans = symphonic && symphonicSettings && !phase2 ? planSymphonicPhrases(
     phrases,
     (id) => {
       const phrase = phrases.find((item) => item.id === id);
@@ -953,6 +962,138 @@ export function realisePianoChamber(request: OrchestrateRequest):
   ) : null;
   const planFor = (id: string): SymphonicPhrasePlan | null => phrasePlans?.find((plan) => plan.phraseId === id) ?? null;
 
+  if (phase2 && symphonicSettings) {
+    const barStart = (bar: number): number => metre.uniform
+      ? (bar - 1) * num(metre.barLen)
+      : num(metre.spans[bar - 1]!.start);
+    const barEnd = (bar: number): number => metre.uniform
+      ? bar * num(metre.barLen)
+      : num(qAdd(metre.spans[bar - 1]!.start, metre.spans[bar - 1]!.length));
+    const planned = planSymphonicDistribution({
+      notes: rows.filter((row) => !omitted.has(row.event.id)).map((row) => ({
+        id: row.event.id,
+        bar: row.event.bar,
+        onset: num(row.onset),
+        duration: num(row.duration),
+        midi: row.midi,
+        role: row.role,
+        locked: locked.has(row.event.id),
+        tieStart: row.event.tieStart,
+        tieStop: row.event.tieStop,
+      })),
+      phrases: phrases.map((phrase, index) => ({
+        id: phrase.id,
+        index,
+        startBar: phrase.startBar,
+        endBar: phrase.endBar,
+        kind: phrase.kind,
+        ...phraseBounds(phrase),
+      })),
+      parts: resolved.parts.map((part) => ({
+        partId: part.partId,
+        range: part.spec.soundingHardRange,
+        transposition: part.spec.transposition,
+      })),
+      settings: symphonicSettings,
+      mode,
+      seed: request.seed,
+      silentBars,
+      barStart,
+      barEnd,
+    });
+    if (!planned.ok) return fail(planned.error);
+    const audit = auditPhase2Distribution({
+      events: planned.plan.distribution.events,
+      silentBars,
+      silentSpans: [...silentBars].map((bar) => ({ start: barStart(bar), end: barEnd(bar) })),
+      barOf: (onset) => barOfOnset(q(Math.round(onset * 480), 480)),
+      locked: rows.filter((row) => locked.has(row.event.id)).map((row) => ({
+        id: row.event.id,
+        midi: row.midi,
+        onset: num(row.onset),
+        duration: num(row.duration),
+      })),
+      settings: symphonicSettings,
+      mode,
+    });
+    if (!audit.ok) return fail(audit.failures[0] ?? 'Phase 2 distribution failed its source checks.');
+    for (const item of planned.plan.placements) {
+      const part = resolved.parts.find((candidate) => candidate.partId === item.partId);
+      if (!part) return fail(`Phase 2 named an unknown part ${item.partId}.`);
+      const source = rows.find((row) => row.event.id === item.eventId);
+      const row = item.kind === 'source' && source
+        ? source
+        : {
+          record: rows[0]!.record,
+          event: {
+            ...rows[0]!.event,
+            id: item.eventId,
+            written: null,
+            rest: false,
+            tieStart: false,
+            tieStop: false,
+            soundingMidi: item.midi,
+          },
+          onset: q(Math.round(item.onset * 480), 480),
+          duration: q(Math.round(item.duration * 480), 480),
+          midi: item.midi,
+          role: 'countermelody' as const,
+          reason: item.reason,
+          confidence: 'medium' as const,
+        };
+      try {
+        placeRow(
+          placed,
+          busy,
+          row,
+          part,
+          item.kind === 'source' && source ? item.shift : 0,
+          metre.barLen,
+          item.phraseId,
+          item.kind === 'derived' || item.role === 'melodic-reinforcement' || item.lineage.includes(':') ? 'derived' : 'source',
+          item.transformation === 'preserved-source' ? 'retained' : item.transformation === 'octave-transfer' ? 'octave-transferred' : 'transformed',
+          item.op,
+          undefined,
+          variableSpans,
+          item.voice,
+        );
+      } catch (error) {
+        if (item.classifies && locked.has(item.eventId)) {
+          return fail(error instanceof Error ? error.message : `Locked event ${item.eventId} could not be placed.`);
+        }
+        planned.plan.omissions.push({ eventId: item.eventId, reason: 'The placement overlapped a voice that was already used.' });
+        continue;
+      }
+      if (item.classifies && source) {
+        classification.set(source.event.id, {
+          eventId: source.event.id,
+          disposition: item.shift === 0 ? 'retained' : 'octave-transferred',
+          partId: item.partId,
+          octaveShift: item.shift,
+          reason: item.reason,
+        });
+      }
+    }
+    for (const [id, partId] of Object.entries(planned.plan.foreground)) foregroundByPhrase.set(id, partId);
+    answers.push(...planned.plan.answers);
+    derivedEvents.push(...planned.plan.derivedLines);
+    silence.push(...planned.plan.silence);
+    omissions.push(...planned.plan.omissions);
+    warnings.push(...planned.plan.warnings);
+    for (const item of planned.plan.omissions) {
+      if (!item.eventId || !classification.has(item.eventId)) continue;
+      const current = classification.get(item.eventId)!;
+      if (current.disposition === 'omitted') current.reason = item.reason;
+    }
+    phrasePlans = planned.plan.plans;
+    phase2Distribution = planned.plan.distribution;
+    phase2Handovers = planned.plan.handovers;
+    timpaniTuning.push(...planned.plan.timpaniTuning);
+    harpPedal = planned.plan.harpPedal;
+  }
+
+  const bassRows = rows.filter((row) => row.role === 'bass' && !omitted.has(row.event.id));
+  if (!phase2) {
   for (const phrase of phrases) {
     const line = melodyRows.filter((row) => row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar);
     if (!line.length) {
@@ -987,7 +1128,6 @@ export function realisePianoChamber(request: OrchestrateRequest):
     previousCarrier = fallback.part.partId;
   }
 
-  const bassRows = rows.filter((row) => row.role === 'bass' && !omitted.has(row.event.id));
   if (bassRows.length) {
     const spans = bassRows.flatMap((row) => sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
     const choice = tryCarrier(resolved.parts, phrasePlans?.[0]?.bassIds ?? ['db', 'vc', 'bn'], bassRows.map((row) => row.midi), busy, spans, null);
@@ -1086,7 +1226,6 @@ export function realisePianoChamber(request: OrchestrateRequest):
     }
   }
 
-  const derivedEvents: OrchestrateReceipt['derivedLines'] = [];
   for (const [phraseIndex, phrase] of phrases.entries()) {
     const answerPlan = planFor(phrase.id);
     if (answerPlan && answerPlan.counterline === 'silence') continue;
@@ -1178,10 +1317,9 @@ export function realisePianoChamber(request: OrchestrateRequest):
       derivedEvents.push({ partId: accepted.partId, lineageId: `${phrase.id}.${accepted.op}`, ops: [accepted.op], events: derivedNotes });
     }
   }
+  }
 
-  const timpaniTuning: number[] = [];
-  let harpPedal = '';
-  if (symphonic && phrasePlans && symphonicSettings) {
+  if (!phase2 && symphonic && phrasePlans && symphonicSettings) {
     for (const row of bassRows) {
       const folded = foldIntoRange(row.midi, TIMPANI_RANGE);
       if (folded === null || timpaniTuning.includes(folded)) continue;
@@ -1560,7 +1698,9 @@ export function realisePianoChamber(request: OrchestrateRequest):
       register: registerPlan.entries.find((entry) => entry.sectionIndex === index && entry.partId === foregroundByPhrase.get(phrase.id))?.registerBand ?? 'middle',
       density: getDensityForBar(densityCurve, phrase.startBar),
       dynamic: dynamicFor(phrase.kind, false, phrase.endBar === 24) ?? 'mf',
-      handover: index > 0 && foregroundByPhrase.get(phrase.id) !== foregroundByPhrase.get(phrases[index - 1]!.id),
+      handover: phase2
+        ? phase2Handovers[phrase.id] === true || (index > 0 && foregroundByPhrase.get(phrase.id) !== foregroundByPhrase.get(phrases[index - 1]!.id))
+        : index > 0 && foregroundByPhrase.get(phrase.id) !== foregroundByPhrase.get(phrases[index - 1]!.id),
       ending: phrase.endBar === 24,
     })),
     classifications: [...classification.values()],
@@ -1590,12 +1730,17 @@ export function realisePianoChamber(request: OrchestrateRequest):
           'Contrabassoon sounds one octave below the written pitch.',
           'Percussion is one player: bass drum GM 36 and suspended cymbal GM 57.',
         ],
+        ...(phase2Distribution ? { distribution: phase2Distribution } : {}),
       },
     } : {}),
     listeningQuestions: [
       'Does the inferred melody still read as the theme after the instrument handover?',
       'Do the added answers sound necessary, or would the bar be clearer as silence?',
       'Does the ending release, or does an inner part keep the harmony spinning?',
+      ...(phase2Distribution ? [
+        'Where the melody changes instrument, does the phrase still read as one line?',
+        'Do Violin II, viola, or cello sound like they have a job, or only a copy?',
+      ] : []),
       ...(harmonicNotes.length ? [
         'Does the new inner line change the harmony, or does it only double a note that was already there?',
         'Can both triad parents still be recognised where a dialogue was asked for?',

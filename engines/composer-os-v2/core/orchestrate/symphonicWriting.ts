@@ -156,6 +156,8 @@ export interface ResolvedSymphonicSettings {
   families: Record<SymphonicFamilyId, SymphonicFamilyActivity>;
   foreground: SymphonicForegroundPreference;
   counterline: 'off' | 'when-source-allows';
+  /** Absent input stays on Phase 1. The field is not read by planSymphonicPhrases. */
+  allocation: 'phase-1' | 'phase-2';
 }
 
 export function resolveSymphonicSettings(raw: SymphonicOrchestrationSettings | undefined): ResolvedSymphonicSettings | { error: string } {
@@ -171,6 +173,10 @@ export function resolveSymphonicSettings(raw: SymphonicOrchestrationSettings | u
   if (counterline !== 'off' && counterline !== 'when-source-allows') {
     return { error: 'Symphonic counterline must be off or when-source-allows.' };
   }
+  const allocation = raw?.allocation ?? 'phase-1';
+  if (allocation !== 'phase-1' && allocation !== 'phase-2') {
+    return { error: 'Symphonic allocation must be phase-1 or phase-2.' };
+  }
   const families: Record<SymphonicFamilyId, SymphonicFamilyActivity> = {
     woodwind: 'open',
     brass: 'open',
@@ -185,7 +191,7 @@ export function resolveSymphonicSettings(raw: SymphonicOrchestrationSettings | u
     }
     families[family as SymphonicFamilyId] = value;
   }
-  return { activity, families, foreground, counterline };
+  return { activity, families, foreground, counterline, allocation };
 }
 
 export interface SymphonicPhrasePlan {

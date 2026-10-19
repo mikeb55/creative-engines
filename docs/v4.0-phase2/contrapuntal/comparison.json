@@ -1,0 +1,134 @@
+{
+  "source": "docs/v3.5-phase1/contrapuntal/source.musicxml",
+  "seed": 11,
+  "mode": "developing",
+  "settings": {
+    "allocation": "phase-2",
+    "activity": "moderate",
+    "foreground": "source-register",
+    "counterline": "when-source-allows",
+    "families": {
+      "woodwind": "open",
+      "brass": "off",
+      "strings": "open",
+      "harp": "off",
+      "percussion": "off"
+    }
+  },
+  "phase2MusicXmlSha256": "4f8db2270ab85cdd4fbb1254d469d1e457c757764e17c2e586deceb7d2067dbd",
+  "phase1MusicXmlSha256": "471a55bba7bc22132ad7bce1be8f113f356fa85b0d8916f72a5ad200c55203c4",
+  "chamberMusicXmlSha256": "423428cb95256728de09a5d9ebdb4dc9c663259b8ca7fe478b08b54a5a3e0870",
+  "midiZipSha256": "bb09c504059eb1fa6b33e2559408e22201a795e23f410df1d382f2f2c3198c95",
+  "participation": {
+    "fl1": 36,
+    "vn1": 36,
+    "va": 36,
+    "cl1": 36,
+    "vn2": 4
+  },
+  "answers": [
+    {
+      "phraseId": "p1",
+      "operator": "augment",
+      "partId": "vn2",
+      "notes": 4
+    }
+  ],
+  "phrases": [
+    {
+      "id": "p1",
+      "startBar": 1,
+      "endBar": 4,
+      "role": "statement",
+      "foreground": "fl1",
+      "answer": "vn2",
+      "answerOperator": "augment",
+      "register": "high",
+      "density": "medium",
+      "dynamic": "p",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p2",
+      "startBar": 5,
+      "endBar": 8,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p3",
+      "startBar": 9,
+      "endBar": 12,
+      "role": "development",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mf",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p4",
+      "startBar": 13,
+      "endBar": 16,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p5",
+      "startBar": 17,
+      "endBar": 20,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p6",
+      "startBar": 21,
+      "endBar": 24,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": true
+    }
+  ],
+  "warnings": [],
+  "listeningQuestions": [
+    "Does the inferred melody still read as the theme after the instrument handover?",
+    "Do the added answers sound necessary, or would the bar be clearer as silence?",
+    "Does the ending release, or does an inner part keep the harmony spinning?",
+    "Where the melody changes instrument, does the phrase still read as one line?",
+    "Do Violin II, viola, or cello sound like they have a job, or only a copy?"
+  ],
+  "renders": "MuseScore Studio 4.7.5 import wrote MSCX and PDF, then aborted on shutdown. See docs/v4.0-phase2/TECHNICAL.md.",
+  "artisticApproval": "PENDING",
+  "note": "Phase 2 is not expected to match Phase 1. Hashes are the primary A/B. Chamber is the secondary comparison."
+}

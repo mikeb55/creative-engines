@@ -50,6 +50,7 @@ interface Fidelity {
     protectedEventIds: string[];
     notes: Array<{ control: string; partId: string; onset: number; duration: number; midi: number; reason: string }>;
   };
+  symphonic?: { distribution?: { allocation: 'phase-2' } };
 }
 
 const PITCH_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -120,6 +121,7 @@ export function PianoChamberPage() {
   const [activity, setActivity] = useState<'sparse' | 'moderate' | 'full'>('moderate');
   const [foregroundPref, setForegroundPref] = useState<'source-register' | 'strings' | 'woodwind' | 'brass'>('source-register');
   const [counterline, setCounterline] = useState<'off' | 'when-source-allows'>('when-source-allows');
+  const [allocation, setAllocation] = useState<'phase-1' | 'phase-2'>('phase-1');
   const [familyActivity, setFamilyActivity] = useState<Record<string, 'off' | 'limited' | 'open'>>({
     woodwind: 'open', brass: 'open', strings: 'open', harp: 'limited', percussion: 'limited',
   });
@@ -286,7 +288,13 @@ export function PianoChamberPage() {
             ...(harmonicDevelopment ? { harmonicDevelopment } : {}),
             ...(ensemble === 'symphonic' ? {
               ensemble,
-              symphonic: { activity, families: familyActivity, foreground: foregroundPref, counterline },
+              symphonic: {
+                activity,
+                families: familyActivity,
+                foreground: foregroundPref,
+                counterline,
+                ...(allocation === 'phase-2' ? { allocation } : {}),
+              },
             } : {}),
           },
         },
@@ -362,6 +370,13 @@ export function PianoChamberPage() {
               <summary>Symphonic limits</summary>
               <p>Family activity is a permission or a limit, not a quota. Empty parts stay in the score.</p>
               <p>Playback limit: General MIDI has no bass-clarinet or contrabassoon program. Those parts use the clarinet and bassoon programs. The sine preview is not orchestral playback.</p>
+              <label>
+                Allocation
+                <select aria-label="symphonic allocation" data-testid="piano-chamber-allocation" value={allocation} onChange={(event) => { setAllocation(event.target.value as 'phase-1' | 'phase-2'); invalidateReview(); }}>
+                  <option value="phase-1">Phase 1 allocation</option>
+                  <option value="phase-2">Phase 2 distribution</option>
+                </select>
+              </label>
               <label>
                 Activity
                 <select aria-label="symphonic activity" value={activity} onChange={(event) => { setActivity(event.target.value as 'sparse' | 'moderate' | 'full'); dropStaleArrangement(); }}>
@@ -635,7 +650,11 @@ export function PianoChamberPage() {
               </ul>
             </div>
           ) : (
-            <p data-testid="piano-chamber-harmonic-off">Harmonic development off. Phase 1 arrangement.</p>
+            <p data-testid="piano-chamber-harmonic-off">
+              {fidelity.symphonic?.distribution?.allocation === 'phase-2'
+                ? 'Harmonic development off. Phase 2 distribution.'
+                : 'Harmonic development off. Phase 1 arrangement.'}
+            </p>
           )}
           <ul>
             {fidelity.phrases.map((phrase) => (

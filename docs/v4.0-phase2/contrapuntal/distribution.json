@@ -1,0 +1,2476 @@
+{
+  "allocation": "phase-2",
+  "decisions": [
+    {
+      "phraseId": "p1",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 1,
+        "endBar": 4
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "dialogue",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p1",
+      "sourceLineage": "P1:b1:v1:e1",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 1,
+        "endBar": 4
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 6,
+      "texture": "dialogue",
+      "reason": "dialogue from register high, phrase function statement, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    },
+    {
+      "phraseId": "p2",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 5,
+        "endBar": 8
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "dialogue",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p2",
+      "sourceLineage": "P1:b5:v1:e27",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 5,
+        "endBar": 8
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 16,
+      "texture": "dialogue",
+      "reason": "dialogue from register high, phrase function return, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    },
+    {
+      "phraseId": "p3",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 9,
+        "endBar": 12
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "dialogue",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p3",
+      "sourceLineage": "P1:b9:v1:e53",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 9,
+        "endBar": 12
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 32,
+      "texture": "dialogue",
+      "reason": "dialogue from register high, phrase function development, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    },
+    {
+      "phraseId": "p4",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 13,
+        "endBar": 16
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "dialogue",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p4",
+      "sourceLineage": "P1:b13:v1:e79",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 13,
+        "endBar": 16
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 48,
+      "texture": "dialogue",
+      "reason": "dialogue from register high, phrase function return, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    },
+    {
+      "phraseId": "p5",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 17,
+        "endBar": 20
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "dialogue",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p5",
+      "sourceLineage": "P1:b17:v1:e105",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 17,
+        "endBar": 20
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 64,
+      "texture": "dialogue",
+      "reason": "dialogue from register high, phrase function return, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    },
+    {
+      "phraseId": "p6",
+      "sourceLineage": "family-gate",
+      "role": "silence",
+      "instrument": "brass",
+      "span": {
+        "startBar": 21,
+        "endBar": 24
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": null,
+      "texture": "sparse-return",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "phraseId": "p6",
+      "sourceLineage": "P1:b21:v1:e131",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "span": {
+        "startBar": 21,
+        "endBar": 24
+      },
+      "register": "high",
+      "activity": "dialogue",
+      "handoverAt": 80,
+      "texture": "sparse-return",
+      "reason": "sparse-return from register high, phrase function return, and rhythmic activity dialogue. Handover follows wind duration, not a bar grid."
+    }
+  ],
+  "events": [
+    {
+      "lineage": "P1:b1:v1:e1",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 0,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e2",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 1,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e3",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 2,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e4",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 3,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e9",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 4,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e10",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 5,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e11",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 6,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e12",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 7,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e17",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 8,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e18",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 9,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e19",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 10,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e20",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 11,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e5",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 0,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e6",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 1,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e7",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 2,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b1:v1:e8",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 3,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 4,
+        "midi": 65
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e13",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 4,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e14",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 5,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e15",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 6,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b2:v1:e16",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 7,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e21",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 8,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e22",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 9,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e23",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 10,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b3:v1:e24",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 11,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 1,
+        "octave": 4,
+        "midi": 61
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "p1.augment",
+      "role": "independent-answer",
+      "instrument": "vn2",
+      "onset": 0.5,
+      "duration": 2,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "augment"
+    },
+    {
+      "lineage": "p1.augment",
+      "role": "independent-answer",
+      "instrument": "vn2",
+      "onset": 2.5,
+      "duration": 2,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "augment"
+    },
+    {
+      "lineage": "p1.augment",
+      "role": "independent-answer",
+      "instrument": "vn2",
+      "onset": 4.5,
+      "duration": 2,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "augment"
+    },
+    {
+      "lineage": "p1.augment",
+      "role": "independent-answer",
+      "instrument": "vn2",
+      "onset": 6.5,
+      "duration": 2,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "augment"
+    },
+    {
+      "lineage": "P1:b5:v1:e27",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 16,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e28",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 17,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e29",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 18,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e30",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 19,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e35",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 20,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e36",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 21,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e37",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 22,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e38",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 23,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e43",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 24,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e44",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 25,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e45",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 26,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e46",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 27,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e31",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 16,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e32",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 17,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e33",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 18,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b5:v1:e34",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 19,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e39",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 20,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e40",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 21,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e41",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 22,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b6:v1:e42",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 23,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e47",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 24,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e48",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 25,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e49",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 26,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b7:v1:e50",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 27,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 4,
+        "midi": 69
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e53",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 32,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e54",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 33,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 5,
+        "midi": 81
+      },
+      "sounding": 81,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e55",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 34,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e56",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 35,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 5,
+        "midi": 77
+      },
+      "sounding": 77,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e61",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 36,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e62",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 37,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 5,
+        "midi": 81
+      },
+      "sounding": 81,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e63",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 38,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e64",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 39,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 5,
+        "midi": 77
+      },
+      "sounding": 77,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e69",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 40,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e70",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 41,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 5,
+        "midi": 81
+      },
+      "sounding": 81,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e71",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 42,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 5,
+        "midi": 79
+      },
+      "sounding": 79,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e72",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 43,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 5,
+        "midi": 77
+      },
+      "sounding": 77,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e57",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 32,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e58",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 33,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e59",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 34,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b9:v1:e60",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 35,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 4,
+        "midi": 65
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e65",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 36,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e66",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 37,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e67",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 38,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b10:v1:e68",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 39,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e73",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 40,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e74",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 41,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e75",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 42,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b11:v1:e76",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 43,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 1,
+        "octave": 4,
+        "midi": 61
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e79",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 48,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e80",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 49,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e81",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 50,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e82",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 51,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e87",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 52,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e88",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 53,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e89",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 54,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e90",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 55,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e95",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 56,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e96",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 57,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e97",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 58,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e98",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 59,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e83",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 48,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e84",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 49,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e85",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 50,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b13:v1:e86",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 51,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e91",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 52,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e92",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 53,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e93",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 54,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b14:v1:e94",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 55,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e99",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 56,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e100",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 57,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e101",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 58,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b15:v1:e102",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 59,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 4,
+        "midi": 69
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e105",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 64,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e106",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 65,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e107",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 66,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e108",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 67,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e113",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 68,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e114",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 69,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e115",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 70,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e116",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 71,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e121",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 72,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e122",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 73,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e123",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 74,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e124",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 75,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e109",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 64,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e110",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 65,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e111",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 66,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b17:v1:e112",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 67,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 0,
+        "octave": 4,
+        "midi": 65
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e117",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 68,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e118",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 69,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e119",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 70,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b18:v1:e120",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 71,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e125",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 72,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e126",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 73,
+      "duration": 1,
+      "written": {
+        "step": "G",
+        "alter": 0,
+        "octave": 4,
+        "midi": 67
+      },
+      "sounding": 65,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e127",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 74,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 4,
+        "midi": 64
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b19:v1:e128",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 75,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 1,
+        "octave": 4,
+        "midi": 61
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e131",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 80,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e132",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 81,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e133",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 82,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e134",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 83,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e139",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 84,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e140",
+      "role": "primary-melody",
+      "instrument": "fl1",
+      "onset": 85,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e141",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 86,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e142",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 87,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e147",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 88,
+      "duration": 1,
+      "written": {
+        "step": "E",
+        "alter": 0,
+        "octave": 5,
+        "midi": 76
+      },
+      "sounding": 76,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e148",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 89,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e149",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 90,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 5,
+        "midi": 72
+      },
+      "sounding": 72,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e150",
+      "role": "primary-melody",
+      "instrument": "vn1",
+      "onset": 91,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 5,
+        "midi": 74
+      },
+      "sounding": 74,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e135",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 80,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 62,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e136",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 81,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e137",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 82,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b21:v1:e138",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 83,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e143",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 84,
+      "duration": 1,
+      "written": {
+        "step": "B",
+        "alter": 0,
+        "octave": 3,
+        "midi": 59
+      },
+      "sounding": 59,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e144",
+      "role": "countermelody",
+      "instrument": "va",
+      "onset": 85,
+      "duration": 1,
+      "written": {
+        "step": "C",
+        "alter": 0,
+        "octave": 4,
+        "midi": 60
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e145",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 86,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b22:v1:e146",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 87,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e151",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 88,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e152",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 89,
+      "duration": 1,
+      "written": {
+        "step": "D",
+        "alter": 0,
+        "octave": 4,
+        "midi": 62
+      },
+      "sounding": 60,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e153",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 90,
+      "duration": 1,
+      "written": {
+        "step": "F",
+        "alter": 1,
+        "octave": 4,
+        "midi": 66
+      },
+      "sounding": 64,
+      "transformation": "preserved-source"
+    },
+    {
+      "lineage": "P1:b23:v1:e154",
+      "role": "countermelody",
+      "instrument": "cl1",
+      "onset": 91,
+      "duration": 1,
+      "written": {
+        "step": "A",
+        "alter": 0,
+        "octave": 4,
+        "midi": 69
+      },
+      "sounding": 67,
+      "transformation": "preserved-source"
+    }
+  ],
+  "silence": [
+    {
+      "bar": 4,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 8,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 12,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 16,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 20,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 24,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    },
+    {
+      "instrument": "brass",
+      "role": "silence",
+      "reason": "Brass family is off. No brass notes were written."
+    }
+  ],
+  "rejected": [
+    {
+      "phraseId": "p1",
+      "candidate": "displace",
+      "reason": "No placement kept the answer inside the phrase, out of protected silence, and off an exact doubling."
+    },
+    {
+      "phraseId": "p1",
+      "candidate": "fragment-head",
+      "reason": "No placement kept the answer inside the phrase, out of protected silence, and off an exact doubling."
+    }
+  ],
+  "endurance": []
+}

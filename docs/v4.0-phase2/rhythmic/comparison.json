@@ -1,0 +1,91 @@
+{
+  "source": "docs/v3.5-phase1/rhythmic/source.musicxml",
+  "seed": 11,
+  "mode": "developing",
+  "settings": {
+    "allocation": "phase-2",
+    "activity": "moderate",
+    "foreground": "source-register",
+    "counterline": "when-source-allows",
+    "families": {
+      "woodwind": "open",
+      "brass": "open",
+      "strings": "open",
+      "harp": "limited",
+      "percussion": "open"
+    }
+  },
+  "phase2MusicXmlSha256": "5bf5e7c383043ace4bffd9be541a1f98545cd456b200c023283941feccf23ffb",
+  "phase1MusicXmlSha256": "c5759e4b2febc9728940edfc387aaee1dab2a22b96586531a7a456f51674273e",
+  "chamberMusicXmlSha256": "c0f8e127d01a165798f12ccfeda170d3ef20e69bb268fe29d22ab4b931216fc4",
+  "midiZipSha256": "d2448beb19933d738bf39ffc775fa61169bc6dee76da0e62eea19c6ad053ca8c",
+  "participation": {
+    "cl1": 72,
+    "vn2": 56,
+    "db": 17,
+    "vn1": 36,
+    "fl1": 28,
+    "vc": 7,
+    "tp1": 4,
+    "hn1": 3,
+    "tba": 1,
+    "timp": 1,
+    "perc": 2
+  },
+  "answers": [],
+  "phrases": [
+    {
+      "id": "p1",
+      "startBar": 1,
+      "endBar": 8,
+      "role": "statement",
+      "foreground": "cl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "low",
+      "density": "medium",
+      "dynamic": "p",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p2",
+      "startBar": 9,
+      "endBar": 16,
+      "role": "development",
+      "foreground": "vn1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mf",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p3",
+      "startBar": 17,
+      "endBar": 24,
+      "role": "return",
+      "foreground": "cl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "low",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": true
+    }
+  ],
+  "warnings": [],
+  "listeningQuestions": [
+    "Does the inferred melody still read as the theme after the instrument handover?",
+    "Do the added answers sound necessary, or would the bar be clearer as silence?",
+    "Does the ending release, or does an inner part keep the harmony spinning?",
+    "Where the melody changes instrument, does the phrase still read as one line?",
+    "Do Violin II, viola, or cello sound like they have a job, or only a copy?"
+  ],
+  "renders": "MuseScore Studio 4.7.5 import wrote MSCX and PDF, then aborted on shutdown. See docs/v4.0-phase2/TECHNICAL.md.",
+  "artisticApproval": "PENDING",
+  "note": "Phase 2 is not expected to match Phase 1. Hashes are the primary A/B. Chamber is the secondary comparison."
+}

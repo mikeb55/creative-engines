@@ -1,0 +1,271 @@
+{
+  "label": "Synchronized MIDI set. Not one full-orchestra MIDI file.",
+  "ppq": 480,
+  "tickOrigin": 0,
+  "files": [
+    "symphony-woodwinds.mid",
+    "symphony-brass.mid",
+    "symphony-strings.mid",
+    "symphony-harp-timpani-percussion.mid"
+  ],
+  "routes": [
+    {
+      "partId": "picc",
+      "name": "Piccolo",
+      "file": "symphony-woodwinds.mid",
+      "track": 1,
+      "channel": 1,
+      "program": 72
+    },
+    {
+      "partId": "fl1",
+      "name": "Flute 1",
+      "file": "symphony-woodwinds.mid",
+      "track": 2,
+      "channel": 2,
+      "program": 73
+    },
+    {
+      "partId": "fl2",
+      "name": "Flute 2",
+      "file": "symphony-woodwinds.mid",
+      "track": 3,
+      "channel": 3,
+      "program": 73
+    },
+    {
+      "partId": "ob1",
+      "name": "Oboe 1",
+      "file": "symphony-woodwinds.mid",
+      "track": 4,
+      "channel": 4,
+      "program": 68
+    },
+    {
+      "partId": "ob2",
+      "name": "Oboe 2",
+      "file": "symphony-woodwinds.mid",
+      "track": 5,
+      "channel": 5,
+      "program": 68
+    },
+    {
+      "partId": "ca",
+      "name": "Cor anglais",
+      "file": "symphony-woodwinds.mid",
+      "track": 6,
+      "channel": 6,
+      "program": 69
+    },
+    {
+      "partId": "cl1",
+      "name": "Clarinet 1 in B-flat",
+      "file": "symphony-woodwinds.mid",
+      "track": 7,
+      "channel": 7,
+      "program": 71
+    },
+    {
+      "partId": "cl2",
+      "name": "Clarinet 2 in B-flat",
+      "file": "symphony-woodwinds.mid",
+      "track": 8,
+      "channel": 8,
+      "program": 71
+    },
+    {
+      "partId": "bcl",
+      "name": "Bass Clarinet in B-flat",
+      "file": "symphony-woodwinds.mid",
+      "track": 9,
+      "channel": 9,
+      "program": 71
+    },
+    {
+      "partId": "bn1",
+      "name": "Bassoon 1",
+      "file": "symphony-woodwinds.mid",
+      "track": 10,
+      "channel": 11,
+      "program": 70
+    },
+    {
+      "partId": "bn2",
+      "name": "Bassoon 2",
+      "file": "symphony-woodwinds.mid",
+      "track": 11,
+      "channel": 12,
+      "program": 70
+    },
+    {
+      "partId": "cbn",
+      "name": "Contrabassoon",
+      "file": "symphony-woodwinds.mid",
+      "track": 12,
+      "channel": 13,
+      "program": 70
+    },
+    {
+      "partId": "hn1",
+      "name": "Horn 1 in F",
+      "file": "symphony-brass.mid",
+      "track": 1,
+      "channel": 1,
+      "program": 60
+    },
+    {
+      "partId": "hn2",
+      "name": "Horn 2 in F",
+      "file": "symphony-brass.mid",
+      "track": 2,
+      "channel": 2,
+      "program": 60
+    },
+    {
+      "partId": "hn3",
+      "name": "Horn 3 in F",
+      "file": "symphony-brass.mid",
+      "track": 3,
+      "channel": 3,
+      "program": 60
+    },
+    {
+      "partId": "hn4",
+      "name": "Horn 4 in F",
+      "file": "symphony-brass.mid",
+      "track": 4,
+      "channel": 4,
+      "program": 60
+    },
+    {
+      "partId": "tp1",
+      "name": "Trumpet 1 in B-flat",
+      "file": "symphony-brass.mid",
+      "track": 5,
+      "channel": 5,
+      "program": 56
+    },
+    {
+      "partId": "tp2",
+      "name": "Trumpet 2 in B-flat",
+      "file": "symphony-brass.mid",
+      "track": 6,
+      "channel": 6,
+      "program": 56
+    },
+    {
+      "partId": "tp3",
+      "name": "Trumpet 3 in B-flat",
+      "file": "symphony-brass.mid",
+      "track": 7,
+      "channel": 7,
+      "program": 56
+    },
+    {
+      "partId": "tbn1",
+      "name": "Tenor Trombone 1",
+      "file": "symphony-brass.mid",
+      "track": 8,
+      "channel": 8,
+      "program": 57
+    },
+    {
+      "partId": "tbn2",
+      "name": "Tenor Trombone 2",
+      "file": "symphony-brass.mid",
+      "track": 9,
+      "channel": 9,
+      "program": 57
+    },
+    {
+      "partId": "tbn3",
+      "name": "Tenor Trombone 3",
+      "file": "symphony-brass.mid",
+      "track": 10,
+      "channel": 11,
+      "program": 57
+    },
+    {
+      "partId": "tba",
+      "name": "Bass Tuba",
+      "file": "symphony-brass.mid",
+      "track": 11,
+      "channel": 12,
+      "program": 58
+    },
+    {
+      "partId": "vn1",
+      "name": "Violin I",
+      "file": "symphony-strings.mid",
+      "track": 1,
+      "channel": 1,
+      "program": 40
+    },
+    {
+      "partId": "vn2",
+      "name": "Violin II",
+      "file": "symphony-strings.mid",
+      "track": 2,
+      "channel": 2,
+      "program": 40
+    },
+    {
+      "partId": "va",
+      "name": "Viola",
+      "file": "symphony-strings.mid",
+      "track": 3,
+      "channel": 3,
+      "program": 41
+    },
+    {
+      "partId": "vc",
+      "name": "Cello",
+      "file": "symphony-strings.mid",
+      "track": 4,
+      "channel": 4,
+      "program": 42
+    },
+    {
+      "partId": "db",
+      "name": "Double Bass",
+      "file": "symphony-strings.mid",
+      "track": 5,
+      "channel": 5,
+      "program": 43
+    },
+    {
+      "partId": "timp",
+      "name": "Timpani",
+      "file": "symphony-harp-timpani-percussion.mid",
+      "track": 1,
+      "channel": 1,
+      "program": 47
+    },
+    {
+      "partId": "perc",
+      "name": "Orchestral percussion",
+      "file": "symphony-harp-timpani-percussion.mid",
+      "track": 2,
+      "channel": 10,
+      "program": 0,
+      "percussion": [
+        {
+          "name": "Bass drum",
+          "gmNote": 36
+        },
+        {
+          "name": "Suspended cymbal",
+          "gmNote": 57
+        }
+      ]
+    },
+    {
+      "partId": "hp",
+      "name": "Harp",
+      "file": "symphony-harp-timpani-percussion.mid",
+      "track": 3,
+      "channel": 3,
+      "program": 46
+    }
+  ]
+}

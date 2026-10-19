@@ -122,6 +122,11 @@ export interface SymphonicOrchestrationSettings {
   families?: Partial<Record<SymphonicFamilyId, SymphonicFamilyActivity>>;
   foreground?: SymphonicForegroundPreference;
   counterline?: 'off' | 'when-source-allows';
+  /**
+   * Absent or `phase-1` keeps the Phase 1 allocator, including its planning path.
+   * `phase-2` selects source-led distribution on the same roster.
+   */
+  allocation?: 'phase-1' | 'phase-2';
 }
 
 export interface PianoChamberHarmonicDevelopment {
