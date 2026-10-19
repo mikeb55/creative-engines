@@ -125,6 +125,9 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/harmony-lab') {
       return ipcInvoke<T>('composer-os-api:harmony-lab', body ?? {});
     }
+    if (path === '/piano-chamber') {
+      return ipcInvoke<T>('composer-os-api:piano-chamber', body ?? {});
+    }
     if (path === '/bhl/defaults') return ipcInvoke<T>('composer-os-api:bhl-defaults', body ?? {});
     if (path === '/bhl/inspect') return ipcInvoke<T>('composer-os-api:bhl-inspect', body ?? {});
     if (path === '/bhl/compose') return ipcInvoke<T>('composer-os-api:bhl-compose', body ?? {});
@@ -291,6 +294,47 @@ export const api = {
   getOutputDirectory: () => get<OutputDirectoryResponse>('/output-directory'),
   getDiagnostics: () => get<DiagnosticsResponse>('/diagnostics'),
   generate: (req: Record<string, unknown>) => post<Record<string, unknown>>('/generate', req),
+  pianoChamber: (req: Record<string, unknown>) =>
+    post<{
+      ok: boolean;
+      error?: string;
+      proposalOnly?: boolean;
+      proposal?: {
+        bars: number;
+        beats: number;
+        beatType: number;
+        tempoBpm: number | null;
+        tempoSource: string;
+        uncertain: string[];
+        motifNote: string;
+        events: Array<{
+          eventId: string;
+          bar: number;
+          midi: number;
+          proposedRole: 'melody' | 'bass' | 'countermelody' | 'harmonic_support' | 'rhythmic_figure' | 'unassigned';
+          confidence: 'low' | 'medium';
+          needsConfirmation: true;
+          reason: string;
+        }>;
+        phrases: Array<{ id: string; startBar: number; endBar: number; reason: string }>;
+        parts?: Array<{ partId: string; name: string }>;
+        protectedEventIds?: string[];
+      };
+      musicXml?: string;
+      midiBase64?: string;
+      fidelity?: {
+        mode: string;
+        tempoBpm: number;
+        phrases: Array<{ id: string; startBar: number; endBar: number; role: string; foreground: string; answer: string | null; answerOperator: string | null }>;
+        derivedAnswers: Array<{ phraseId: string; operator: string; partId: string; notes: number }>;
+        silence: Array<{ bar: number; reason: string }>;
+        warnings: string[];
+        listeningQuestions: string[];
+        preview: Array<{ partId: string; midi: number; onset: number; duration: number }>;
+        musicalQualityScore: null;
+        musicallyApproved: false;
+      };
+    }>('/piano-chamber', req),
   harmonyLab: (req: Record<string, unknown>) =>
     post<{
       ok: boolean;

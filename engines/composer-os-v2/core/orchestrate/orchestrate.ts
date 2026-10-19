@@ -34,6 +34,7 @@ import {
 } from '../string-quartet/quartetVoiceLeadingGuard';
 import { resolveTemplate, type ResolvedPart } from './ensembleTemplates';
 import { performE2 } from './e2Perform';
+import { proposePianoChamber, realisePianoChamber, type PianoChamberFidelity, type PianoChamberProposal } from './pianoChamber';
 import type {
   DerivedLineEvent,
   EnsembleTemplateId,
@@ -51,6 +52,8 @@ export interface OrchestrateSuccess {
   musicXml: string;
   receipt: OrchestrateReceipt;
   score: ScoreModel;
+  midiBase64?: string;
+  fidelity?: PianoChamberFidelity;
 }
 
 export interface OrchestrateFailure {
@@ -58,7 +61,13 @@ export interface OrchestrateFailure {
   error: string;
 }
 
-export type OrchestrateResult = OrchestrateSuccess | OrchestrateFailure;
+export interface OrchestrateProposal {
+  ok: true;
+  proposalOnly: true;
+  proposal: PianoChamberProposal;
+}
+
+export type OrchestrateResult = OrchestrateSuccess | OrchestrateFailure | OrchestrateProposal;
 
 interface SourceNote {
   partId: string;
@@ -520,6 +529,28 @@ function partModel(part: ResolvedPart, measures: PartModel['measures']): PartMod
 }
 
 export function orchestrate(request: OrchestrateRequest): OrchestrateResult {
+  if (request.pianoChamber) {
+    if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
+    if (request.pianoChamber.action === 'propose') {
+      const proposed = proposePianoChamber(
+        request.pianoChamber.sourceMusicXml,
+        request.pianoChamber.correction?.partIds,
+        request.pianoChamber.correction,
+      );
+      if (!proposed.ok) return proposed;
+      return { ok: true, proposalOnly: true, proposal: proposed.proposal };
+    }
+    const realised = realisePianoChamber(request);
+    if (!realised.ok) return realised;
+    return {
+      ok: true,
+      musicXml: realised.musicXml,
+      receipt: realised.receipt,
+      score: realised.score,
+      midiBase64: realised.midiBase64,
+      fidelity: realised.fidelity,
+    };
+  }
   if (request.e2) {
     const performed = performE2(request.e2);
     if (!performed.ok) return { ok: false, error: performed.reason };

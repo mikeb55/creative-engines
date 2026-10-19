@@ -1,0 +1,2110 @@
+{
+  "version": "piano-chamber-1",
+  "mode": "developing",
+  "sourceSha256": "3c3d349f0cb5765ec73f9ce9f4b7886af4663007f07df16fd6a773efa50022f5",
+  "seed": 11,
+  "tempoBpm": 72,
+  "phrases": [
+    {
+      "id": "p1",
+      "startBar": 1,
+      "endBar": 4,
+      "role": "statement",
+      "foreground": "fl",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "medium",
+      "dynamic": "p",
+      "handover": false,
+      "ending": false
+    },
+    {
+      "id": "p2",
+      "startBar": 5,
+      "endBar": 8,
+      "role": "return",
+      "foreground": "fl",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": false,
+      "ending": false
+    },
+    {
+      "id": "p3",
+      "startBar": 9,
+      "endBar": 12,
+      "role": "development",
+      "foreground": "ob",
+      "answer": "vn2",
+      "answerOperator": "displace",
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mf",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p4",
+      "startBar": 13,
+      "endBar": 16,
+      "role": "return",
+      "foreground": "fl",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p5",
+      "startBar": 17,
+      "endBar": 20,
+      "role": "return",
+      "foreground": "fl",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": false,
+      "ending": false
+    },
+    {
+      "id": "p6",
+      "startBar": 21,
+      "endBar": 24,
+      "role": "return",
+      "foreground": "fl",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": false,
+      "ending": true
+    }
+  ],
+  "classifications": [
+    {
+      "eventId": "P1:b1:v1:e1",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b1:v1:e5",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b1:v1:e2",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b1:v1:e6",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b1:v1:e3",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b1:v1:e7",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b1:v1:e4",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b1:v1:e8",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b2:v1:e9",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b2:v1:e13",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b2:v1:e10",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b2:v1:e14",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b2:v1:e11",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b2:v1:e15",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b2:v1:e12",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b2:v1:e16",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b3:v1:e17",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b3:v1:e21",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b3:v1:e18",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b3:v1:e22",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b3:v1:e19",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b3:v1:e23",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b3:v1:e20",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b3:v1:e24",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b5:v1:e27",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b5:v1:e31",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b5:v1:e28",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b5:v1:e32",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b5:v1:e29",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b5:v1:e33",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b5:v1:e30",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b5:v1:e34",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b6:v1:e35",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b6:v1:e39",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b6:v1:e36",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b6:v1:e40",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b6:v1:e37",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b6:v1:e41",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b6:v1:e38",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b6:v1:e42",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b7:v1:e43",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b7:v1:e47",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b7:v1:e44",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b7:v1:e48",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b7:v1:e45",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b7:v1:e49",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b7:v1:e46",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b7:v1:e50",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b9:v1:e53",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b9:v1:e57",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b9:v1:e54",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b9:v1:e58",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b9:v1:e55",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b9:v1:e59",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b9:v1:e56",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b9:v1:e60",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b10:v1:e61",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b10:v1:e65",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b10:v1:e62",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b10:v1:e66",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b10:v1:e63",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b10:v1:e67",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b10:v1:e64",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b10:v1:e68",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b11:v1:e69",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b11:v1:e73",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b11:v1:e70",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b11:v1:e74",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b11:v1:e71",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b11:v1:e75",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b11:v1:e72",
+      "disposition": "retained",
+      "partId": "ob",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b11:v1:e76",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b13:v1:e79",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b13:v1:e83",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b13:v1:e80",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b13:v1:e84",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b13:v1:e81",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b13:v1:e85",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b13:v1:e82",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b13:v1:e86",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b14:v1:e87",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b14:v1:e91",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b14:v1:e88",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b14:v1:e92",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b14:v1:e89",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b14:v1:e93",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b14:v1:e90",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b14:v1:e94",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b15:v1:e95",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b15:v1:e99",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b15:v1:e96",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b15:v1:e100",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b15:v1:e97",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b15:v1:e101",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b15:v1:e98",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b15:v1:e102",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b17:v1:e105",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b17:v1:e109",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b17:v1:e106",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b17:v1:e110",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b17:v1:e107",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b17:v1:e111",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b17:v1:e108",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b17:v1:e112",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b18:v1:e113",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b18:v1:e117",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b18:v1:e114",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b18:v1:e118",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b18:v1:e115",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b18:v1:e119",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b18:v1:e116",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b18:v1:e120",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b19:v1:e121",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b19:v1:e125",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b19:v1:e122",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b19:v1:e126",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b19:v1:e123",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b19:v1:e127",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b19:v1:e124",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b19:v1:e128",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b21:v1:e131",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b21:v1:e135",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b21:v1:e132",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b21:v1:e136",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b21:v1:e133",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b21:v1:e137",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b21:v1:e134",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b21:v1:e138",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b22:v1:e139",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b22:v1:e143",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b22:v1:e140",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b22:v1:e144",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b22:v1:e141",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b22:v1:e145",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b22:v1:e142",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b22:v1:e146",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b23:v1:e147",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b23:v1:e151",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b23:v1:e148",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b23:v1:e152",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b23:v1:e149",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b23:v1:e153",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    },
+    {
+      "eventId": "P1:b23:v1:e150",
+      "disposition": "retained",
+      "partId": "fl",
+      "octaveShift": 0,
+      "reason": "Foreground keeps the sounding pitch."
+    },
+    {
+      "eventId": "P1:b23:v1:e154",
+      "disposition": "retained",
+      "partId": "vc",
+      "octaveShift": 0,
+      "reason": "countermelody kept."
+    }
+  ],
+  "protectedEventIds": [
+    "P1:b1:v1:e1",
+    "P1:b1:v1:e5",
+    "P1:b1:v1:e2",
+    "P1:b1:v1:e3",
+    "P1:b1:v1:e4",
+    "P1:b2:v1:e9",
+    "P1:b2:v1:e10",
+    "P1:b2:v1:e11",
+    "P1:b2:v1:e12",
+    "P1:b3:v1:e17",
+    "P1:b3:v1:e18",
+    "P1:b3:v1:e19",
+    "P1:b3:v1:e20",
+    "P1:b5:v1:e27",
+    "P1:b5:v1:e31",
+    "P1:b5:v1:e28",
+    "P1:b5:v1:e29",
+    "P1:b5:v1:e30",
+    "P1:b6:v1:e35",
+    "P1:b6:v1:e36",
+    "P1:b6:v1:e37",
+    "P1:b6:v1:e38",
+    "P1:b7:v1:e43",
+    "P1:b7:v1:e44",
+    "P1:b7:v1:e45",
+    "P1:b7:v1:e46",
+    "P1:b9:v1:e57",
+    "P1:b13:v1:e79",
+    "P1:b13:v1:e83",
+    "P1:b13:v1:e80",
+    "P1:b13:v1:e81",
+    "P1:b13:v1:e82",
+    "P1:b14:v1:e87",
+    "P1:b14:v1:e88",
+    "P1:b14:v1:e89",
+    "P1:b14:v1:e90",
+    "P1:b15:v1:e95",
+    "P1:b15:v1:e96",
+    "P1:b15:v1:e97",
+    "P1:b15:v1:e98",
+    "P1:b17:v1:e105",
+    "P1:b17:v1:e109",
+    "P1:b17:v1:e106",
+    "P1:b17:v1:e107",
+    "P1:b17:v1:e108",
+    "P1:b18:v1:e113",
+    "P1:b18:v1:e114",
+    "P1:b18:v1:e115",
+    "P1:b18:v1:e116",
+    "P1:b19:v1:e121",
+    "P1:b19:v1:e122",
+    "P1:b19:v1:e123",
+    "P1:b19:v1:e124",
+    "P1:b21:v1:e131",
+    "P1:b21:v1:e135",
+    "P1:b21:v1:e132",
+    "P1:b21:v1:e133",
+    "P1:b21:v1:e134",
+    "P1:b22:v1:e139",
+    "P1:b22:v1:e140",
+    "P1:b22:v1:e141",
+    "P1:b22:v1:e142",
+    "P1:b23:v1:e147",
+    "P1:b23:v1:e148",
+    "P1:b23:v1:e149",
+    "P1:b23:v1:e150"
+  ],
+  "silence": [
+    {
+      "bar": 4,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 8,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 12,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 16,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 20,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    },
+    {
+      "bar": 24,
+      "reason": "Source bar has no sounding attack. The rest stays empty."
+    }
+  ],
+  "omissions": [],
+  "derivedAnswers": [
+    {
+      "phraseId": "p3",
+      "operator": "displace",
+      "partId": "vn2",
+      "notes": 4
+    }
+  ],
+  "preview": [
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 0,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 1,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 2,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 3,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 4,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 5,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 6,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 7,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 8,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 9,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 10,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 11,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 16,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 17,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 18,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 19,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 20,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 21,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 22,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 23,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 24,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 25,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 26,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 27,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 32,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 81,
+      "onset": 33,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 34,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 77,
+      "onset": 35,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 36,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 81,
+      "onset": 37,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 38,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 77,
+      "onset": 39,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 40,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 81,
+      "onset": 41,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 79,
+      "onset": 42,
+      "duration": 1
+    },
+    {
+      "partId": "ob",
+      "midi": 77,
+      "onset": 43,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 48,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 49,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 50,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 51,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 52,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 53,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 54,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 55,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 56,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 57,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 58,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 59,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 64,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 65,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 66,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 67,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 68,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 69,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 70,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 71,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 72,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 73,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 74,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 75,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 80,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 81,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 82,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 83,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 84,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 85,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 86,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 87,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 76,
+      "onset": 88,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 89,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 72,
+      "onset": 90,
+      "duration": 1
+    },
+    {
+      "partId": "fl",
+      "midi": 74,
+      "onset": 91,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 0,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 1,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 2,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 3,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 4,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 5,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 6,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 7,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 8,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 9,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 10,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 11,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 16,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 17,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 18,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 19,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 20,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 21,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 22,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 23,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 24,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 25,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 26,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 27,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 32,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 33,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 34,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 35,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 36,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 37,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 38,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 39,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 40,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 41,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 42,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 43,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 48,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 49,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 50,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 51,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 52,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 53,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 54,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 55,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 56,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 57,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 58,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 59,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 64,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 65,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 66,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 67,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 68,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 69,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 70,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 71,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 72,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 65,
+      "onset": 73,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 74,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 75,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 62,
+      "onset": 80,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 81,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 82,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 83,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 59,
+      "onset": 84,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 85,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 86,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 87,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 88,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 60,
+      "onset": 89,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 64,
+      "onset": 90,
+      "duration": 1
+    },
+    {
+      "partId": "vc",
+      "midi": 67,
+      "onset": 91,
+      "duration": 1
+    },
+    {
+      "partId": "vn2",
+      "midi": 79,
+      "onset": 41.5,
+      "duration": 1
+    },
+    {
+      "partId": "vn2",
+      "midi": 81,
+      "onset": 42.5,
+      "duration": 1
+    },
+    {
+      "partId": "vn2",
+      "midi": 79,
+      "onset": 43.5,
+      "duration": 0.5
+    },
+    {
+      "partId": "vn2",
+      "midi": 79,
+      "onset": 44,
+      "duration": 0.5
+    },
+    {
+      "partId": "vn2",
+      "midi": 77,
+      "onset": 44.5,
+      "duration": 1
+    }
+  ],
+  "warnings": [],
+  "musicalQualityScore": null,
+  "musicallyApproved": false,
+  "listeningQuestions": [
+    "Does the inferred melody still read as the theme after the instrument handover?",
+    "Do the added answers sound necessary, or would the bar be clearer as silence?",
+    "Does the ending release, or does an inner part keep the harmony spinning?"
+  ]
+}

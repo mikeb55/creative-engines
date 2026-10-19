@@ -6,6 +6,7 @@
 
 | Lane | Status |
 |------|--------|
+| **V3.5 Phase 1 piano to chamber** | **IMPLEMENTED, TESTED, NOT MUSICALLY APPROVED** — opt-in `orchestrate()` branch. 24-bar piano MusicXML to the existing ten-player chamber roster. Review step required. Evidence `docs/v3.5-phase1/`. Phase 2 not started. |
 | **Riff chord-loop trust** | **Phase 1–3 SHIPPED** — post-gen disclosure · inline badges · **ack gating + per-token Accept/Pick/Edit** (empty loop ungated; no polychord grammar) |
 | **GCE endingContext** | **SHIPPED** — `terminal` / `loop` / `open_idiom` for `finalBarTension` (threshold unchanged; `riff_generator` defaults `loop`); **`openIdiomDefault`** user pref (default OFF) → same disclosure UX as ack |
 | **Riff phrase library** | **Phase 1 ingest** + **Phase 1.5 S0–S3** `#/riffgen` QA + GenerateIsland **SHIPPED** — **11** schema categories / target **171**; derived **193** files / **345** phrases; **all 11 categories populated**; **many-to-many STYLE_PAIRINGS** — **11 of 11** categories paired (**12** edges); **Phase 1.9** fidelity SHIPPED; **Phase 2** readiness: **P3+P4+P5 SHIPPED** — all **12** edges **ready=Y**; **Style Pairings panel single-select** (default **None**; max 1 force-on; all 12 `defaultEnabled: false`) · pitch **PR A/B/C** shipped · **per-phrase meter SHIPPED** |

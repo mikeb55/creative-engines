@@ -1,0 +1,79 @@
+{
+  "operatorHits": {
+    "displace": {
+      "example": "lyrical",
+      "seed": 11,
+      "partId": "vn2",
+      "notes": [
+        {
+          "sounding": 76,
+          "onset": 25.5,
+          "duration": 1
+        },
+        {
+          "sounding": 77,
+          "onset": 26.5,
+          "duration": 1
+        },
+        {
+          "sounding": 79,
+          "onset": 27.5,
+          "duration": 1
+        },
+        {
+          "sounding": 81,
+          "onset": 28.5,
+          "duration": 1
+        }
+      ]
+    },
+    "fragment-head": {
+      "example": "lyrical",
+      "seed": 12,
+      "partId": "vn2",
+      "notes": [
+        {
+          "sounding": 76,
+          "onset": 24.5,
+          "duration": 1
+        },
+        {
+          "sounding": 77,
+          "onset": 25.5,
+          "duration": 1
+        },
+        {
+          "sounding": 79,
+          "onset": 26.5,
+          "duration": 1
+        }
+      ]
+    },
+    "augment": {
+      "example": "lyrical",
+      "seed": 13,
+      "partId": "vn2",
+      "notes": [
+        {
+          "sounding": 76,
+          "onset": 24.5,
+          "duration": 2
+        },
+        {
+          "sounding": 77,
+          "onset": 26.5,
+          "duration": 2
+        },
+        {
+          "sounding": 79,
+          "onset": 28.5,
+          "duration": 2
+        }
+      ]
+    }
+  },
+  "operatorRefusals": [],
+  "shortCellRefusal": {
+    "reason": "p2 has no answer. The melody cell is shorter than three notes."
+  }
+}

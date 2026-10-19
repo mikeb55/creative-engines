@@ -1,0 +1,51 @@
+{
+  "software": "MuseScore Studio 4.7.5",
+  "file": "docs/v3.5-phase1/external/musescore-4.7.5-piano.musicxml",
+  "handEditedAfterExport": false,
+  "parts": [
+    {
+      "partId": "P1",
+      "name": "Piano"
+    }
+  ],
+  "bars": 24,
+  "metre": "4/4",
+  "tempoBpm": 96,
+  "tempoSource": "score",
+  "phrases": [
+    {
+      "id": "p1",
+      "startBar": 1,
+      "endBar": 8,
+      "confidence": "medium",
+      "needsConfirmation": true,
+      "reason": "Boundary follows a rest in the inferred melody."
+    },
+    {
+      "id": "p2",
+      "startBar": 9,
+      "endBar": 16,
+      "confidence": "low",
+      "needsConfirmation": true,
+      "reason": "Boundary falls on an 8-bar grid because the melody did not rest."
+    },
+    {
+      "id": "p3",
+      "startBar": 17,
+      "endBar": 24,
+      "confidence": "low",
+      "needsConfirmation": true,
+      "reason": "Boundary falls on an 8-bar grid because the melody did not rest."
+    }
+  ],
+  "roles": {
+    "melody": 96,
+    "bass": 20
+  },
+  "notes": 116,
+  "protectedAnchors": 99,
+  "sourceTieStarts": 1,
+  "chamberTieStarts": 1,
+  "exportParts": 10,
+  "omissions": []
+}

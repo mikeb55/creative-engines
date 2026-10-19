@@ -28,7 +28,7 @@ import {
   apiExportGuitarPro,
   apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
-import { apiHarmonyLab } from '../engines/composer-os-v2/app-api/orchestrateApp';
+import { apiHarmonyLab, apiOrchestrate } from '../engines/composer-os-v2/app-api/orchestrateApp';
 import {
   apiBhlCandidates,
   apiBhlCatalog,
@@ -492,6 +492,15 @@ app.post('/api/pentatonic/project/open', (req: Request, res: Response) => {
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
+app.post('/api/piano-chamber', (req: Request, res: Response) => {
+  try {
+    const result = apiOrchestrate(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
 });
 

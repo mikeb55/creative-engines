@@ -35,6 +35,38 @@ export interface SectionColourPlan {
   independence?: { maxCoOnsetRate: number; maxParallelPerfectRun: number };
 }
 
+export type PianoChamberRole =
+  | 'melody'
+  | 'bass'
+  | 'countermelody'
+  | 'harmonic_support'
+  | 'rhythmic_figure'
+  | 'unassigned';
+
+export type PianoChamberMode = 'faithful' | 'developing';
+
+/** Musician corrections. Inferred roles stay proposals until `reviewConfirmed`. */
+export interface PianoChamberCorrection {
+  mode?: PianoChamberMode;
+  tempoBpm?: number;
+  partIds?: string[];
+  roles?: Record<string, PianoChamberRole>;
+  /** Extra event ids that must survive. */
+  locks?: string[];
+  /** Removes a default lock. The omission is then intentional. */
+  unlocks?: string[];
+  phrases?: Array<{ id: string; startBar: number; endBar: number }>;
+  reviewConfirmed?: boolean;
+  /** Musician asked to leave these source events out. Locked ids are refused. */
+  omitEventIds?: string[];
+}
+
+export interface PianoChamberCommand {
+  action: 'propose' | 'realise';
+  sourceMusicXml: string;
+  correction?: PianoChamberCorrection;
+}
+
 export interface OrchestrateRequest {
   /** Required. false or omitted does not build a score. */
   enabled: boolean;
@@ -45,6 +77,8 @@ export interface OrchestrateRequest {
   preserveMelody: true;
   /** Opt-in E2 realisation. When set, legacy source reduction does not run. */
   e2?: E2PerformRequest;
+  /** V3.5 Phase 1 piano-to-chamber. When set, legacy reduction and E2 do not run. */
+  pianoChamber?: PianoChamberCommand;
 }
 
 export interface OrchestrateFlag {

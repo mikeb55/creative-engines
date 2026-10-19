@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { HomeGenerate } from './pages/HomeGenerate';
 import { SoloPianoPage } from './pages/SoloPianoPage';
+import { PianoChamberPage } from './pages/PianoChamberPage';
 import { Presets } from './pages/Presets';
 import { Outputs } from './pages/Outputs';
 import { UserGuide } from './pages/UserGuide';
@@ -500,6 +501,13 @@ export default function App() {
             Solo Piano
           </button>
           <button
+            className={tab === 'piano-chamber' ? '' : 'secondary'}
+            onClick={() => goToTab('piano-chamber')}
+            type="button"
+          >
+            Piano to chamber
+          </button>
+          <button
             className={tab === 'composer-engines' ? '' : 'secondary'}
             onClick={() => goToTab('composer-engines')}
           >
@@ -598,6 +606,7 @@ export default function App() {
       {tab === 'pentatonic' && <PentatonicEnginePage />}
       {tab === 'hexatonic' && <HexatonicEnginePage />}
       {tab === 'solo-piano' && <SoloPianoPage />}
+      {tab === 'piano-chamber' && <PianoChamberPage />}
       {tab === 'bhl' && <BhlComposerPage />}
       {tab === 'practice' && <PracticeStudioPage />}
       {tab === 'evaluation' && <EvaluationDashboardPage />}

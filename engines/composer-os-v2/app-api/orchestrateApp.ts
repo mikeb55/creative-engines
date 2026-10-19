@@ -24,6 +24,24 @@ function isPlan(value: unknown): value is SectionColourPlan {
 export function apiOrchestrate(body: unknown): OrchestrateResult {
   if (!body || typeof body !== 'object') return { ok: false, error: 'Orchestrate is off.' };
   const request = body as Partial<OrchestrateRequest> & { e2?: E2PerformRequest };
+  if (request.pianoChamber) {
+    if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
+    if (request.pianoChamber.action !== 'propose' && request.pianoChamber.action !== 'realise') {
+      return { ok: false, error: 'Piano chamber needs action propose or realise.' };
+    }
+    if (typeof request.pianoChamber.sourceMusicXml !== 'string' || !request.pianoChamber.sourceMusicXml.trim()) {
+      return { ok: false, error: 'Piano chamber needs source MusicXML.' };
+    }
+    return orchestrate({
+      enabled: true,
+      sourceMusicXml: request.pianoChamber.sourceMusicXml,
+      template: 'chamber_orchestra',
+      plan: [],
+      seed: typeof request.seed === 'number' ? request.seed : 1,
+      preserveMelody: true,
+      pianoChamber: request.pianoChamber,
+    });
+  }
   if (request.e2) {
     if (request.enabled !== true) return { ok: false, error: 'Orchestrate is off.' };
     return orchestrate({

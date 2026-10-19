@@ -26,7 +26,7 @@ import {
   type PdfGenerateFromPdfRequest,
   getComposerOsRuntimeBuildInfo,
 } from '../../../engines/composer-os-v2/app-api/composerOsApiCore';
-import { apiHarmonyLab } from '../../../engines/composer-os-v2/app-api/orchestrateApp';
+import { apiHarmonyLab, apiOrchestrate } from '../../../engines/composer-os-v2/app-api/orchestrateApp';
 import {
   apiBhlCandidates,
   apiBhlCatalog,
@@ -409,6 +409,9 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   );
   ipcMain.handle('composer-os-api:harmony-lab', (_e, body: unknown) =>
     Promise.resolve(apiHarmonyLab(body))
+  );
+  ipcMain.handle('composer-os-api:piano-chamber', (_e, body: unknown) =>
+    Promise.resolve(apiOrchestrate(body))
   );
   ipcMain.handle('composer-os-api:get-outputs', () => apiListOutputs(outputDir));
   ipcMain.handle('composer-os-api:get-output-directory', () => apiGetOutputDirectory(outputDir));
