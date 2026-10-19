@@ -79,6 +79,12 @@ interface HarmonicContext {
   beats: number;
   beatType: number;
   barQuarters: number;
+  /** Absolute quarter start of bars 1–24. Absent on a constant metre. */
+  barOriginQuarters?: readonly number[];
+  /** Quarter length of bars 1–24. Absent on a constant metre. */
+  barLengths?: readonly number[];
+  barBeats?: readonly number[];
+  barBeatTypes?: readonly number[];
   phrases: Array<{ id: string; startBar: number; endBar: number }>;
   rows: HarmonicSourceRow[];
   busy: Map<string, Array<{ start: number; end: number }>>;
@@ -138,6 +144,44 @@ function eighths(quarters: number): number {
 
 function barStartEighths(bar: number, barQuarters: number): number {
   return (bar - 1) * eighths(barQuarters);
+}
+
+function originQuarters(ctx: HarmonicContext, bar: number): number {
+  if (!ctx.barOriginQuarters) return (bar - 1) * ctx.barQuarters;
+  return ctx.barOriginQuarters[bar - 1] ?? (bar - 1) * ctx.barQuarters;
+}
+
+function barLengthQuarters(ctx: HarmonicContext, bar: number): number {
+  if (!ctx.barLengths) return ctx.barQuarters;
+  return ctx.barLengths[bar - 1] ?? ctx.barQuarters;
+}
+
+function barContaining(ctx: HarmonicContext, startQ: number): number {
+  if (!ctx.barOriginQuarters) return Math.floor(startQ / ctx.barQuarters) + 1;
+  for (let bar = 1; bar <= 24; bar += 1) {
+    const start = originQuarters(ctx, bar);
+    const end = start + barLengthQuarters(ctx, bar);
+    if (startQ >= start - 1e-9 && startQ < end - 1e-9) return bar;
+  }
+  return 25;
+}
+
+/** Sequential placement for metres other than constant 3/4, 4/4 and 6/8. No accent grid. */
+function fitExpandedMetre(quarters: number, beatType: number, mild: boolean):
+  | { commonOff: number; commonDur: number; tensionOff: number; tensionDur: number; resolutionOff: number }
+  | { error: string } {
+  let step = beatType === 8 ? 0.5 : 1;
+  if (step * 3 > quarters + 1e-6) step /= 2;
+  if (step * 3 > quarters + 1e-6) return { error: 'The metre cannot hold this tension and resolution.' };
+  const commonOff = 0;
+  const commonDur = step;
+  const tensionOff = step;
+  const tensionDur = mild ? step : Math.min(step * 2, quarters - step * 2);
+  const resolutionOff = tensionOff + tensionDur;
+  if (tensionDur <= 0 || resolutionOff + step > quarters + 1e-6) {
+    return { error: 'The metre cannot hold this tension and resolution.' };
+  }
+  return { commonOff, commonDur, tensionOff, tensionDur, resolutionOff };
 }
 
 function carriers(ctx: HarmonicContext, start: number, end: number): Set<string> {
@@ -203,7 +247,13 @@ interface Slot {
   endEighth: number;
 }
 
-function slotsFor(control: BhlTensionReleaseControl, barQuarters: number, beats: number, beatType: number): { common: Slot; tension: Slot; resolution: Slot } | { error: string } {
+function slotsFor(
+  control: BhlTensionReleaseControl,
+  barQuarters: number,
+  beats: number,
+  beatType: number,
+  varying?: { origins: readonly number[]; quarters: readonly number[]; beats: readonly number[]; beatType: readonly number[] },
+): { common: Slot; tension: Slot; resolution: Slot } | { error: string } {
   const start = control.startBar;
   const end = control.endBar;
   const needsNextBar = control.resolutionTiming === 'bar-end';
@@ -225,7 +275,13 @@ function slotsFor(control: BhlTensionReleaseControl, barQuarters: number, beats:
   if (tensionBar < start || resolutionBar > end || tensionBar > end) {
     return { error: 'Tension and resolution do not both fall inside the chosen span.' };
   }
-  const compound = beats === 6 && beatType === 8;
+  const activeBeats = varying ? varying.beats[tensionBar - 1] ?? beats : beats;
+  const activeType = varying ? varying.beatType[tensionBar - 1] ?? beatType : beatType;
+  const activeQuarters = varying ? varying.quarters[tensionBar - 1] ?? barQuarters : barQuarters;
+  const resolutionQuarters = varying ? varying.quarters[resolutionBar - 1] ?? activeQuarters : barQuarters;
+  const origins = varying?.origins;
+  const legacy = (activeBeats === 4 && activeType === 4) || (activeBeats === 3 && activeType === 4) || (activeBeats === 6 && activeType === 8);
+  const compound = activeBeats === 6 && activeType === 8;
   const mild = control.departure === 'mild';
   let commonOff = 0.5;
   let commonDur = 0.5;
@@ -238,28 +294,37 @@ function slotsFor(control: BhlTensionReleaseControl, barQuarters: number, beats:
     tensionOff = 1;
     tensionDur = mild ? 0.5 : 1;
     resolutionOff = mild ? 1.5 : 2;
-  } else if (barQuarters === 3 && beats === 3) {
+  } else if (activeQuarters === 3 && activeBeats === 3) {
     commonOff = 0.5;
     commonDur = 0.5;
     tensionOff = 1;
     tensionDur = mild ? 1 : 1;
     resolutionOff = 2;
+  } else if (!legacy) {
+    const fitted = fitExpandedMetre(activeQuarters, activeType, mild);
+    if ('error' in fitted) return fitted;
+    commonOff = fitted.commonOff;
+    commonDur = fitted.commonDur;
+    tensionOff = fitted.tensionOff;
+    tensionDur = fitted.tensionDur;
+    resolutionOff = fitted.resolutionOff;
   }
   if (control.resolutionTiming === 'bar-end') {
-    tensionOff = mild ? barQuarters - 1 : Math.max(0.5, barQuarters - tensionDur);
-    tensionDur = mild ? 1 : Math.min(2, barQuarters - tensionOff);
+    tensionOff = mild ? activeQuarters - 1 : Math.max(0.5, activeQuarters - tensionDur);
+    tensionDur = mild ? 1 : Math.min(2, activeQuarters - tensionOff);
     resolutionOff = 0;
   }
   if (control.resolutionTiming === 'phrase-end' && resolutionBar !== tensionBar) {
     resolutionOff = 0;
   }
   if (control.resolutionTiming === 'phrase-end' && resolutionBar === tensionBar) {
-    resolutionOff = Math.max(tensionOff + tensionDur, barQuarters - 1);
-    if (resolutionOff >= barQuarters) return { error: 'Phrase-end resolution has no beat left after the tension.' };
+    resolutionOff = Math.max(tensionOff + tensionDur, activeQuarters - 1);
+    if (resolutionOff >= activeQuarters) return { error: 'Phrase-end resolution has no beat left after the tension.' };
   }
-  const common = makeSlot(tensionBar, commonOff, commonDur, barQuarters);
-  const tension = makeSlot(tensionBar, tensionOff, tensionDur, barQuarters);
-  const resolution = makeSlot(resolutionBar, resolutionOff, control.resolutionTiming === 'bar-end' || resolutionOff === 0 ? Math.min(1, barQuarters) : 1, barQuarters);
+  const common = makeSlot(tensionBar, commonOff, commonDur, activeQuarters, origins);
+  const tension = makeSlot(tensionBar, tensionOff, tensionDur, activeQuarters, origins);
+  const resolutionDur = control.resolutionTiming === 'bar-end' || resolutionOff === 0 ? Math.min(1, resolutionQuarters) : 1;
+  const resolution = makeSlot(resolutionBar, resolutionOff, resolutionDur, resolutionQuarters, origins);
   if (!common || !tension || !resolution) return { error: 'The metre cannot hold this tension and resolution.' };
   if (tension.eighth < common.endEighth - 1e-6 || resolution.eighth < tension.endEighth - 1e-6) {
     return { error: 'Resolution would arrive before the tension has sounded.' };
@@ -267,9 +332,9 @@ function slotsFor(control: BhlTensionReleaseControl, barQuarters: number, beats:
   return { common, tension, resolution };
 }
 
-function makeSlot(bar: number, onsetQ: number, durationQ: number, barQuarters: number): Slot | null {
+function makeSlot(bar: number, onsetQ: number, durationQ: number, barQuarters: number, origins?: readonly number[]): Slot | null {
   if (onsetQ < -1e-6 || durationQ <= 0 || onsetQ + durationQ > barQuarters + 1e-6) return null;
-  const eighth = barStartEighths(bar, barQuarters) + eighths(onsetQ);
+  const eighth = (origins ? eighths(origins[bar - 1] ?? 0) : barStartEighths(bar, barQuarters)) + eighths(onsetQ);
   const endEighth = eighth + eighths(durationQ);
   return { bar, onsetQ, durationQ, eighth, endEighth };
 }
@@ -306,7 +371,15 @@ function buildBhlLine(ctx: HarmonicContext, control: BhlTensionReleaseControl, b
   if (control.departure !== 'mild' && control.departure !== 'strong') return fail('Harmonic departure must be mild or strong.');
   if (!['early', 'mid', 'late'].includes(control.tensionPlacement)) return fail('Tension placement was not recognised.');
   if (!['next-beat', 'bar-end', 'phrase-end'].includes(control.resolutionTiming)) return fail('Resolution timing was not recognised.');
-  const timed = slotsFor(control, ctx.barQuarters, ctx.beats, ctx.beatType);
+  const timed = slotsFor(
+    control,
+    ctx.barQuarters,
+    ctx.beats,
+    ctx.beatType,
+    ctx.barOriginQuarters && ctx.barLengths && ctx.barBeats && ctx.barBeatTypes
+      ? { origins: ctx.barOriginQuarters, quarters: ctx.barLengths, beats: ctx.barBeats, beatType: ctx.barBeatTypes }
+      : undefined,
+  );
   if ('error' in timed) return fail(timed.error);
   const tensionRows = rowsInBar(ctx, timed.tension.bar);
   const resolutionRows = rowsInBar(ctx, timed.resolution.bar);
@@ -320,7 +393,7 @@ function buildBhlLine(ctx: HarmonicContext, control: BhlTensionReleaseControl, b
   const state = control.departure === 'strong' ? 'chaos' as const : 'tension' as const;
   const field = buildBhlWorldField('B', {
     bar: timed.tension.bar,
-    quarters: ctx.barQuarters,
+    quarters: ctx.barLengths?.[timed.tension.bar - 1] ?? ctx.barQuarters,
     attacks: [],
     rests: [],
     notes: [],
@@ -572,12 +645,13 @@ function buildTriadDialogue(
     events.forEach((event, index) => {
       if (attacks >= control.maxAttacks) return;
       const startQ = window
-        ? (window[0] - 1) * ctx.barQuarters + event.onset
-        : (control.startBar - 1) * ctx.barQuarters + event.onset;
+        ? originQuarters(ctx, window[0]) + event.onset
+        : originQuarters(ctx, control.startBar) + event.onset;
       const duration = Math.max(0.5, Math.min(event.duration, 2));
       const endQ = startQ + duration;
-      const bar = Math.floor(startQ / ctx.barQuarters) + 1;
-      if (window && (bar < window[0] || bar > window[1] || endQ > window[1] * ctx.barQuarters + 1e-6)) return;
+      const bar = barContaining(ctx, startQ);
+      const windowEnd = window ? originQuarters(ctx, window[1]) + barLengthQuarters(ctx, window[1]) : 0;
+      if (window && (bar < window[0] || bar > window[1] || endQ > windowEnd + 1e-6)) return;
       if (bar < control.startBar || bar > control.endBar) return;
       const direction: -1 | 0 | 1 = previous === null || event.midi === null
         ? 0
@@ -633,7 +707,7 @@ function buildTriadDialogue(
     transformNote = `${parentA.id} keeps its own tones.`;
     placeMapped(parentA, motif.events.filter((event) => event.midi !== null).map((event) => ({ onset: event.onset, duration: event.duration, midi: event.midi as number })), groups[0], windowA, 'parent-a');
     const lastA = notes[notes.length - 1];
-    if (lastA && qToNumber(lastA.onset) + qToNumber(lastA.duration) > (windowB[0] - 1) * ctx.barQuarters - 0.5) {
+    if (lastA && qToNumber(lastA.onset) + qToNumber(lastA.duration) > originQuarters(ctx, windowB[0]) - 0.5) {
       notes.pop();
       attacks -= 1;
     }

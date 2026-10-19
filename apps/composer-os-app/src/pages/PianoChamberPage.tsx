@@ -24,6 +24,7 @@ interface Proposal {
   bars: number;
   beats: number;
   beatType: number;
+  metres?: Array<{ bar: number; throughBar: number; beats: number; beatType: number; groups: number[] | null }>;
   tempoBpm: number | null;
   tempoSource: string;
   uncertain: string[];
@@ -66,6 +67,15 @@ function download(name: string, blob: Blob) {
   link.download = name;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function metreLine(proposal: Proposal): string {
+  const runs = proposal.metres;
+  if (!runs?.length) return `${proposal.beats}/${proposal.beatType}, ${proposal.bars} bars.`;
+  return runs.map((run) => {
+    const groups = run.groups && run.groups.length > 1 ? ` (${run.groups.join('+')})` : '';
+    return `${run.beats}/${run.beatType}${groups} in bars ${run.bar}–${run.throughBar}`;
+  }).join('; ');
 }
 
 function playPreview(notes: Fidelity['preview'], tempo: number) {
@@ -306,7 +316,7 @@ export function PianoChamberPage() {
     <section data-testid="piano-chamber" style={{ display: 'grid', gap: '0.75rem', maxWidth: 920 }}>
       <h2 style={{ margin: 0 }}>Piano to chamber</h2>
       <p style={{ margin: 0 }}>
-        Twenty-four bars. One piano part or two selected piano parts. 4/4, 3/4 or 6/8. Developing arrangement is the default. Inferred roles stay proposals until you confirm them.
+        Twenty-four bars. One piano part or two selected piano parts. Quarter metres 2/4, 3/4, 4/4, 5/4, 6/4 and 7/4. Eighth metres 3/8, 5/8, 6/8, 7/8, 9/8 and 12/8. A bar may change to another of these. Any other signature is refused. Developing arrangement is the default. Inferred roles stay proposals until you confirm them.
       </p>
       <input
         data-testid="piano-chamber-file"
@@ -322,8 +332,8 @@ export function PianoChamberPage() {
       {error ? <p role="alert" data-testid="piano-chamber-error">{error}</p> : null}
       {proposal ? (
         <div data-testid="piano-chamber-review" style={{ display: 'grid', gap: '0.5rem' }}>
-          <p>
-            {proposal.beats}/{proposal.beatType}, {proposal.bars} bars.
+          <p data-testid="piano-chamber-metre">
+            {metreLine(proposal)}.
             Tempo {proposal.tempoSource === 'missing' ? 'missing' : proposal.tempoBpm}. {proposal.motifNote}
           </p>
           <label>

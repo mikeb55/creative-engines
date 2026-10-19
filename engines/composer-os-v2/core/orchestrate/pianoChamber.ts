@@ -26,7 +26,8 @@ import { q, qAdd, qCmp, qEq, qSub, qToNumber, type ExactQuarter } from '../piano
 import type { NoteEvent, PartDynamicEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import { parametersHash, captureSource, selectSourceEvents, type SourceBundle, type SourceRecord } from './sourceFoundation';
 import { resolveTemplate, type ResolvedPart } from './ensembleTemplates';
-import { buildE2Score, quarterLength, type E2Assignment, type E2PartSpec } from './e2Placement';
+import { barSpans, buildE2Score, quarterLength, type E2Assignment, type E2PartSpec } from './e2Placement';
+import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { E2RealisedPlacement } from './harmonicRealisation';
 import type { SpelledRegister } from './harmonicColourTypes';
 import type { EventLineage } from './sourceFoundation';
@@ -68,6 +69,8 @@ export interface PianoChamberProposal {
   bars: 24;
   beats: number;
   beatType: number;
+  /** Contiguous runs. One run when the excerpt stays in one signature. */
+  metres: Array<{ bar: number; throughBar: number; beats: number; beatType: number; groups: number[] | null }>;
   tempoBpm: number | null;
   tempoSource: 'score' | 'missing';
   parts: Array<{ partId: string; name: string }>;
@@ -240,6 +243,31 @@ function decompose(duration: ExactQuarter): ExactQuarter[] {
   return out;
 }
 
+const CHAMBER_METRES: ReadonlyArray<readonly [number, number]> = [
+  [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4],
+  [3, 8], [5, 8], [6, 8], [7, 8], [9, 8], [12, 8],
+];
+
+const CHAMBER_METRE_LABEL = '2/4, 3/4, 4/4, 5/4, 6/4, 7/4, 3/8, 5/8, 6/8, 7/8, 9/8 and 12/8';
+
+function chamberMetreSupported(beats: number, beatType: number): boolean {
+  return CHAMBER_METRES.some(([numerator, denominator]) => numerator === beats && denominator === beatType);
+}
+
+function legacyMetre(beats: number, beatType: number): boolean {
+  return (beats === 4 && beatType === 4) || (beats === 3 && beatType === 4) || (beats === 6 && beatType === 8);
+}
+
+interface ChamberMetre {
+  beats: number;
+  beatType: number;
+  barLen: ExactQuarter;
+  uniform: boolean;
+  metres: BarMeterMap;
+  spans: Array<{ bar: number; start: ExactQuarter; length: ExactQuarter }>;
+  runs: Array<{ bar: number; throughBar: number; beats: number; beatType: number; groups: number[] | null }>;
+}
+
 function splitBars(onset: ExactQuarter, duration: ExactQuarter, barLen: ExactQuarter): Array<{ onset: ExactQuarter; duration: ExactQuarter }> {
   const pieces: Array<{ onset: ExactQuarter; duration: ExactQuarter }> = [];
   let cursor = onset;
@@ -257,6 +285,49 @@ function splitBars(onset: ExactQuarter, duration: ExactQuarter, barLen: ExactQua
   return pieces;
 }
 
+function splitAlong(
+  onset: ExactQuarter,
+  duration: ExactQuarter,
+  spans: ReadonlyArray<{ bar: number; start: ExactQuarter; length: ExactQuarter }>,
+): Array<{ onset: ExactQuarter; duration: ExactQuarter }> {
+  const pieces: Array<{ onset: ExactQuarter; duration: ExactQuarter }> = [];
+  let cursor = onset;
+  let left = duration;
+  const last = spans[spans.length - 1];
+  if (!last) throw new Error('the score has no bars');
+  const scoreEnd = qAdd(last.start, last.length);
+  while (qCmp(left, q(0)) > 0) {
+    const span = spans.find((item) => qCmp(cursor, item.start) >= 0 && qCmp(cursor, qAdd(item.start, item.length)) < 0);
+    if (!span) throw new Error('duration continues past the last bar');
+    const barEnd = qAdd(span.start, span.length);
+    const room = qSub(barEnd, cursor);
+    const take = qCmp(left, room) <= 0 ? left : room;
+    if (qCmp(take, q(0)) <= 0) throw new Error('duration did not advance');
+    pieces.push({ onset: cursor, duration: take });
+    cursor = qAdd(cursor, take);
+    left = qSub(left, take);
+    if (qCmp(cursor, scoreEnd) > 0) throw new Error('duration continues past the last bar');
+  }
+  return pieces;
+}
+
+function sliceNote(
+  onset: ExactQuarter,
+  duration: ExactQuarter,
+  barLen: ExactQuarter,
+  spans?: ReadonlyArray<{ bar: number; start: ExactQuarter; length: ExactQuarter }>,
+): Array<{ onset: ExactQuarter; duration: ExactQuarter }> {
+  return spans ? splitAlong(onset, duration, spans) : splitBars(onset, duration, barLen);
+}
+
+function answerBeat(metre: ChamberMetre, bar: number): number {
+  const signature = metre.metres[bar] ?? { numerator: metre.beats, denominator: metre.beatType };
+  if (legacyMetre(signature.numerator, signature.denominator)) return 1;
+  if (signature.denominator === 8 && (signature.numerator === 9 || signature.numerator === 12)) return 1.5;
+  if (signature.denominator === 8) return 0.5;
+  return 1;
+}
+
 function tempoOf(bundle: SourceBundle): number | null {
   for (const direction of bundle.score.directions) {
     if (direction.kind !== 'tempo') continue;
@@ -271,7 +342,7 @@ function pianoName(name: string): boolean {
   return /piano|grand/i.test(name);
 }
 
-function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { error: string } | { records: SourceRecord[]; beats: number; beatType: number; barLen: ExactQuarter } {
+function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { error: string } | { records: SourceRecord[]; metre: ChamberMetre } {
   if (!bundle.semanticsUnderstood) {
     const rows = bundle.score.unsupported
       .filter((item) => item.kind !== 'key' && item.kind !== 'staff-details')
@@ -295,29 +366,82 @@ function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { 
     return { error: `Phase 1 needs a supplied 24-bar score, bars 1–24. This selection has ${bars.length} bar numbers (${bars[0] ?? 'none'}–${bars[bars.length - 1] ?? 'none'}). Prepare the excerpt. The ending was not invented.` };
   }
   if (measures.some((measure) => measure.pickup)) return { error: 'Pickup bars are outside Phase 1. The metre was not changed.' };
-  const beats = measures[0]?.beats ?? 0;
-  const beatType = measures[0]?.beatType ?? 0;
-  const metreOk = (beats === 4 && beatType === 4) || (beats === 3 && beatType === 4) || (beats === 6 && beatType === 8);
-  if (!metreOk) return { error: `Phase 1 accepts constant 4/4, 3/4 or 6/8. Found ${beats}/${beatType}.` };
-  if (measures.some((measure) => measure.beats !== beats || measure.beatType !== beatType)) {
-    return { error: 'The metre changes inside the excerpt. Phase 1 does not quantise or rewrite the time signature.' };
+  for (const part of selected) {
+    const present = new Set(measures.filter((measure) => measure.partId === part.id).map((measure) => measure.bar));
+    for (let bar = 1; bar <= 24; bar += 1) {
+      if (!present.has(bar)) return { error: `Bar ${bar} is missing from ${part.id}. The bar was not invented.` };
+    }
   }
+  const metres: BarMeterMap = {};
+  const runs: ChamberMetre['runs'] = [];
+  for (let bar = 1; bar <= 24; bar += 1) {
+    const group = measures.filter((measure) => measure.bar === bar);
+    const first = group[0];
+    if (!first) return { error: `Bar ${bar} is missing. The bar was not invented.` };
+    if (group.some((measure) => measure.metreRejected)) {
+      return { error: `Bar ${bar} has a time signature that was not read. The metre was not rewritten.` };
+    }
+    if (!chamberMetreSupported(first.beats, first.beatType)) {
+      return { error: `Supported metres are ${CHAMBER_METRE_LABEL}. Bar ${bar} is ${first.beats}/${first.beatType}. The time signature was not rewritten.` };
+    }
+    if (group.some((measure) => measure.beats !== first.beats || measure.beatType !== first.beatType)) {
+      return { error: `Bar ${bar} does not share one time signature across the selected piano parts. Nothing was quantised.` };
+    }
+    const groupText = group.map((measure) => (measure.beatGroups ?? []).join('+'));
+    if (new Set(groupText).size > 1) {
+      return { error: `Bar ${bar} has conflicting beat groups. No accent pattern was chosen.` };
+    }
+    metres[bar] = { numerator: first.beats, denominator: first.beatType };
+    const groups = first.beatGroups && first.beatGroups.length > 1 ? [...first.beatGroups] : null;
+    const previous = runs[runs.length - 1];
+    const same = previous
+      && previous.beats === first.beats
+      && previous.beatType === first.beatType
+      && (previous.groups ?? []).join('+') === (groups ?? []).join('+');
+    if (same && previous) previous.throughBar = bar;
+    else runs.push({ bar, throughBar: bar, beats: first.beats, beatType: first.beatType, groups });
+  }
+  const beats = metres[1]?.numerator ?? 0;
+  const beatType = metres[1]?.denominator ?? 0;
+  const uniform = runs.length === 1;
   const tuplet = bundle.records.find((record) => selected.some((part) => part.id === record.canonical.partId) && record.canonical.tuplet && (record.canonical.tuplet.actualNotes !== 3 || record.canonical.tuplet.normalNotes !== 2));
   if (tuplet) {
     const ratio = tuplet.canonical.tuplet!;
     return { error: `Unsupported tuplet ${ratio.actualNotes}:${ratio.normalNotes} in ${tuplet.canonical.partId} bar ${tuplet.canonical.bar}. Phase 1 keeps ordinary 3:2 triplets only.` };
   }
   const records = [...selectSourceEvents(bundle, selected.map((part) => ({ partId: part.id })))];
-  return { records, beats, beatType, barLen: quarterLength(beats, beatType) };
+  for (const record of records) {
+    const measure = measures.find((item) => item.partId === record.canonical.partId && item.bar === record.canonical.bar);
+    if (!measure) return { error: `Bar ${record.canonical.bar} is missing from ${record.canonical.partId}.` };
+    const end = qAdd(rat(record.canonical.onsetInBar), rat(record.canonical.duration));
+    if (end.n * measure.expected.d > measure.expected.n * end.d) {
+      return { error: `Source event ${record.canonical.id} extends past bar ${record.canonical.bar} (${measure.beats}/${measure.beatType}). The note was not shortened or moved.` };
+    }
+  }
+  const spans = barSpans(metres, 24);
+  return {
+    records,
+    metre: {
+      beats,
+      beatType,
+      barLen: quarterLength(beats, beatType),
+      uniform,
+      metres,
+      spans,
+      runs,
+    },
+  };
 }
 
-function buildRows(records: readonly SourceRecord[], barLen: ExactQuarter): NoteRow[] {
+function buildRows(records: readonly SourceRecord[], metre: ChamberMetre): NoteRow[] {
   return records
     .filter((record) => !record.canonical.rest && record.canonical.soundingMidi !== null && record.canonical.written)
     .map((record) => ({
       record,
       event: record.canonical,
-      onset: qAdd(q((record.canonical.bar - 1) * barLen.n, barLen.d), rat(record.canonical.onsetInBar)),
+      onset: metre.uniform
+        ? qAdd(q((record.canonical.bar - 1) * metre.barLen.n, metre.barLen.d), rat(record.canonical.onsetInBar))
+        : qAdd(metre.spans[record.canonical.bar - 1]!.start, rat(record.canonical.onsetInBar)),
       duration: rat(record.canonical.duration),
       midi: record.canonical.soundingMidi as number,
       role: 'unassigned' as const,
@@ -541,10 +665,11 @@ function placeRow(
   disposition: Placed['disposition'],
   op?: string,
   writtenPitch?: SpelledRegister,
+  variableSpans?: ReadonlyArray<{ bar: number; start: ExactQuarter; length: ExactQuarter }>,
 ): void {
   const midi = writtenPitch?.midi ?? row.midi + shift;
   const pitch = writtenPitch ?? spellShift(row.event, midi, shift);
-  const pieces = splitBars(row.onset, row.duration, barLen);
+  const pieces = sliceNote(row.onset, row.duration, barLen, variableSpans);
   pieces.forEach((piece, pieceIndex) => {
     const written = decompose(piece.duration);
     let cursor = piece.onset;
@@ -596,10 +721,10 @@ export function proposePianoChamber(xml: string, partIds?: string[], correction?
   }
   const validated = validateBundle(bundle, partIds);
   if ('error' in validated) return fail(validated.error);
-  const rows = buildRows(validated.records, validated.barLen);
+  const rows = buildRows(validated.records, validated.metre);
   if (!rows.length) return fail('The piano selection has no sounding notes.');
   const roleUncertainty = assignRoles(rows);
-  const phrased = proposePhrases(rows, validated.barLen);
+  const phrased = proposePhrases(rows, validated.metre.barLen);
   const phrases = applyCorrections(rows, phrased.phrases, correction);
   const discovered = discoverMotifs(bundle.score);
   const tempo = tempoOf(bundle);
@@ -612,8 +737,9 @@ export function proposePianoChamber(xml: string, partIds?: string[], correction?
     proposal: {
       sourceSha256: bundle.sha256,
       bars: 24,
-      beats: validated.beats,
-      beatType: validated.beatType,
+      beats: validated.metre.beats,
+      beatType: validated.metre.beatType,
+      metres: validated.metre.runs,
       tempoBpm: tempo,
       tempoSource: tempo === null ? 'missing' : 'score',
       parts,
@@ -677,9 +803,32 @@ export function realisePianoChamber(request: OrchestrateRequest):
   if (tempo === null || tempo <= 0) {
     return fail('The score has no numeric tempo. Set correction.tempoBpm. The tempo was not guessed.');
   }
-  const rows = buildRows(validated.records, validated.barLen);
+  const metre = validated.metre;
+  const variableSpans = metre.uniform ? undefined : metre.spans;
+  const phraseBounds = (phrase: { startBar: number; endBar: number }): { start: number; end: number } => {
+    if (metre.uniform) {
+      return {
+        start: num(q((phrase.startBar - 1) * metre.barLen.n, metre.barLen.d)),
+        end: num(q(phrase.endBar * metre.barLen.n, metre.barLen.d)),
+      };
+    }
+    const first = metre.spans[phrase.startBar - 1]!;
+    const last = metre.spans[phrase.endBar - 1]!;
+    return { start: num(first.start), end: num(qAdd(last.start, last.length)) };
+  };
+  const barOfOnset = (onset: ExactQuarter): number => {
+    if (metre.uniform) return Math.floor(num(onset) / num(metre.barLen) + 1e-9) + 1;
+    const value = num(onset);
+    for (const span of metre.spans) {
+      const start = num(span.start);
+      const end = start + num(span.length);
+      if (value >= start - 1e-9 && value < end - 1e-9) return span.bar;
+    }
+    return 24;
+  };
+  const rows = buildRows(validated.records, metre);
   assignRoles(rows);
-  let phrases = proposePhrases(rows, validated.barLen).phrases;
+  let phrases = proposePhrases(rows, metre.barLen).phrases;
   phrases = applyCorrections(rows, phrases, correction);
   if (phrases.some((phrase) => phrase.startBar < 1 || phrase.endBar > 24 || phrase.endBar < phrase.startBar)) {
     return fail('Phrase boundaries must stay inside bars 1–24.');
@@ -755,7 +904,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     const preferred = phrase.kind === 'return' && openingCarrierRef.id
       ? [openingCarrierRef.id, ...melodyOrder(centre)]
       : melodyOrder(centre);
-    const spans = line.flatMap((row) => splitBars(row.onset, row.duration, validated.barLen).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
+    const spans = line.flatMap((row) => sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
     const choice = tryCarrier(resolved.parts, preferred, line.map((row) => row.midi), busy, spans, avoid);
     const fallback = choice ?? tryCarrier(resolved.parts, melodyOrder(centre), line.map((row) => row.midi), busy, spans, null);
     if (!fallback) return fail(`No chamber instrument can hold the melody in ${phrase.id} without clipping a note.`);
@@ -763,7 +912,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     foregroundByPhrase.set(phrase.id, fallback.part.partId);
     for (const row of line) {
       const disposition = fallback.shift === 0 ? 'retained' : 'octave-transferred';
-      placeRow(placed, busy, row, fallback.part, fallback.shift, validated.barLen, phrase.id, 'source', disposition);
+      placeRow(placed, busy, row, fallback.part, fallback.shift, metre.barLen, phrase.id, 'source', disposition, undefined, undefined, variableSpans);
       classification.set(row.event.id, {
         eventId: row.event.id,
         disposition,
@@ -777,12 +926,12 @@ export function realisePianoChamber(request: OrchestrateRequest):
 
   const bassRows = rows.filter((row) => row.role === 'bass' && !omitted.has(row.event.id));
   if (bassRows.length) {
-    const spans = bassRows.flatMap((row) => splitBars(row.onset, row.duration, validated.barLen).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
+    const spans = bassRows.flatMap((row) => sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
     const choice = tryCarrier(resolved.parts, ['db', 'vc', 'bn'], bassRows.map((row) => row.midi), busy, spans, null);
     if (!choice) return fail('No bass instrument can hold the bass lane without clipping.');
     for (const row of bassRows) {
       const disposition = choice.shift === 0 ? 'retained' : 'octave-transferred';
-      placeRow(placed, busy, row, choice.part, choice.shift, validated.barLen, phraseOf(phrases, row.event.bar).id, 'source', disposition);
+      placeRow(placed, busy, row, choice.part, choice.shift, metre.barLen, phraseOf(phrases, row.event.bar).id, 'source', disposition, undefined, undefined, variableSpans);
       classification.set(row.event.id, {
         eventId: row.event.id,
         disposition,
@@ -816,7 +965,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
         ? ['vn2', 'va', 'cl', 'vn1']
         : ['va', 'hn', 'cl', 'vn2', 'bn'];
     const foreground = foregroundByPhrase.get(phrase.id) ?? null;
-    const spans = splitBars(row.onset, row.duration, validated.barLen).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) }));
+    const spans = sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) }));
     const choice = tryCarrier(resolved.parts, ids.filter((id) => id !== foreground), [row.midi], busy, spans, foreground);
     if (!choice) {
       if (locked.has(row.event.id)) return fail(`Locked event ${row.event.id} has no free instrument in range.`);
@@ -833,7 +982,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       continue;
     }
     const disposition = choice.shift === 0 ? 'retained' : 'octave-transferred';
-    placeRow(placed, busy, row, choice.part, choice.shift, validated.barLen, phrase.id, 'source', disposition);
+    placeRow(placed, busy, row, choice.part, choice.shift, metre.barLen, phrase.id, 'source', disposition, undefined, undefined, variableSpans);
     classification.set(row.event.id, {
       eventId: row.event.id,
       disposition,
@@ -887,12 +1036,13 @@ export function realisePianoChamber(request: OrchestrateRequest):
     const start = Math.abs(request.seed + phraseIndex * 3) % ANSWER_OPS.length;
     const order = [...ANSWER_OPS.slice(start), ...ANSWER_OPS.slice(0, start)];
     const foreground = foregroundByPhrase.get(phrase.id) ?? null;
-    const phraseStart = num(q((phrase.startBar - 1) * validated.barLen.n, validated.barLen.d));
-    const phraseEnd = num(q(phrase.endBar * validated.barLen.n, validated.barLen.d));
+    const bounds = phraseBounds(phrase);
+    const phraseStart = bounds.start;
+    const phraseEnd = bounds.end;
     const midpoint = phraseStart + (phraseEnd - phraseStart) / 2;
     let accepted: { op: OperatorId; partId: string; notes: Array<{ onset: number; midi: number; duration: number }> } | null = null;
     for (const op of order) {
-      const params = op === 'fragment-head' ? { count: 3 } : op === 'augment' ? { factor: 2 } : { beats: 1 };
+      const params = op === 'fragment-head' ? { count: 3 } : op === 'augment' ? { factor: 2 } : { beats: answerBeat(metre, phrase.startBar) };
       const transformed = applyOperator(motif, op, params);
       const soundingEvents = transformed.motif.events.filter((event) => event.midi !== null).map((event) => {
         let midi = event.midi as number;
@@ -944,7 +1094,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
         confidence: 'medium',
       };
       try {
-        placeRow(placed, busy, fake, part, 0, validated.barLen, phrase.id, 'derived', 'transformed', accepted.op);
+        placeRow(placed, busy, fake, part, 0, metre.barLen, phrase.id, 'derived', 'transformed', accepted.op, undefined, variableSpans);
         derivedNotes.push({ sounding: note.midi, duration: note.duration, onset: note.onset });
       } catch {
         omissions.push({ reason: `${phrase.id} answer note ${noteIndex + 1} overlapped ${part.name} and was left out.` });
@@ -963,9 +1113,15 @@ export function realisePianoChamber(request: OrchestrateRequest):
     const bassCarrier = placed.find((note) => bassRows.some((row) => note.sourceIds.includes(row.event.id) && note.origin === 'source'))?.partId ?? null;
     const harmonic = applyPianoChamberHarmonic({
       seed: request.seed,
-      beats: validated.beats,
-      beatType: validated.beatType,
-      barQuarters: num(validated.barLen),
+      beats: metre.beats,
+      beatType: metre.beatType,
+      barQuarters: num(metre.barLen),
+      ...(metre.uniform ? {} : {
+        barOriginQuarters: metre.spans.map((span) => num(span.start)),
+        barLengths: metre.spans.map((span) => num(span.length)),
+        barBeats: metre.spans.map((span) => metre.metres[span.bar]!.numerator),
+        barBeatTypes: metre.spans.map((span) => metre.metres[span.bar]!.denominator),
+      }),
       phrases: phrases.map((phrase) => ({ id: phrase.id, startBar: phrase.startBar, endBar: phrase.endBar })),
       rows: rows.filter((row) => !omitted.has(row.event.id)).map((row) => ({
         id: row.event.id,
@@ -986,7 +1142,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     for (const note of harmonicNotes) {
       const part = resolved.parts.find((item) => item.partId === note.partId);
       if (!part) return fail(`Harmonic line named an unknown part ${note.partId}.`);
-      const bar = Math.floor(num(note.onset) / num(validated.barLen) + 1e-9) + 1;
+      const bar = barOfOnset(note.onset);
       const fake: NoteRow = {
         record: rows[0]!.record,
         event: {
@@ -1006,7 +1162,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
         confidence: 'medium',
       };
       try {
-        placeRow(placed, busy, fake, part, 0, validated.barLen, phraseOf(phrases, bar).id, 'derived', 'transformed', note.control, note.pitch);
+        placeRow(placed, busy, fake, part, 0, metre.barLen, phraseOf(phrases, bar).id, 'derived', 'transformed', note.control, note.pitch, variableSpans);
       } catch (error) {
         return fail(error instanceof Error ? error.message : 'The harmonic line overlapped a voice that was already placed.');
       }
@@ -1114,7 +1270,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       title: 'Piano to chamber',
       tempo,
       bars: 24,
-      metres: Object.fromEntries(Array.from({ length: 24 }, (_, index) => [index + 1, { numerator: validated.beats, denominator: validated.beatType }])),
+      metres: metre.metres,
       parts: specs,
       placements,
       rests: [],
@@ -1176,7 +1332,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
         if (index === siblings.length - 1 && row.event.tieStart) {
           note.notation = { ...note.notation, tie: siblings.length === 1 ? 'start' : 'continue' };
         } else if (index === 0 && row.event.tieStop) {
-          note.notation = { ...note.notation, tie: 'stop' };
+          note.notation = { ...note.notation, tie: siblings.length === 1 ? 'stop' : 'continue' };
         }
       }
     }

@@ -303,6 +303,7 @@ export const api = {
         bars: number;
         beats: number;
         beatType: number;
+        metres?: Array<{ bar: number; throughBar: number; beats: number; beatType: number; groups: number[] | null }>;
         tempoBpm: number | null;
         tempoSource: string;
         uncertain: string[];

@@ -286,9 +286,18 @@ assert.equal(refusedLength.ok, false);
 if (!refusedLength.ok) assert.match(refusedLength.error, /24-bar/);
 
 const fiveFour = pianoScore('Five four', Array.from({ length: 24 }, () => `${w('C', 5, 1)}${backup()}${w('C', 3, 2)}`), 5, 4);
-const refusedMetre = apiOrchestrate({ enabled: true, pianoChamber: { action: 'propose', sourceMusicXml: fiveFour } });
+const acceptedFive = apiOrchestrate({ enabled: true, pianoChamber: { action: 'propose', sourceMusicXml: fiveFour } });
+assert.equal(acceptedFive.ok, true, acceptedFive.ok ? '' : acceptedFive.error);
+if (acceptedFive.ok && 'proposalOnly' in acceptedFive) {
+  assert.equal(acceptedFive.proposal.beats, 5);
+  assert.equal(acceptedFive.proposal.beatType, 4);
+  assert.equal(acceptedFive.proposal.metres.length, 1);
+}
+
+const nineSixteen = pianoScore('Nine sixteen', Array.from({ length: 24 }, () => `${w('C', 5, 1)}${backup()}${w('C', 3, 2)}`), 9, 16);
+const refusedMetre = apiOrchestrate({ enabled: true, pianoChamber: { action: 'propose', sourceMusicXml: nineSixteen } });
 assert.equal(refusedMetre.ok, false);
-if (!refusedMetre.ok) assert.match(refusedMetre.error, /4\/4, 3\/4 or 6\/8/);
+if (!refusedMetre.ok) assert.match(refusedMetre.error, /9\/16/);
 
 const quint = pianoScore('Quint', [
   ...Array.from({ length: 23 }, () => lyricalBar([['C', 5], ['D', 5], ['E', 5], ['G', 5]], ['C', 3])),

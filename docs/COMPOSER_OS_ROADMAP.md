@@ -6,7 +6,7 @@
 
 | Lane | Status |
 |------|--------|
-| **V3.5 Phase 1 piano to chamber** | **IMPLEMENTED, TESTED, NOT MUSICALLY APPROVED** — opt-in `orchestrate()` branch. Evidence `docs/v3.5-phase1/`. |
+| **V3.5 Phase 1 piano to chamber** | **IMPLEMENTED, TESTED, NOT MUSICALLY APPROVED** — opt-in `orchestrate()` branch. Metres: 2/4, 3/4, 4/4, 5/4, 6/4, 7/4, 3/8, 5/8, 6/8, 7/8, 9/8, 12/8, including changes inside the 24 bars. Evidence `docs/v3.5-phase1/`. |
 | **V3.5 Phase 2 harmonic development** | **IMPLEMENTED, TESTED, NOT MUSICALLY APPROVED** — BHL quadratonic tension–release and explicit triad-pair dialogue on the same branch. Both default off. Off matches Phase 1 bytes. Evidence `docs/v3.5-phase2/`. |
 | **Riff chord-loop trust** | **Phase 1–3 SHIPPED** — post-gen disclosure · inline badges · **ack gating + per-token Accept/Pick/Edit** (empty loop ungated; no polychord grammar) |
 | **GCE endingContext** | **SHIPPED** — `terminal` / `loop` / `open_idiom` for `finalBarTension` (threshold unchanged; `riff_generator` defaults `loop`); **`openIdiomDefault`** user pref (default OFF) → same disclosure UX as ack |
