@@ -35,6 +35,7 @@ import {
 import { resolveTemplate, type ResolvedPart } from './ensembleTemplates';
 import { performE2 } from './e2Perform';
 import { proposePianoChamber, realisePianoChamber, type PianoChamberFidelity, type PianoChamberProposal } from './pianoChamber';
+import type { SymphonicMidiManifest } from './symphonicMidiSet';
 import type {
   DerivedLineEvent,
   EnsembleTemplateId,
@@ -53,6 +54,9 @@ export interface OrchestrateSuccess {
   receipt: OrchestrateReceipt;
   score: ScoreModel;
   midiBase64?: string;
+  /** Zip of the synchronized family files plus manifest. Not one orchestra MIDI file. */
+  midiSetBase64?: string;
+  midiManifest?: SymphonicMidiManifest;
   fidelity?: PianoChamberFidelity;
 }
 
@@ -548,6 +552,7 @@ export function orchestrate(request: OrchestrateRequest): OrchestrateResult {
       receipt: realised.receipt,
       score: realised.score,
       midiBase64: realised.midiBase64,
+      ...(realised.midiSetBase64 ? { midiSetBase64: realised.midiSetBase64, midiManifest: realised.midiManifest } : {}),
       fidelity: realised.fidelity,
     };
   }

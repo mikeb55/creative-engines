@@ -5,7 +5,7 @@
  * Every pitch of every decomposed segment receives sound ties and notation ties.
  */
 
-import { DIVISIONS, type MeasureModel, type NoteEvent, type PartModel, type PianoExactTiming, type PianoPedalEvent, type RestEvent, type ScoreEvent } from '../score-model/scoreModelTypes';
+import { DIVISIONS, type MeasureModel, type NoteEvent, type PartModel, type PianoExactTiming, type PianoGrandStaffV1, type PianoPedalEvent, type RestEvent, type ScoreEvent } from '../score-model/scoreModelTypes';
 import { pianoStaffForVoice } from '../piano/pianoTypes';
 import { PIANO_V11_EXPORT_PPQ, integralTicks } from '../piano/pianoExactTiming';
 import {
@@ -92,6 +92,10 @@ function exactNotation(exact: PianoExactTiming, number: number, ties: string): s
   return `${beams}${notations}`;
 }
 
+function grandContract(part: PartModel): PianoGrandStaffV1 | undefined {
+  return part.pianoGrandStaff ?? part.harpGrandStaff;
+}
+
 /**
  * Scoped exact path. Durations are already sounding ticks.
  * time-modification is not applied again.
@@ -102,9 +106,9 @@ function pianoExactGrandStaffXml(
   preferFlats: boolean,
   measureCapacity: number,
 ): string {
-  const contract = part.pianoGrandStaff;
+  const contract = grandContract(part);
   if (!contract || contract.kind !== 'grand-staff-v1') {
-    throw new Error(`MusicXML export: part ${part.id} has no piano grand-staff contract`);
+    throw new Error(`MusicXML export: part ${part.id} has no grand-staff contract`);
   }
   const voices = contract.innerVoiceEnabled ? [1, 2, 3] : [1, 3];
   const allowed = new Set(voices);
@@ -195,9 +199,9 @@ export function pianoGrandStaffEventsToXml(
   preferFlats: boolean,
   measureCapacity: number,
 ): string {
-  const contract = part.pianoGrandStaff;
+  const contract = grandContract(part);
   if (!contract || contract.kind !== 'grand-staff-v1') {
-    throw new Error(`MusicXML export: part ${part.id} has no piano grand-staff contract`);
+    throw new Error(`MusicXML export: part ${part.id} has no grand-staff contract`);
   }
   if (measure.events.some((event) => (event.kind === 'note' || event.kind === 'rest') && event.pianoExact)) {
     return pianoExactGrandStaffXml(measure, part, preferFlats, measureCapacity);

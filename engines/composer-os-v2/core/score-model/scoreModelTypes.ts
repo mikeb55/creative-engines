@@ -273,6 +273,8 @@ export interface PartModel {
   clef: 'treble' | 'bass';
   /** Explicit piano grand-staff contract. Does not apply to guitar, TAB or renamed keyboard parts. */
   pianoGrandStaff?: PianoGrandStaffV1;
+  /** Harp grand staff. Identity stays harp. This is not a piano part. */
+  harpGrandStaff?: PianoGrandStaffV1;
   measures: MeasureModel[];
   /** Song Mode keyboard-centric writer: export harmony staff as Piano / keys comp (same event layout as duo guitar). */
   songModePresentAsPianoComp?: boolean;

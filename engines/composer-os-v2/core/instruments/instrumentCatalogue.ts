@@ -60,6 +60,15 @@ export const HORN_F_TRANSPOSITION: Transposition = { diatonic: -4, chromatic: -7
 export const CLARINET_BB_TRANSPOSITION: Transposition = { diatonic: -1, chromatic: -2, octaveChange: 0 };
 export const DOUBLE_BASS_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: -1 };
 export const PICCOLO_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: 1 };
+/** Cor anglais in F. Written C sounds F a perfect fifth below. Treble clef, not the older Russian alto-clef concert part. */
+export const COR_ANGLAIS_TRANSPOSITION: Transposition = { diatonic: -4, chromatic: -7, octaveChange: 0 };
+/**
+ * Bass clarinet in B-flat, modern treble-clef convention.
+ * Written C sounds B-flat a major ninth below. Bass-clef concert notation is not used.
+ */
+export const BASS_CLARINET_BB_TRANSPOSITION: Transposition = { diatonic: -1, chromatic: -2, octaveChange: -1 };
+/** Contrabassoon sounds one octave below the written bass-clef pitch. */
+export const CONTRABASSOON_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: -1 };
 export const CELESTA_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: 1 };
 export const GLOCKENSPIEL_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: 2 };
 
@@ -168,8 +177,12 @@ export const INSTRUMENT_CATALOGUE: readonly InstrumentSpec[] = [
     id: 'piccolo',
     displayName: 'Piccolo',
     family: 'woodwinds',
-    soundingHardRange: null,
-    soundingComfortRange: null,
+    /**
+     * Orchestralibrary written D4–C7, sounding one octave higher.
+     * D5 is MIDI 74 and C8 is MIDI 108. Middle C is MIDI 60.
+     */
+    soundingHardRange: [74, 108],
+    soundingComfortRange: [74, 108],
     comfortInferred: true,
     transposition: PICCOLO_TRANSPOSITION,
     clefs: ['treble'],
@@ -356,6 +369,78 @@ export const INSTRUMENT_CATALOGUE: readonly InstrumentSpec[] = [
     maxSimultaneous: 4,
     balanceClass: 'other',
     sources: [ORCH_LIB, SOUNDS_XML],
+  }),
+  spec({
+    id: 'cor_anglais',
+    displayName: 'Cor anglais',
+    family: 'woodwinds',
+    /** Orchestralibrary written B3–G6, sounding a perfect fifth lower: E3–C6. */
+    soundingHardRange: [52, 84],
+    soundingComfortRange: [52, 84],
+    comfortInferred: true,
+    transposition: COR_ANGLAIS_TRANSPOSITION,
+    clefs: ['treble'],
+    instrumentSound: 'wind.reed.english-horn',
+    midiProgram: 69,
+    techniques: ['flutter'],
+    maxSimultaneous: 1,
+    balanceClass: 'woodwind',
+    sources: [ORCH_LIB, SOUNDS_XML],
+  }),
+  spec({
+    id: 'bass_clarinet_bb',
+    displayName: 'Bass Clarinet in B-flat',
+    family: 'woodwinds',
+    /**
+     * Orchestralibrary written E♭3–G6 in treble clef, sounding a major ninth lower: C♯2–F5.
+     * The low C3 extension is not this hard floor.
+     */
+    soundingHardRange: [37, 77],
+    soundingComfortRange: [37, 77],
+    comfortInferred: true,
+    transposition: BASS_CLARINET_BB_TRANSPOSITION,
+    clefs: ['treble'],
+    instrumentSound: 'wind.reed.clarinet.bass',
+    /** General MIDI has no bass-clarinet program. 71 is the clarinet program. */
+    midiProgram: 71,
+    techniques: ['flutter'],
+    maxSimultaneous: 1,
+    balanceClass: 'woodwind',
+    sources: [ORCH_LIB, SOUNDS_XML],
+  }),
+  spec({
+    id: 'contrabassoon',
+    displayName: 'Contrabassoon',
+    family: 'woodwinds',
+    /** Orchestralibrary written B♭1–B♭4, sounding one octave lower: B♭0–B♭3. */
+    soundingHardRange: [22, 58],
+    soundingComfortRange: [22, 58],
+    comfortInferred: true,
+    transposition: CONTRABASSOON_TRANSPOSITION,
+    clefs: ['bass'],
+    instrumentSound: 'wind.reed.contrabassoon',
+    /** General MIDI has no contrabassoon program. 70 is the bassoon program. */
+    midiProgram: 70,
+    techniques: [],
+    maxSimultaneous: 1,
+    balanceClass: 'woodwind',
+    sources: [ORCH_LIB, SOUNDS_XML],
+  }),
+  spec({
+    id: 'orchestral_percussion',
+    displayName: 'Orchestral percussion',
+    family: 'percussion',
+    soundingHardRange: null,
+    soundingComfortRange: null,
+    comfortInferred: true,
+    transposition: CONCERT_TRANSPOSITION,
+    clefs: ['percussion'],
+    instrumentSound: 'drum.bass-drum',
+    midiProgram: 0,
+    techniques: [],
+    maxSimultaneous: 1,
+    balanceClass: 'other',
+    sources: [SOUNDS_XML],
   }),
   spec({
     id: 'glockenspiel',

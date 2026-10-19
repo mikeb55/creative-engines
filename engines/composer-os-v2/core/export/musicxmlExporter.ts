@@ -51,6 +51,7 @@ import { applyContextPitchSpellings, midiToPitch, noteXmlPitchedFragment, noteXm
 import { logGuitarVoice2CheckpointFromScore } from '../goldenPath/phaseAGuitarPolyphonyProbe';
 import { assertNoteXmlCanonicalChildOrder, assertSibeliusExportMeasureStructure } from './exportMeasureStructureAssert';
 import { pianoGrandStaffEventsToXml, pianoPedalDirectionXml } from './pianoGrandStaffXml';
+import { integralTicks } from '../piano/pianoExactTiming';
 import { exactSingleStaffEventsToXml, measureUsesExactStaff } from './exactSingleStaffXml';
 import { formatTimeXml } from '../piano/pianoMeterPlan';
 import { validateMusicXml } from '../../../../src/utils/musicXmlValidator';
@@ -1505,6 +1506,67 @@ function eventsToXml(
   return xml;
 }
 
+function orchestralPercussionScorePartXml(partId: string): string {
+  return `    <score-part id="${partId}">
+      <part-name>Orchestral percussion</part-name>
+      <part-abbreviation>Perc.</part-abbreviation>
+      <score-instrument id="${partId}-bd">
+        <instrument-name>Bass drum</instrument-name>
+        <instrument-sound>drum.bass-drum</instrument-sound>
+      </score-instrument>
+      <score-instrument id="${partId}-cym">
+        <instrument-name>Suspended cymbal</instrument-name>
+        <instrument-sound>metal.cymbal.suspended</instrument-sound>
+      </score-instrument>
+      <midi-instrument id="${partId}-bd">
+        <midi-channel>10</midi-channel>
+        <midi-unpitched>36</midi-unpitched>
+      </midi-instrument>
+      <midi-instrument id="${partId}-cym">
+        <midi-channel>10</midi-channel>
+        <midi-unpitched>57</midi-unpitched>
+      </midi-instrument>
+    </score-part>`;
+}
+
+function orchestralPercussionEventsToXml(measure: MeasureModel, part: PartModel, measureCapacity: number): string {
+  let xml = '';
+  let cursor = 0;
+  for (const event of measure.events) {
+    if (event.kind !== 'note' && event.kind !== 'rest') continue;
+    if (!event.pianoExact) throw new Error(`Orchestral percussion ${part.id} bar ${measure.index} has no exact timing`);
+    const start = integralTicks(event.pianoExact.onsetQ, DIVISIONS);
+    const duration = integralTicks(event.pianoExact.durationQ, DIVISIONS);
+    if (start === null || duration === null || duration < 1) {
+      throw new Error(`Orchestral percussion ${part.id} bar ${measure.index} cannot be written at PPQ ${DIVISIONS}`);
+    }
+    if (start !== cursor) throw new Error(`Orchestral percussion ${part.id} bar ${measure.index} has a gap at tick ${cursor}`);
+    const spec = tickSpecForLength(duration);
+    const typeDots = typeAndDotsXml(spec);
+    if (event.kind === 'rest') {
+      xml += noteXmlRestFragment({ durationTicks: duration, voice: event.voice ?? 1, typeAndDotsXml: typeDots });
+    } else {
+      const gm = event.pitch;
+      if (gm !== 36 && gm !== 57) throw new Error(`Orchestral percussion refuses GM note ${gm}. Bass drum is 36 and suspended cymbal is 57.`);
+      xml += drumKitNoteXml({
+        chord: false,
+        step: gm === 36 ? 'F' : 'G',
+        octave: gm === 36 ? 4 : 5,
+        ticks480: duration,
+        voice: event.voice ?? 1,
+        stem: 'up',
+        notehead: gm === 57 ? 'x' : 'normal',
+        instrumentId: gm === 36 ? `${part.id}-bd` : `${part.id}-cym`,
+      });
+    }
+    cursor += duration;
+  }
+  if (cursor !== measureCapacity) {
+    throw new Error(`Orchestral percussion ${part.id} bar ${measure.index} tick sum ${cursor} ≠ ${measureCapacity}`);
+  }
+  return xml;
+}
+
 /** Export ScoreModel to MusicXML string. */
 export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXmlExportOptions): MusicXmlExportResult {
   try {
@@ -1555,6 +1617,9 @@ export function exportScoreModelToMusicXml(score: ScoreModel, options?: MusicXml
         }
         if (p.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY || p.id === 'groove_drums') {
           return grooveDrumsScorePartXml(p.id);
+        }
+        if (p.instrumentIdentity === 'orchestral_percussion') {
+          return orchestralPercussionScorePartXml(p.id);
         }
         /** Big Band (`bb_piano`) + String Quartet (`sq_piano`) + Song Mode keys comp: piano part-list, GM ch. 1 program 1. */
         if (isBigBandPianoPart(p) || isStringQuartetPianoPart(p) || isSongModeKeysCompPianoPart(p)) {
@@ -1609,7 +1674,7 @@ ${partList}
       const clefLine = part.clef === 'bass' ? 4 : 2;
       const clefOctaveChangeXml = '';
       let clefXml: string;
-      if (isBigBandDrums || isArtRockBandDrums || isFelaAfrobeatDrums || isGrooveDrums) {
+      if (isBigBandDrums || isArtRockBandDrums || isFelaAfrobeatDrums || isGrooveDrums || part.instrumentIdentity === 'orchestral_percussion') {
         clefXml = '<clef number="1"><sign>percussion</sign><line>2</line></clef>';
       } else if (
         part.instrumentIdentity === 'string_quartet_viola' ||
@@ -1668,7 +1733,7 @@ ${partList}
             : transposeSemi !== undefined
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
-          const stavesAndClefXml = part.pianoGrandStaff
+          const stavesAndClefXml = part.pianoGrandStaff || part.harpGrandStaff
             ? `      <staves>2</staves>
       <clef number="1"><sign>G</sign><line>2</line></clef>
       <clef number="2"><sign>F</sign><line>4</line></clef>
@@ -1874,7 +1939,9 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
                 ? grooveDrumsEventsToXml(m, i, part, decompose, measureCapacity)
               : guitarInstrumentGroupTabExport
                 ? guitarInstrumentGroupTabEventsToXml(m, i, part, decompose, opts, preferFlats, measureCapacity)
-                : part.pianoGrandStaff
+                : part.instrumentIdentity === 'orchestral_percussion'
+                  ? orchestralPercussionEventsToXml(m, part, measureCapacity)
+                : part.pianoGrandStaff || part.harpGrandStaff
                   ? pianoGrandStaffEventsToXml(m, i, part, decompose, preferFlats, measureCapacity)
                   : measureUsesExactStaff(m)
                     ? exactSingleStaffEventsToXml(m, part, preferFlats, measureCapacity)
@@ -1891,7 +1958,7 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
 `;
     xml = applyContextPitchSpellings(xml, score.pitchClassSpelling);
     assertSibeliusExportMeasureStructure(xml, {
-      pianoGrandStaffPartIds: score.parts.filter((p) => p.pianoGrandStaff).map((p) => p.id),
+      pianoGrandStaffPartIds: score.parts.filter((p) => p.pianoGrandStaff || p.harpGrandStaff).map((p) => p.id),
     });
     assertNoteXmlCanonicalChildOrder(xml);
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {

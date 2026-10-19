@@ -173,6 +173,7 @@ function midiChannelForPart(part: PartModel, partIndex: number, e2: boolean): nu
     || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY
     || part.instrumentIdentity === 'big_band_jazz_drums';
   if (drums && (e2 || part.id === GROOVE_DRUMS_PART_ID || part.instrumentIdentity === GROOVE_DRUMS_INSTRUMENT_IDENTITY)) return 10;
+  if (part.instrumentIdentity === 'orchestral_percussion') return 10;
   if (e2 && partIndex >= 15) throw new Error(`E2 MIDI refuses channel wrap for part ${part.id}`);
   return melodicChannelForPartIndex(partIndex);
 }
@@ -194,6 +195,13 @@ export interface WriteScoreMidiOptions {
   bpm?: number;
   /** Overrides {@link ScoreModel.barMeterMap} when resolving meters (same as MusicXML export). */
   barMeterMap?: BarMeterMap;
+  /** Writes conductor and part tracks when every part rests. The channel-wrap guard stays. */
+  allowEmpty?: boolean;
+}
+
+/** Channel used by E2 sounding export. Channel 10 is only an explicit percussion mapping. */
+export function e2SoundingChannel(part: PartModel, partIndex: number): number {
+  return midiChannelForPart(part, partIndex, true);
 }
 
 function mergeTieChains(
@@ -233,7 +241,7 @@ function mergeTieChains(
  */
 export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, options?: WriteScoreMidiOptions): boolean {
   const totalBars = scoreTotalBars(score);
-  if (totalBars < 1 || !hasRenderableNotes(score)) {
+  if (totalBars < 1 || (!hasRenderableNotes(score) && !options?.allowEmpty)) {
     return false;
   }
 

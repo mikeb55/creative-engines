@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { planDensityCurve, getDensityForBar } from '../density/densityCurvePlanner';
 import { runEnsembleExportPipeline } from '../export/ensembleExport';
-import { writeScoreMidi } from '../export/midiScoreWriter';
+import { writeScoreMidi, writeScoreModelMidiFile } from '../export/midiScoreWriter';
 import { midiOfPitch } from '../performance-composer/pcChord';
 import { discoverMotifs } from '../motif-ops/motifDiscovery';
 import { applyOperator } from '../motif-ops/operators';
@@ -32,6 +32,20 @@ import type { E2RealisedPlacement } from './harmonicRealisation';
 import type { SpelledRegister } from './harmonicColourTypes';
 import type { EventLineage } from './sourceFoundation';
 import { applyPianoChamberHarmonic, type ScheduledHarmonicNote } from './pianoChamberHarmonic';
+import { buildSymphonicMidiSet, type SymphonicMidiManifest } from './symphonicMidiSet';
+import {
+  BASS_DRUM_GM,
+  HARP_RANGE,
+  SUSPENDED_CYMBAL_GM,
+  SYMPHONIC_PART_BAND,
+  TIMPANI_RANGE,
+  foldIntoRange,
+  isSymphonicWind,
+  planSymphonicPhrases,
+  resolveSymphonicRoster,
+  resolveSymphonicSettings,
+  type SymphonicPhrasePlan,
+} from './symphonicWriting';
 import type {
   OrchestrateReceipt,
   OrchestrateRequest,
@@ -119,6 +133,13 @@ export interface PianoChamberFidelity {
   musicalQualityScore: null;
   musicallyApproved: false;
   listeningQuestions: string[];
+  /** Present only for the symphonic ensemble. Chamber receipts omit it. */
+  symphonic?: {
+    plans: SymphonicPhrasePlan[];
+    timpaniTuning: number[];
+    harpPedal: string;
+    conventions: string[];
+  };
   /** Present only when a Phase 2 control wrote notes. */
   harmonicDevelopment?: {
     protectedEventIds: string[];
@@ -164,6 +185,7 @@ interface Placed {
   octaveShift: number;
   op?: string;
   phraseId: string;
+  voice?: number;
 }
 
 const ANSWER_OPS: readonly OperatorId[] = ['fragment-head', 'augment', 'displace'];
@@ -666,6 +688,7 @@ function placeRow(
   op?: string,
   writtenPitch?: SpelledRegister,
   variableSpans?: ReadonlyArray<{ bar: number; start: ExactQuarter; length: ExactQuarter }>,
+  voice = 1,
 ): void {
   const midi = writtenPitch?.midi ?? row.midi + shift;
   const pitch = writtenPitch ?? spellShift(row.event, midi, shift);
@@ -691,6 +714,7 @@ function placeRow(
         octaveShift: shift,
         ...(op ? { op } : {}),
         phraseId,
+        voice,
       });
       cursor = qAdd(cursor, duration);
     });
@@ -781,11 +805,17 @@ function dynamicFor(kind: Phrase['kind'], highest: boolean, ending: boolean): Pa
 }
 
 export function realisePianoChamber(request: OrchestrateRequest):
-  | { ok: true; musicXml: string; midiBase64: string; receipt: OrchestrateReceipt; score: ScoreModel; fidelity: PianoChamberFidelity }
+  | { ok: true; musicXml: string; midiBase64: string; midiSetBase64?: string; midiManifest?: SymphonicMidiManifest; receipt: OrchestrateReceipt; score: ScoreModel; fidelity: PianoChamberFidelity }
   | { ok: false; error: string } {
   const command = request.pianoChamber;
   if (!command) return fail('Piano chamber was not requested.');
   const correction = command.correction ?? {};
+  if (correction.ensemble && correction.ensemble !== 'chamber' && correction.ensemble !== 'symphonic') {
+    return fail('Ensemble must be chamber or symphonic.');
+  }
+  const symphonic = correction.ensemble === 'symphonic';
+  const symphonicSettings = symphonic ? resolveSymphonicSettings(correction.symphonic) : null;
+  if (symphonicSettings && 'error' in symphonicSettings) return fail(symphonicSettings.error);
   if (correction.reviewConfirmed !== true) {
     return fail('Role and phrase review is required before realisation. Confirm or edit the inferred lanes. Uncertain analysis was not treated as fact.');
   }
@@ -799,6 +829,17 @@ export function realisePianoChamber(request: OrchestrateRequest):
   }
   const validated = validateBundle(bundle, correction.partIds);
   if ('error' in validated) return fail(validated.error);
+  const tempoMarks = bundle.score.directions.filter((direction) => direction.kind === 'tempo');
+  if (symphonic) {
+    const marked = tempoMarks.filter((direction) => typeof direction.playbackBpm === 'number' && direction.playbackBpm > 0);
+    const distinct = new Set(marked.map((direction) => direction.playbackBpm));
+    if (distinct.size > 1) {
+      return fail('The source has more than one tempo. A tempo map was not flattened to the first mark. Refusing the symphonic realisation.');
+    }
+    if (tempoMarks.some((direction) => /eighth|half|dotted/i.test(direction.text) && !/quarter/i.test(direction.text))) {
+      return fail('The source tempo unit is not a quarter-note metronome mark. It was not rewritten as the first tempo.');
+    }
+  }
   const tempo = proposed.proposal.tempoBpm ?? correction.tempoBpm ?? null;
   if (tempo === null || tempo <= 0) {
     return fail('The score has no numeric tempo. Set correction.tempoBpm. The tempo was not guessed.');
@@ -841,8 +882,12 @@ export function realisePianoChamber(request: OrchestrateRequest):
   for (const id of omitted) {
     if (locked.has(id)) return fail(`Locked source event ${id} cannot be omitted. Unlock it first. Locked material was not changed silently.`);
   }
-  const resolved = resolveTemplate('chamber_orchestra');
-  if (resolved.parts.length !== 10) return fail('The chamber roster did not resolve to ten catalogue instruments.');
+  const resolved = symphonic ? resolveSymphonicRoster() : resolveTemplate('chamber_orchestra');
+  if (!symphonic && resolved.parts.length !== 10) return fail('The chamber roster did not resolve to ten catalogue instruments.');
+  if (symphonic && (resolved.omissions.length > 0 || resolved.parts.length !== 31)) {
+    return fail(`The symphonic roster is incomplete. ${resolved.omissions.map((item) => item.detail).join(' ') || `${resolved.parts.length} parts resolved.`}`);
+  }
+  const partBand = symphonic ? SYMPHONIC_PART_BAND : PART_BAND;
   const family = getEnsembleFamilyProfile('chamber_orchestra');
   const sections = phrases.map((phrase, index) => ({
     index,
@@ -892,6 +937,21 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const openingCarrierRef: { id: string | null } = { id: null };
   const melodyRows = rows.filter((row) => row.role === 'melody' && !omitted.has(row.event.id));
   const highestMidi = melodyRows.reduce((best, row) => Math.max(best, row.midi), 0);
+  const phrasePlans = symphonic && symphonicSettings ? planSymphonicPhrases(
+    phrases,
+    (id) => {
+      const phrase = phrases.find((item) => item.id === id);
+      const line = melodyRows.filter((row) => phrase && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar);
+      if (!line.length) return 64;
+      return line.reduce((sum, row) => sum + row.midi, 0) / line.length;
+    },
+    (id) => {
+      const phrase = phrases.find((item) => item.id === id);
+      return melodyRows.filter((row) => phrase && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar).length;
+    },
+    symphonicSettings,
+  ) : null;
+  const planFor = (id: string): SymphonicPhrasePlan | null => phrasePlans?.find((plan) => plan.phraseId === id) ?? null;
 
   for (const phrase of phrases) {
     const line = melodyRows.filter((row) => row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar);
@@ -900,13 +960,16 @@ export function realisePianoChamber(request: OrchestrateRequest):
       continue;
     }
     const centre = line.reduce((sum, row) => sum + row.midi, 0) / line.length;
+    const plan = planFor(phrase.id);
     const avoid = phrase.kind === 'return' && openingCarrierRef.id ? null : previousCarrier;
-    const preferred = phrase.kind === 'return' && openingCarrierRef.id
-      ? [openingCarrierRef.id, ...melodyOrder(centre)]
-      : melodyOrder(centre);
+    const preferred = plan
+      ? plan.foregroundIds
+      : phrase.kind === 'return' && openingCarrierRef.id
+        ? [openingCarrierRef.id, ...melodyOrder(centre)]
+        : melodyOrder(centre);
     const spans = line.flatMap((row) => sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
     const choice = tryCarrier(resolved.parts, preferred, line.map((row) => row.midi), busy, spans, avoid);
-    const fallback = choice ?? tryCarrier(resolved.parts, melodyOrder(centre), line.map((row) => row.midi), busy, spans, null);
+    const fallback = choice ?? tryCarrier(resolved.parts, plan ? plan.foregroundIds : melodyOrder(centre), line.map((row) => row.midi), busy, spans, null);
     if (!fallback) return fail(`No chamber instrument can hold the melody in ${phrase.id} without clipping a note.`);
     if (!openingCarrierRef.id) openingCarrierRef.id = fallback.part.partId;
     foregroundByPhrase.set(phrase.id, fallback.part.partId);
@@ -927,7 +990,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const bassRows = rows.filter((row) => row.role === 'bass' && !omitted.has(row.event.id));
   if (bassRows.length) {
     const spans = bassRows.flatMap((row) => sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) })));
-    const choice = tryCarrier(resolved.parts, ['db', 'vc', 'bn'], bassRows.map((row) => row.midi), busy, spans, null);
+    const choice = tryCarrier(resolved.parts, phrasePlans?.[0]?.bassIds ?? ['db', 'vc', 'bn'], bassRows.map((row) => row.midi), busy, spans, null);
     if (!choice) return fail('No bass instrument can hold the bass lane without clipping.');
     for (const row of bassRows) {
       const disposition = choice.shift === 0 ? 'retained' : 'octave-transferred';
@@ -959,11 +1022,19 @@ export function realisePianoChamber(request: OrchestrateRequest):
       omissions.push({ eventId: row.event.id, reason: 'Sparse accompaniment reduction.' });
       continue;
     }
-    const ids = row.role === 'countermelody'
-      ? ['vc', 'va', 'cl', 'bn', 'hn', 'vn2']
-      : row.role === 'rhythmic_figure'
-        ? ['vn2', 'va', 'cl', 'vn1']
-        : ['va', 'hn', 'cl', 'vn2', 'bn'];
+    const supportPlan = planFor(phrase.id);
+    if (symphonic && symphonicSettings?.activity === 'sparse' && row.role === 'harmonic_support' && !locked.has(row.event.id)) {
+      classification.set(row.event.id, { eventId: row.event.id, disposition: 'omitted', partId: null, octaveShift: 0, reason: 'Symphonic activity is sparse. Short inner colour was left out.' });
+      omissions.push({ eventId: row.event.id, reason: 'Sparse symphonic limit.' });
+      continue;
+    }
+    const ids = supportPlan
+      ? (row.role === 'countermelody' || row.role === 'rhythmic_figure' ? supportPlan.answerIds : supportPlan.supportIds)
+      : row.role === 'countermelody'
+        ? ['vc', 'va', 'cl', 'bn', 'hn', 'vn2']
+        : row.role === 'rhythmic_figure'
+          ? ['vn2', 'va', 'cl', 'vn1']
+          : ['va', 'hn', 'cl', 'vn2', 'bn'];
     const foreground = foregroundByPhrase.get(phrase.id) ?? null;
     const spans = sliceNote(row.onset, row.duration, metre.barLen, variableSpans).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) }));
     const choice = tryCarrier(resolved.parts, ids.filter((id) => id !== foreground), [row.midi], busy, spans, foreground);
@@ -973,7 +1044,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       omissions.push({ eventId: row.event.id, reason: 'No free instrument in range.' });
       continue;
     }
-    const band = PART_BAND[choice.part.partId] ?? 'middle';
+    const band = partBand[choice.part.partId] ?? 'middle';
     const box = BANDS[band];
     if (row.role === 'harmonic_support' && (row.midi + choice.shift < box[0] - 12 || row.midi + choice.shift > box[1] + 12)) {
       if (locked.has(row.event.id)) return fail(`Locked event ${row.event.id} falls outside the register plan.`);
@@ -1017,6 +1088,8 @@ export function realisePianoChamber(request: OrchestrateRequest):
 
   const derivedEvents: OrchestrateReceipt['derivedLines'] = [];
   for (const [phraseIndex, phrase] of phrases.entries()) {
+    const answerPlan = planFor(phrase.id);
+    if (answerPlan && answerPlan.counterline === 'silence') continue;
     if (mode !== 'developing' || phrase.kind === 'statement' || phrase.kind === 'return' || phrase.endBar === 24) continue;
     if ([...Array(phrase.endBar - phrase.startBar + 1).keys()].every((offset) => silentBars.has(phrase.startBar + offset))) {
       silence.push({ bar: phrase.startBar, reason: 'Answer omitted. The phrase is protected silence.' });
@@ -1064,7 +1137,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       const events = soundingEvents
         .map((event) => ({ ...event, onset: midpoint + offset + event.onset }))
         .filter((event) => event.onset >= phraseStart && event.onset + event.duration <= phraseEnd + 1e-6);
-      const ids = foreground && ['fl', 'ob', 'cl', 'vn1'].includes(foreground) ? ['vn2', 'va', 'vc', 'bn', 'hn'] : ['fl', 'ob', 'cl', 'vn1', 'hn'];
+      const ids = answerPlan ? answerPlan.answerIds : foreground && ['fl', 'ob', 'cl', 'vn1'].includes(foreground) ? ['vn2', 'va', 'vc', 'bn', 'hn'] : ['fl', 'ob', 'cl', 'vn1', 'hn'];
       const spans = events.map((event) => ({ start: event.onset, end: event.onset + event.duration }));
       const carrier = tryCarrier(resolved.parts, ids, events.map((event) => event.midi), busy, spans, foreground);
       if (!carrier) continue;
@@ -1103,6 +1176,106 @@ export function realisePianoChamber(request: OrchestrateRequest):
     if (derivedNotes.length) {
       answers.push({ phraseId: phrase.id, operator: accepted.op, partId: accepted.partId, notes: derivedNotes.length });
       derivedEvents.push({ partId: accepted.partId, lineageId: `${phrase.id}.${accepted.op}`, ops: [accepted.op], events: derivedNotes });
+    }
+  }
+
+  const timpaniTuning: number[] = [];
+  let harpPedal = '';
+  if (symphonic && phrasePlans && symphonicSettings) {
+    for (const row of bassRows) {
+      const folded = foldIntoRange(row.midi, TIMPANI_RANGE);
+      if (folded === null || timpaniTuning.includes(folded)) continue;
+      timpaniTuning.push(folded);
+      if (timpaniTuning.length === 4) break;
+    }
+    const pedal = new Map<number, number>();
+    for (const row of rows) {
+      if (omitted.has(row.event.id)) continue;
+      const pc = pcOf(row.midi);
+      const alter = spellMidi(row.midi).alter;
+      const prior = pedal.get(pc);
+      if (prior === undefined) pedal.set(pc, alter);
+      else if (prior !== alter) pedal.set(pc, 99);
+    }
+    const conflicts = [...pedal.entries()].filter((entry) => entry[1] === 99).map((entry) => entry[0]);
+    harpPedal = [...pedal.entries()].filter((entry) => entry[1] !== 99).map(([pc, alter]) => `${pc}:${alter}`).join(' ');
+    if (conflicts.length) warnings.push(`Harp pedal cannot hold two spellings of pitch class ${conflicts.join(', ')}. Conflicting harp notes rest.`);
+    const harpCap = symphonicSettings.families.harp === 'limited' ? 2 : 6;
+    let harpCount = 0;
+    for (const plan of phrasePlans) {
+      const harp = resolved.parts.find((part) => part.partId === 'hp');
+      if (plan.harp && harp && harpCount < harpCap) {
+        const supports = rows.filter((row) => row.role === 'harmonic_support' && !omitted.has(row.event.id) && row.event.bar >= plan.startBar && row.event.bar <= plan.endBar && pedal.get(pcOf(row.midi)) !== 99 && row.midi >= HARP_RANGE[0] && row.midi <= HARP_RANGE[1]);
+        for (const row of supports) {
+          if (harpCount >= harpCap) break;
+          try {
+            placeRow(placed, busy, row, harp, 0, metre.barLen, plan.phraseId, 'source', 'retained', undefined, undefined, variableSpans, row.midi >= 60 ? 1 : 3);
+            harpCount += 1;
+          } catch {
+            warnings.push(`Harp rests through part of ${plan.phraseId}. The texture overlapped or exceeded a conservative grip.`);
+          }
+        }
+      }
+      const timpani = resolved.parts.find((part) => part.partId === 'timp');
+      if (plan.timpani && timpani && timpaniTuning.length) {
+        const row = bassRows.find((item) => item.event.bar >= plan.startBar && item.event.bar <= plan.endBar);
+        const folded = row ? foldIntoRange(row.midi, TIMPANI_RANGE) : null;
+        if (row && folded !== null && timpaniTuning.includes(folded)) {
+          const fake = { ...row, midi: folded, event: { ...row.event, id: `${plan.phraseId}-timp` } };
+          try {
+            placeRow(placed, busy, fake, timpani, 0, metre.barLen, plan.phraseId, 'derived', 'transformed', 'timpani-tuning', spellMidi(folded), variableSpans);
+          } catch {
+            warnings.push(`Timpani rest in ${plan.phraseId}. The declared tuning could not enter without a collision.`);
+          }
+        }
+      }
+      const percussion = resolved.parts.find((part) => part.partId === 'perc');
+      if (plan.percussion !== 'none' && percussion) {
+        const attack = melodyRows.find((row) => row.event.bar >= plan.startBar && row.event.bar <= plan.endBar && !silentBars.has(row.event.bar));
+        if (attack) {
+          const gm = plan.percussion === 'bass-drum' ? BASS_DRUM_GM : SUSPENDED_CYMBAL_GM;
+          const duration = qCmp(attack.duration, q(1)) < 0 ? attack.duration : q(1);
+          const fake = { ...attack, duration, midi: gm, event: { ...attack.event, id: `${plan.phraseId}-perc` } };
+          try {
+            placeRow(placed, busy, fake, percussion, 0, metre.barLen, plan.phraseId, 'derived', 'transformed', plan.percussion, spellMidi(gm), variableSpans);
+          } catch {
+            warnings.push(`Percussion rests in ${plan.phraseId}. No simultaneous roll was added.`);
+          }
+        }
+      }
+      if (plan.doubling) {
+        const head = melodyRows.find((row) => row.event.bar >= plan.startBar && row.event.bar <= plan.endBar);
+        if (head) {
+          const spans = sliceNote(head.onset, head.duration, metre.barLen, variableSpans).slice(0, 1).map((piece) => ({ start: num(piece.onset), end: num(piece.onset) + num(piece.duration) }));
+          const carrier = tryCarrier(resolved.parts, plan.supportIds, [head.midi], busy, spans, foregroundByPhrase.get(plan.phraseId) ?? null);
+          if (carrier) {
+            const short = { ...head, duration: spans.length ? q(Math.round((spans[0]!.end - spans[0]!.start) * 480), 480) : head.duration, event: { ...head.event, id: `${plan.phraseId}-double` } };
+            try {
+              placeRow(placed, busy, short, carrier.part, carrier.shift, metre.barLen, plan.phraseId, 'derived', 'transformed', 'reinforcement', undefined, variableSpans);
+            } catch {
+              warnings.push(`${plan.phraseId} reinforcement was left out.`);
+            }
+          }
+        }
+      }
+    }
+    for (const part of resolved.parts) {
+      if (!isSymphonicWind(part.partId)) continue;
+      const notes = placed.filter((note) => note.partId === part.partId).sort((a, b) => num(a.onset) - num(b.onset));
+      let runStart = 0;
+      let runEnd = 0;
+      let open = false;
+      for (const note of notes) {
+        const start = num(note.onset);
+        const end = start + num(note.duration);
+        if (!open || start > runEnd + 0.45) {
+          if (open && runEnd - runStart > 8) warnings.push(`Wind endurance heuristic: ${part.name} sounds ${Math.round(runEnd - runStart)} quarters without a rest. This is not player approval.`);
+          runStart = start;
+        }
+        runEnd = Math.max(runEnd, end);
+        open = true;
+      }
+      if (open && runEnd - runStart > 8) warnings.push(`Wind endurance heuristic: ${part.name} sounds ${Math.round(runEnd - runStart)} quarters without a rest. This is not player approval.`);
     }
   }
 
@@ -1188,7 +1361,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   });
   const registerPlan = planRegisterOwnership({
     sections,
-    partRegisterBias: PART_BAND,
+    partRegisterBias: partBand,
     mayLeadInMidRegister: { cl: true, hn: true, vn2: true, va: true },
   });
   const densityPlan = planDensityOwnership({
@@ -1218,8 +1391,9 @@ export function realisePianoChamber(request: OrchestrateRequest):
     clef: part.spec.clefs[0] === 'bass' ? 'bass' : 'treble',
     transposition: part.spec.transposition,
     hardRange: part.spec.soundingHardRange,
-    maxSimultaneous: 1,
+    maxSimultaneous: part.partId === 'hp' ? 4 : 1,
     catalogueInstrumentSound: part.spec.instrumentSound,
+    ...(part.partId === 'hp' ? { harpGrandStaff: true } : {}),
   }));
   const placements: E2RealisedPlacement[] = [];
   const assignments: E2Assignment[] = [];
@@ -1254,7 +1428,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       occurrence: index,
       sourceNotationEventIds: note.sourceIds,
     });
-    assignments.push({ placementId: id, partId: note.partId, voice: 1 });
+    assignments.push({ placementId: id, partId: note.partId, voice: note.voice ?? 1 });
   });
   const tieGroups = new Map<string, string[]>();
   for (const placement of placements) {
@@ -1267,7 +1441,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   let built;
   try {
     built = buildE2Score({
-      title: 'Piano to chamber',
+      title: symphonic ? 'Piano to symphony' : 'Piano to chamber',
       tempo,
       bars: 24,
       metres: metre.metres,
@@ -1340,9 +1514,27 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const exported = runEnsembleExportPipeline(built.score);
   if (!exported.ok || !exported.xml) return fail(exported.errors.join(' ') || 'MusicXML export failed.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'piano-chamber-'));
-  const midiPath = writeScoreMidi(built.score, directory, 'piano-chamber', built.score.barMeterMap, tempo);
-  if (!midiPath) return fail('MIDI export failed.');
-  const midiBase64 = fs.readFileSync(midiPath).toString('base64');
+  let midiBase64 = '';
+  let midiSetBase64: string | undefined;
+  let midiManifest: SymphonicMidiManifest | undefined;
+  if (symphonic) {
+    const midiSet = buildSymphonicMidiSet(built.score, tempo);
+    if (!midiSet.ok) return fail(midiSet.error);
+    midiSetBase64 = midiSet.zipBase64;
+    midiManifest = midiSet.manifest;
+    const stringsOnly: ScoreModel = {
+      ...built.score,
+      parts: built.score.parts.filter((part) => ['vn1', 'vn2', 'va', 'vc', 'db'].includes(part.id)),
+    };
+    const stringsPath = path.join(directory, 'symphony-strings.mid');
+    const stringsWrote = writeScoreModelMidiFile(stringsOnly, stringsPath, { bpm: tempo, barMeterMap: built.score.barMeterMap, allowEmpty: true });
+    if (!stringsWrote) return fail('Strings MIDI file was not written.');
+    midiBase64 = fs.readFileSync(stringsPath).toString('base64');
+  } else {
+    const midiPath = writeScoreMidi(built.score, directory, 'piano-chamber', built.score.barMeterMap, tempo);
+    if (!midiPath) return fail('MIDI export failed.');
+    midiBase64 = fs.readFileSync(midiPath).toString('base64');
+  }
   const orchestration = buildOrchestrationReport({ xml: exported.xml });
   const hard = orchestration.rangeUse.filter((row) => row.outsideHard > 0);
   if (hard.length) return fail(`Range report found hard-range notes in ${hard.map((row) => row.partId).join(', ')}.`);
@@ -1385,6 +1577,21 @@ export function realisePianoChamber(request: OrchestrateRequest):
     warnings,
     musicalQualityScore: null,
     musicallyApproved: false,
+    ...(symphonic && phrasePlans ? {
+      symphonic: {
+        plans: phrasePlans,
+        timpaniTuning,
+        harpPedal,
+        conventions: [
+          'Trumpets 1–3 are B-flat.',
+          'Trombones 1–3 are tenor trombones at concert pitch.',
+          'Bass clarinet is B-flat in treble clef, sounding a major ninth down.',
+          'Cor anglais is in F.',
+          'Contrabassoon sounds one octave below the written pitch.',
+          'Percussion is one player: bass drum GM 36 and suspended cymbal GM 57.',
+        ],
+      },
+    } : {}),
     listeningQuestions: [
       'Does the inferred melody still read as the theme after the instrument handover?',
       'Do the added answers sound necessary, or would the bar be clearer as silence?',
@@ -1450,7 +1657,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     planners: {
       family: 'chamber_orchestra',
       density: phrases.map((phrase) => ({ bar: phrase.startBar, requested: colourPlan.find((section) => section.section === phrase.id)?.density ?? 'medium', planner: getDensityForBar(densityCurve, phrase.startBar) })),
-      register: registerPlan.entries.filter((entry) => entry.sectionIndex === 0).map((entry) => ({ partId: entry.partId, requested: PART_BAND[entry.partId] ?? 'middle', assigned: entry.registerBand })),
+      register: registerPlan.entries.filter((entry) => entry.sectionIndex === 0).map((entry) => ({ partId: entry.partId, requested: partBand[entry.partId] ?? 'middle', assigned: entry.registerBand })),
       guitarZone: null,
       bassZone: null,
       ownershipEntries: texturePlan.entries.length,
@@ -1461,5 +1668,5 @@ export function realisePianoChamber(request: OrchestrateRequest):
     musicalQualityScore: null,
     musicallyApproved: false,
   };
-  return { ok: true, musicXml: exported.xml, midiBase64, receipt, score: built.score, fidelity };
+  return { ok: true, musicXml: exported.xml, midiBase64, ...(midiSetBase64 ? { midiSetBase64, midiManifest } : {}), receipt, score: built.score, fidelity };
 }

@@ -1,0 +1,211 @@
+{
+  "source": "docs/v3.5-phase1/lyrical/source.musicxml",
+  "sourceSha256": "191f0a579b188c259f961ca44d87a7b91aaf17e732eb2dea9f9c1ee5bf048dea",
+  "chamberSha256": "a852369637620d66c5ed16dce7ea27f7598c149e9c72e058796f62b9590cff7e",
+  "symphonySha256": "d721d9140488f85f00af3db8dcc262b2e5f5c7e691f8d4232309bdafd6630c61",
+  "chamberParts": 10,
+  "symphonyParts": 31,
+  "symphonyStaves": 32,
+  "phrases": [
+    {
+      "id": "p1",
+      "startBar": 1,
+      "endBar": 4,
+      "role": "statement",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "medium",
+      "dynamic": "p",
+      "handover": false,
+      "ending": false
+    },
+    {
+      "id": "p2",
+      "startBar": 5,
+      "endBar": 8,
+      "role": "development",
+      "foreground": "vn1",
+      "answer": "cl1",
+      "answerOperator": "displace",
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mf",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p3",
+      "startBar": 9,
+      "endBar": 12,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p4",
+      "startBar": 13,
+      "endBar": 16,
+      "role": "development",
+      "foreground": "vn1",
+      "answer": "cl1",
+      "answerOperator": "displace",
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mf",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p5",
+      "startBar": 17,
+      "endBar": 20,
+      "role": "return",
+      "foreground": "fl1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "sparse",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": false
+    },
+    {
+      "id": "p6",
+      "startBar": 21,
+      "endBar": 24,
+      "role": "development",
+      "foreground": "vn1",
+      "answer": null,
+      "answerOperator": null,
+      "register": "high",
+      "density": "medium",
+      "dynamic": "mp",
+      "handover": true,
+      "ending": true
+    }
+  ],
+  "answers": [
+    {
+      "phraseId": "p2",
+      "operator": "displace",
+      "partId": "cl1",
+      "notes": 4
+    },
+    {
+      "phraseId": "p4",
+      "operator": "displace",
+      "partId": "cl1",
+      "notes": 4
+    }
+  ],
+  "silence": [],
+  "orchestralParticipation": {
+    "declaredParts": 31,
+    "declaredStaves": 32,
+    "partsWithoutSoundingNotes": 24,
+    "soundingPartIds": ["fl1", "cl1", "timp", "perc", "hp", "vn1", "db"],
+    "role": "Orchestral infrastructure demonstration. Not proof of fully developed symphonic distribution. Greater instrumental participation is a Phase 2 objective."
+  },
+  "soundingEvents": {
+    "midiNoteOns": 141,
+    "midiNoteOffs": 141,
+    "musicXmlSoundingAttacks": 141,
+    "countedFrom": "staged symphony MIDI set and lyrical-symphony.musicxml during the documentation repair"
+  },
+  "fluteFeasibility": {
+    "partId": "fl1",
+    "uninterruptedQuarterDurations": [15, 12, 15, 15],
+    "heuristicEnduranceWarnings": true,
+    "protectedSourceNotesDeleted": false,
+    "playerApproval": false,
+    "note": "Practical breathing and musical feasibility require musician review. No player approval has been granted."
+  },
+  "desktopRelease": {
+    "packagedDevUpdated": false,
+    "stableUpdated": false,
+    "desktopApplicationInstalled": false,
+    "note": "Browser and source-level validation are separate from installed-app acceptance."
+  },
+  "v35Regression": {
+    "lyricalChamberMatchesCommittedFixture": true,
+    "fixture": "docs/v3.5-phase1/lyrical/lyrical.musicxml",
+    "historicalFixturesRewritten": false
+  },
+  "warnings": [
+    "Wind endurance heuristic: Flute 1 sounds 15 quarters without a rest. This is not player approval.",
+    "Wind endurance heuristic: Flute 1 sounds 12 quarters without a rest. This is not player approval.",
+    "Wind endurance heuristic: Flute 1 sounds 15 quarters without a rest. This is not player approval.",
+    "Wind endurance heuristic: Flute 1 sounds 15 quarters without a rest. This is not player approval."
+  ],
+  "timpaniTuning": [
+    48,
+    53,
+    55,
+    45
+  ],
+  "conventions": [
+    "Trumpets 1–3 are B-flat.",
+    "Trombones 1–3 are tenor trombones at concert pitch.",
+    "Bass clarinet is B-flat in treble clef, sounding a major ninth down.",
+    "Cor anglais is in F.",
+    "Contrabassoon sounds one octave below the written pitch.",
+    "Percussion is one player: bass drum GM 36 and suspended cymbal GM 57."
+  ],
+  "roster": [
+    "picc Piccolo piccolo symphony-woodwinds.mid",
+    "fl1 Flute 1 flute symphony-woodwinds.mid",
+    "fl2 Flute 2 flute symphony-woodwinds.mid",
+    "ob1 Oboe 1 oboe symphony-woodwinds.mid",
+    "ob2 Oboe 2 oboe symphony-woodwinds.mid",
+    "ca Cor anglais cor_anglais symphony-woodwinds.mid",
+    "cl1 Clarinet 1 in B-flat clarinet_bb symphony-woodwinds.mid",
+    "cl2 Clarinet 2 in B-flat clarinet_bb symphony-woodwinds.mid",
+    "bcl Bass Clarinet in B-flat bass_clarinet_bb symphony-woodwinds.mid",
+    "bn1 Bassoon 1 bassoon symphony-woodwinds.mid",
+    "bn2 Bassoon 2 bassoon symphony-woodwinds.mid",
+    "cbn Contrabassoon contrabassoon symphony-woodwinds.mid",
+    "hn1 Horn 1 in F horn_f symphony-brass.mid",
+    "hn2 Horn 2 in F horn_f symphony-brass.mid",
+    "hn3 Horn 3 in F horn_f symphony-brass.mid",
+    "hn4 Horn 4 in F horn_f symphony-brass.mid",
+    "tp1 Trumpet 1 in B-flat trumpet_bb symphony-brass.mid",
+    "tp2 Trumpet 2 in B-flat trumpet_bb symphony-brass.mid",
+    "tp3 Trumpet 3 in B-flat trumpet_bb symphony-brass.mid",
+    "tbn1 Tenor Trombone 1 trombone symphony-brass.mid",
+    "tbn2 Tenor Trombone 2 trombone symphony-brass.mid",
+    "tbn3 Tenor Trombone 3 trombone symphony-brass.mid",
+    "tba Bass Tuba tuba symphony-brass.mid",
+    "timp Timpani timpani symphony-harp-timpani-percussion.mid",
+    "perc Orchestral percussion orchestral_percussion symphony-harp-timpani-percussion.mid",
+    "hp Harp harp symphony-harp-timpani-percussion.mid",
+    "vn1 Violin I violin symphony-strings.mid",
+    "vn2 Violin II violin symphony-strings.mid",
+    "va Viola viola symphony-strings.mid",
+    "vc Cello cello symphony-strings.mid",
+    "db Double Bass double_bass symphony-strings.mid"
+  ],
+  "renders": {
+    "musescoreNotation": {
+      "software": "MuseScore Studio 4.7.5",
+      "encodingDate": "2026-10-19",
+      "pages": 6,
+      "includesTitlePage": true,
+      "roundTripPreserved": ["transpositions", "viola alto clef", "two harp staves", "percussion mapping bass drum 36 and suspended cymbal 57"],
+      "evidence": "Inspected existing round-trip MusicXML and six page renders. This documentation pass did not launch MuseScore again.",
+      "audioListening": "NOT PERFORMED"
+    },
+    "sibelius": "NOT RUN",
+    "cubase": "NOT RUN",
+    "artisticListening": "NOT PERFORMED",
+    "physicalPlaying": "NOT PERFORMED"
+  },
+  "artisticApproval": "PENDING"
+}

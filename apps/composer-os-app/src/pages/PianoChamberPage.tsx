@@ -115,6 +115,14 @@ export function PianoChamberPage() {
   const [error, setError] = useState('');
   const [musicXml, setMusicXml] = useState('');
   const [midiBase64, setMidiBase64] = useState('');
+  const [midiSetBase64, setMidiSetBase64] = useState('');
+  const [ensemble, setEnsemble] = useState<'chamber' | 'symphonic'>('chamber');
+  const [activity, setActivity] = useState<'sparse' | 'moderate' | 'full'>('moderate');
+  const [foregroundPref, setForegroundPref] = useState<'source-register' | 'strings' | 'woodwind' | 'brass'>('source-register');
+  const [counterline, setCounterline] = useState<'off' | 'when-source-allows'>('when-source-allows');
+  const [familyActivity, setFamilyActivity] = useState<Record<string, 'off' | 'limited' | 'open'>>({
+    woodwind: 'open', brass: 'open', strings: 'open', harp: 'limited', percussion: 'limited',
+  });
   const [fidelity, setFidelity] = useState<Fidelity | null>(null);
   const [busy, setBusy] = useState(false);
   const [bhlOn, setBhlOn] = useState(false);
@@ -149,6 +157,7 @@ export function PianoChamberPage() {
   function dropStaleArrangement() {
     setMusicXml('');
     setMidiBase64('');
+    setMidiSetBase64('');
     setFidelity(null);
   }
 
@@ -275,6 +284,10 @@ export function PianoChamberPage() {
             ...(unlocks.length ? { unlocks } : {}),
             ...(partIds.length ? { partIds } : {}),
             ...(harmonicDevelopment ? { harmonicDevelopment } : {}),
+            ...(ensemble === 'symphonic' ? {
+              ensemble,
+              symphonic: { activity, families: familyActivity, foreground: foregroundPref, counterline },
+            } : {}),
           },
         },
       });
@@ -286,14 +299,15 @@ export function PianoChamberPage() {
       return;
     }
     setBusy(false);
-    if (!response.ok || !response.musicXml || !response.midiBase64 || !response.fidelity) {
+    if (!response.ok || !response.musicXml || !response.fidelity || (ensemble === 'chamber' ? !response.midiBase64 : !response.midiSetBase64)) {
       setError(response.error || 'Arrangement was refused.');
       setMusicXml('');
       setFidelity(null);
       return;
     }
     setMusicXml(response.musicXml);
-    setMidiBase64(response.midiBase64);
+    setMidiBase64(response.midiBase64 ?? '');
+    setMidiSetBase64(response.midiSetBase64 ?? '');
     setFidelity(response.fidelity);
   }
 
@@ -314,7 +328,7 @@ export function PianoChamberPage() {
 
   return (
     <section data-testid="piano-chamber" style={{ display: 'grid', gap: '0.75rem', maxWidth: 920 }}>
-      <h2 style={{ margin: 0 }}>Piano to chamber</h2>
+      <h2 style={{ margin: 0 }}>Piano orchestration</h2>
       <p style={{ margin: 0 }}>
         Twenty-four bars. One piano part or two selected piano parts. Quarter metres 2/4, 3/4, 4/4, 5/4, 6/4 and 7/4. Eighth metres 3/8, 5/8, 6/8, 7/8, 9/8 and 12/8. A bar may change to another of these. Any other signature is refused. Developing arrangement is the default. Inferred roles stay proposals until you confirm them.
       </p>
@@ -336,6 +350,54 @@ export function PianoChamberPage() {
             {metreLine(proposal)}.
             Tempo {proposal.tempoSource === 'missing' ? 'missing' : proposal.tempoBpm}. {proposal.motifNote}
           </p>
+          <label>
+            Ensemble
+            <select data-testid="piano-chamber-ensemble" value={ensemble} onChange={(event) => { setEnsemble(event.target.value as 'chamber' | 'symphonic'); invalidateReview(); }}>
+              <option value="chamber">Chamber</option>
+              <option value="symphonic">Symphonic</option>
+            </select>
+          </label>
+          {ensemble === 'symphonic' ? (
+            <details data-testid="piano-chamber-symphonic" open>
+              <summary>Symphonic limits</summary>
+              <p>Family activity is a permission or a limit, not a quota. Empty parts stay in the score.</p>
+              <p>Playback limit: General MIDI has no bass-clarinet or contrabassoon program. Those parts use the clarinet and bassoon programs. The sine preview is not orchestral playback.</p>
+              <label>
+                Activity
+                <select aria-label="symphonic activity" value={activity} onChange={(event) => { setActivity(event.target.value as 'sparse' | 'moderate' | 'full'); dropStaleArrangement(); }}>
+                  <option value="sparse">sparse</option>
+                  <option value="moderate">moderate</option>
+                  <option value="full">full</option>
+                </select>
+              </label>
+              <label>
+                Foreground
+                <select aria-label="foreground preference" value={foregroundPref} onChange={(event) => { setForegroundPref(event.target.value as 'source-register' | 'strings' | 'woodwind' | 'brass'); dropStaleArrangement(); }}>
+                  <option value="source-register">source register</option>
+                  <option value="strings">strings</option>
+                  <option value="woodwind">woodwind</option>
+                  <option value="brass">brass</option>
+                </select>
+              </label>
+              <label>
+                Counterline
+                <select aria-label="counterline" value={counterline} onChange={(event) => { setCounterline(event.target.value as 'off' | 'when-source-allows'); dropStaleArrangement(); }}>
+                  <option value="when-source-allows">when the source allows</option>
+                  <option value="off">off</option>
+                </select>
+              </label>
+              {(['woodwind', 'brass', 'strings', 'harp', 'percussion'] as const).map((family) => (
+                <label key={family}>
+                  {family}
+                  <select aria-label={`${family} activity`} value={familyActivity[family]} onChange={(event) => { setFamilyActivity({ ...familyActivity, [family]: event.target.value as 'off' | 'limited' | 'open' }); dropStaleArrangement(); }}>
+                    <option value="off">off</option>
+                    <option value="limited">limited</option>
+                    <option value="open">open</option>
+                  </select>
+                </label>
+              ))}
+            </details>
+          ) : null}
           <label>
             Mode
             <select data-testid="piano-chamber-mode" value={mode} onChange={(event) => { setMode(event.target.value as 'developing' | 'faithful'); dropStaleArrangement(); }}>
@@ -587,9 +649,10 @@ export function PianoChamberPage() {
           <div>
             {fidelity.listeningQuestions.map((question) => <p key={question}>{question}</p>)}
           </div>
+          {midiSetBase64 ? <p data-testid="piano-chamber-midi-label">Synchronized MIDI set. Not one full-orchestra MIDI file. The sine preview does not play the orchestra.</p> : null}
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             <button type="button" data-testid="piano-chamber-preview" onClick={() => playPreview(fidelity.preview, fidelity.tempoBpm)}>
-              Pitch preview
+              Sine preview, not orchestral playback
             </button>
             <button
               type="button"
@@ -598,16 +661,29 @@ export function PianoChamberPage() {
             >
               MusicXML
             </button>
-            <button
-              type="button"
-              data-testid="piano-chamber-midi"
-              onClick={() => {
-                const binary = Uint8Array.from(atob(midiBase64), (char) => char.charCodeAt(0));
-                download('piano-chamber.mid', new Blob([binary], { type: 'audio/midi' }));
-              }}
-            >
-              MIDI
-            </button>
+            {midiSetBase64 ? (
+              <button
+                type="button"
+                data-testid="piano-chamber-midi-set"
+                onClick={() => {
+                  const binary = Uint8Array.from(atob(midiSetBase64), (char) => char.charCodeAt(0));
+                  download('symphony-midi-set.zip', new Blob([binary], { type: 'application/zip' }));
+                }}
+              >
+                Synchronized MIDI set
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="piano-chamber-midi"
+                onClick={() => {
+                  const binary = Uint8Array.from(atob(midiBase64), (char) => char.charCodeAt(0));
+                  download('piano-chamber.mid', new Blob([binary], { type: 'audio/midi' }));
+                }}
+              >
+                MIDI
+              </button>
+            )}
           </div>
         </div>
       ) : null}

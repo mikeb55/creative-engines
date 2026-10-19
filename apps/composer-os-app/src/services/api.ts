@@ -323,6 +323,8 @@ export const api = {
       };
       musicXml?: string;
       midiBase64?: string;
+      midiSetBase64?: string;
+      midiManifest?: { label: string; files: string[]; routes: Array<{ partId: string; file: string; track: number; channel: number; program: number }> };
       fidelity?: {
         mode: string;
         tempoBpm: number;

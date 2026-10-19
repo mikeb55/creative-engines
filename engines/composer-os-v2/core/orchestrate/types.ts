@@ -55,6 +55,13 @@ export interface PianoChamberCorrection {
   locks?: string[];
   /** Removes a default lock. The omission is then intentional. */
   unlocks?: string[];
+  /**
+   * Absent means chamber. Do not send this field on an existing chamber request.
+   * `symphonic` chooses the 31-part roster on the same branch.
+   */
+  ensemble?: 'chamber' | 'symphonic';
+  /** Read only when `ensemble` is `symphonic`. Omitted settings use the documented limits below. */
+  symphonic?: SymphonicOrchestrationSettings;
   phrases?: Array<{ id: string; startBar: number; endBar: number }>;
   reviewConfirmed?: boolean;
   /** Musician asked to leave these source events out. Locked ids are refused. */
@@ -102,6 +109,19 @@ export interface TriadPairDialogueControl {
   registerMin: number;
   registerMax: number;
   maxAttacks: number;
+}
+
+export type SymphonicFamilyId = 'woodwind' | 'brass' | 'strings' | 'harp' | 'percussion';
+export type SymphonicFamilyActivity = 'off' | 'limited' | 'open';
+export type SymphonicDensity = 'sparse' | 'moderate' | 'full';
+export type SymphonicForegroundPreference = 'source-register' | 'strings' | 'woodwind' | 'brass';
+
+/** Family activity is a permission or a limit. It is not a note quota. */
+export interface SymphonicOrchestrationSettings {
+  activity?: SymphonicDensity;
+  families?: Partial<Record<SymphonicFamilyId, SymphonicFamilyActivity>>;
+  foreground?: SymphonicForegroundPreference;
+  counterline?: 'off' | 'when-source-allows';
 }
 
 export interface PianoChamberHarmonicDevelopment {
