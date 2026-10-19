@@ -4,15 +4,17 @@
   <work><work-title>Part M1 below</work-title></work>
   <part-list>
     <score-part id="guitar">
-      <part-name>Piano</part-name>
-      <part-abbreviation>Pno.</part-abbreviation>
-      <score-instrument id="guitar-I1">
-        <instrument-name>Piano</instrument-name>
-        <instrument-sound>keyboard.piano</instrument-sound>
+      <part-name>Clean Electric Guitar</part-name>
+      <part-abbreviation>Gtr.</part-abbreviation>
+      <score-instrument id="P1-I1">
+        <instrument-name>Electric Guitar</instrument-name>
+        <instrument-sound>strings.guitar.electric</instrument-sound>
       </score-instrument>
-      <midi-instrument id="guitar-I1">
+      <midi-instrument id="P1-I1">
         <midi-channel>1</midi-channel>
-        <midi-program>1</midi-program>
+        <midi-program>28</midi-program>
+        <volume>80</volume>
+        <pan>0</pan>
       </midi-instrument>
     </score-part>
     <score-part id="bass">

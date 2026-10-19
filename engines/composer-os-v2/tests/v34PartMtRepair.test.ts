@@ -67,6 +67,17 @@ function triadPcs(symbol: string): number[] {
   return [root, (root + 4) % 12, (root + 7) % 12];
 }
 
+function guitarStaff(xml: string | undefined): boolean {
+  if (!xml) return false;
+  const head = xml.slice(0, xml.indexOf('<part id="guitar">'));
+  return (
+    head.includes('<part-name>Clean Electric Guitar</part-name>') &&
+    !head.includes('<part-name>Piano</part-name>') &&
+    head.includes('<instrument-sound>strings.guitar.electric</instrument-sound>') &&
+    head.includes('<midi-program>28</midi-program>')
+  );
+}
+
 function digest(score: ScoreModel | undefined): string {
   const parts = (score?.parts ?? []).map((part) =>
     part.measures
@@ -252,7 +263,9 @@ export function runV34PartMtRepairTests(): Row[] {
       legalTint(first.score) &&
       legalTint(second.score) &&
       first.score.tempo === 66 &&
-      second.score.tempo === 72,
+      second.score.tempo === 72 &&
+      guitarStaff(first.xml) &&
+      guitarStaff(second.xml),
   );
   if (!first.success || !second.success) {
     console.log('PART ERRORS', first.errors, second.errors);
@@ -362,7 +375,7 @@ export function writeV34PartMtExamples(dir: string): void {
     {
       stem: 'fur-alina-m1-below-seed3340',
       title: 'Für Alina posture — M1 below',
-      rule: 'M1 below. Melody is the diatonic cell. Tintinnabuli is the nearest triad tone under the melody, inside the bass range. On every second bar of the phrase the bass enters one beat later, so the melody holds alone. Every fourth bar is silence. The next phrase transposes the cell. Bars 1 and 25 stay the Song Mode identity lock.',
+      rule: 'M1 below. Melody is the diatonic cell. Tintinnabuli is the nearest triad tone under the melody, inside the bass range. On every second bar of the phrase the bass enters one beat later, so the melody holds alone. The third bar of each four-bar phrase is silence. The next phrase transposes the cell. Bars 1 and 25 stay the Song Mode identity lock.',
       opts: songOpts({
         arvoPartContext: 'fur_alina',
         arvoPartTintinnabuli: { mode: 'M1', position: 'below' },

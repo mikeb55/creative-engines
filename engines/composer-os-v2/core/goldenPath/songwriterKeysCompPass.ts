@@ -29,10 +29,16 @@ export function applySongwriterKeysCompPresentation(score: ScoreModel, context: 
   const g = score.parts.find((p) => p.id === 'guitar');
   if (!g) return;
 
-  g.songModePresentAsPianoComp = true;
-  g.name = 'Piano';
-  /** GM Acoustic Grand — export uses +1 in MusicXML midi-program tag; 0 is common offset. */
-  g.midiProgram = 0;
+  /**
+   * `arvo_part` on this duo is the guitar staff of the M/T repair.
+   * The keys-comp register clamp still runs. The printed instrument stays guitar.
+   */
+  if (md.songwriterStyleId !== 'arvo_part') {
+    g.songModePresentAsPianoComp = true;
+    g.name = 'Piano';
+    /** GM Acoustic Grand — export uses +1 in MusicXML midi-program tag; 0 is common offset. */
+    g.midiProgram = 0;
+  }
 
   /** Donald Fagen uses `applySongModeFagenKeysCompV15` for split-hand ranges — do not collapse to one band here. */
   if (md.songwriterStyleId === 'donald_fagen') return;
