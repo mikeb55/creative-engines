@@ -6,6 +6,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import dotenv from 'dotenv';
 import type { StartupState } from './startupState';
 import * as crypto from 'crypto';
@@ -18,12 +19,8 @@ import {
   resolveDesktopIpcBundlePath,
   resolveBuildStampPath,
 } from './config';
-import {
-  desktopChannelIdentity,
-  devDocumentsExportRoot,
-  devUserDataPath,
-  loadDesktopChannel,
-} from './desktopChannel';
+import { desktopChannelIdentity, loadDesktopChannel } from './desktopChannel';
+import { DEV_TEST_ROOT_ENV, startDesktopProcess, testRootWriteError } from './devTestIsolation';
 import { releaseDisplayForChannel } from './releaseIdentity';
 import {
   verifyUiBundleAtPath,
@@ -49,13 +46,24 @@ loadEnv();
 
 const desktopChannel = loadDesktopChannel();
 const desktopIdentity = desktopChannelIdentity(desktopChannel);
-if (desktopChannel === 'dev') {
-  app.setName(desktopIdentity.productName);
-  app.setPath('userData', devUserDataPath(app.getPath('appData')));
-  if (!process.env.COMPOSER_OS_OUTPUT_DIR?.trim()) {
-    process.env.COMPOSER_OS_OUTPUT_DIR = devDocumentsExportRoot();
-  }
-}
+const startup = startDesktopProcess({
+  channel: desktopChannel,
+  productName: desktopIdentity.productName,
+  testRootEnv: process.env[DEV_TEST_ROOT_ENV],
+  outputDirEnv: process.env.COMPOSER_OS_OUTPUT_DIR,
+  homeDir: os.homedir(),
+  appDataDir: app.getPath('appData'),
+  setName: (name) => app.setName(name),
+  setPath: (key, value) => app.setPath(key as Parameters<typeof app.setPath>[0], value),
+  setOutputDir: (dir) => {
+    process.env.COMPOSER_OS_OUTPUT_DIR = dir;
+  },
+  requestLock: () => app.requestSingleInstanceLock(),
+  exit: (code) => {
+    process.exit(code);
+  },
+  mkdir: (dir) => fs.mkdirSync(dir, { recursive: true }),
+});
 console.log('[desktop-channel]', desktopChannel, desktopIdentity.appId);
 
 /** Packaged builds always use full React UI (`resources/ui`). */
@@ -90,7 +98,7 @@ function isAllowedDevNavigation(url: string, devBase: string): boolean {
   }
 }
 
-const gotLock = app.requestSingleInstanceLock();
+const gotLock = startup === 'locked';
 if (!gotLock) {
   app.quit();
 } else {
@@ -464,6 +472,12 @@ async function launchApp(): Promise<void> {
   });
 
   const outputDir = resolveDefaultOutputDir();
+  const outputBlocked = testRootWriteError(outputDir);
+  if (outputBlocked) {
+    setStartupState('fatal_error');
+    loadErrorPage(win, outputBlocked);
+    return;
+  }
   try {
     fs.mkdirSync(outputDir, { recursive: true });
     fs.accessSync(outputDir, fs.constants.W_OK);

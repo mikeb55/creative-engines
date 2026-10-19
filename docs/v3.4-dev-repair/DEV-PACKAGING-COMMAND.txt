@@ -1,0 +1,12 @@
+cd apps/composer-os-desktop
+
+npm run desktop:build \
+&& swift scripts/render-dev-icon.swift resources/icon.png resources/icon-dev.png \
+&& COMPOSER_OS_PACK_CHANNEL=dev CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac --dir \
+  --config.directories.output=release-v34-dev-candidate-fixed \
+  --config.appId=com.mikeb55.composeros.dev \
+  --config.productName="Composer OS DEV" \
+  --config.mac.icon=resources/icon-dev.png \
+&& COMPOSER_OS_PACK_CHANNEL=dev node scripts/writeDesktopChannel.js "release-v34-dev-candidate-fixed/mac-arm64/Composer OS DEV.app" \
+&& node scripts/finalizeMacCandidateResources.js "release-v34-dev-candidate-fixed/mac-arm64/Composer OS DEV.app" \
+&& npx tsx install/signMacCandidateCli.ts "release-v34-dev-candidate-fixed/mac-arm64/Composer OS DEV.app"

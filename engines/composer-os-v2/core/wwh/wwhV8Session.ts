@@ -144,9 +144,15 @@ function pitchHasFret(sounding: number, maxFret: number): boolean {
   });
 }
 
+function v8SessionRoot(): string {
+  const isolated = process.env.COMPOSER_OS_DEV_TEST_SESSION_ROOT?.trim();
+  if (isolated && path.isAbsolute(isolated)) return path.resolve(isolated);
+  return V8_SESSION_DIR;
+}
+
 function assertSessionsDir(file: string): void {
   const resolved = path.resolve(file);
-  const root = path.resolve(V8_SESSION_DIR);
+  const root = path.resolve(v8SessionRoot());
   const relative = path.relative(root, resolved);
   if (relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Refusing to write outside the V8 session folder.');
   const blocked = path.resolve(root, '..');
@@ -296,7 +302,7 @@ export function generateWwhV8Session(request: V8SessionRequest, now = new Date()
   if (sourceAfter !== sourceBefore) throw new Error('The Black Aura leadsheet changed during generation.');
   const runId = `v8-${now.getTime().toString(36)}-${randomBytes(3).toString('hex')}`;
   const slug = (pairLabel ?? request.approach).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const dir = path.join(V8_SESSION_DIR, runId);
+  const dir = path.join(v8SessionRoot(), runId);
   const musicXmlPath = path.join(dir, `Black-Aura-${slug}.musicxml`);
   assertSessionsDir(musicXmlPath);
   fs.mkdirSync(dir, { recursive: true });

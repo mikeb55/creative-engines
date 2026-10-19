@@ -1,0 +1,456 @@
+diff --git a/apps/composer-os-desktop/electron/ipcEntry.ts b/apps/composer-os-desktop/electron/ipcEntry.ts
+index 461510e9..8920aeff 100644
+--- a/apps/composer-os-desktop/electron/ipcEntry.ts
++++ b/apps/composer-os-desktop/electron/ipcEntry.ts
+@@ -3,6 +3,7 @@
+  */
+ import { app, shell, type IpcMain } from 'electron';
+ import { documentsSaveBase, loadDesktopChannel } from './desktopChannel';
++import { testRootWriteError } from './devTestIsolation';
+ import { existsSync } from 'node:fs';
+ import { readFile } from 'node:fs/promises';
+ import path from 'path';
+@@ -180,6 +181,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+       if (relToDoc.startsWith('..') || path.isAbsolute(relToDoc)) {
+         return { ok: false, error: 'path outside Documents' };
+       }
++      const blocked = testRootWriteError(full);
++      if (blocked) return { ok: false, error: blocked };
+       try {
+         const { mkdir, writeFile } = await import('fs/promises');
+         await mkdir(path.dirname(full), { recursive: true });
+@@ -209,6 +212,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+     }
+     const relDir = getOutputDir(eng);
+     const target = path.join(app.getPath('documents'), ...relDir.split(/[/\\]/));
++    const blocked = testRootWriteError(target);
++    if (blocked) return;
+     try {
+       const fs = await import('fs/promises');
+       await fs.mkdir(target, { recursive: true });
+@@ -350,6 +355,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+     if (!filepath || !session) {
+       return { ok: false, error: 'missing filepath or session' };
+     }
++    const blocked = testRootWriteError(filepath);
++    if (blocked) return { ok: false, error: blocked };
+     return saveSessionFile(filepath, session);
+   });
+ 
+@@ -555,6 +562,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+         .slice(0, 40);
+       const filename = `wayne_shorter_${safeTitle}.musicxml`;
+       const outPath = path.join(outputDir, filename);
++      const blocked = testRootWriteError(outPath);
++      if (blocked) throw new Error(blocked);
+       await writeFile(outPath, stdout, 'utf8');
+ 
+       return { path: outPath, filename };
+@@ -643,6 +652,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+         .slice(0, 40);
+       const filename = `charlie_parker_${safeTitle}.musicxml`;
+       const outPath = path.join(outputDir, filename);
++      const blocked = testRootWriteError(outPath);
++      if (blocked) throw new Error(blocked);
+       await writeFile(outPath, stdout, 'utf8');
+ 
+       return { path: outPath, filename };
+@@ -724,6 +735,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+         .slice(0, 40);
+       const filename = `monk_${safeTitle}.musicxml`;
+       const outPath = path.join(outputDir, filename);
++      const blocked = testRootWriteError(outPath);
++      if (blocked) throw new Error(blocked);
+       await writeFile(outPath, stdout, 'utf8');
+       return { path: outPath, filename };
+     }
+@@ -796,14 +809,19 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+       });
+       if (picked.canceled || !picked.filePaths?.[0]) return { ok: false as const, canceled: true as const };
+       const { runRespondSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcRespondSession');
++      const respondRoot = performanceComposerRespondRoot();
++      const respondBlocked = testRootWriteError(respondRoot);
++      if (respondBlocked) return { ok: false as const, error: respondBlocked };
+       const result = runRespondSession({
+         sourcePath: picked.filePaths[0],
+-        outRoot: performanceComposerRespondRoot(),
++        outRoot: respondRoot,
+         build: runningBuildForProvenance(),
+       });
+       // Plain-named copies of this run on the Desktop (replaces the previous run's copies only).
+       const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
+       const latest = path.join(app.getPath('desktop'), 'RESPOND LATEST');
++      const latestBlocked = testRootWriteError(latest);
++      if (latestBlocked) return { ok: false as const, error: latestBlocked };
+       mkdirSync(latest, { recursive: true });
+       for (const f of readdirSync(latest)) if (f.endsWith('.musicxml')) unlinkSync(path.join(latest, f));
+       const piece = result.sourceFile
+@@ -833,15 +851,20 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+       const rawSeed = body && typeof body === 'object' ? (body as { seed?: unknown }).seed : undefined;
+       const seed = typeof rawSeed === 'number' && Number.isFinite(rawSeed) ? rawSeed : undefined;
+       const { runTritonePairSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcTritonePairSession');
++      const tritoneRoot = performanceComposerTritonePairRoot();
++      const tritoneBlocked = testRootWriteError(tritoneRoot);
++      if (tritoneBlocked) return { ok: false as const, error: tritoneBlocked };
+       const result = runTritonePairSession({
+         sourcePath: picked.filePaths[0],
+-        outRoot: performanceComposerTritonePairRoot(),
++        outRoot: tritoneRoot,
+         build: runningBuildForProvenance(),
+         seed,
+       });
+       // Plain-named copies on the Desktop (replaces the previous Tritone Pair copies only).
+       const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
+       const latest = path.join(app.getPath('desktop'), 'TRITONE PAIR LATEST');
++      const latestBlocked = testRootWriteError(latest);
++      if (latestBlocked) return { ok: false as const, error: latestBlocked };
+       mkdirSync(latest, { recursive: true });
+       for (const f of readdirSync(latest)) if (f.endsWith('.musicxml') || f.endsWith('.md')) unlinkSync(path.join(latest, f));
+       copyFileSync(result.musicXmlPath, path.join(latest, path.basename(result.musicXmlPath)));
+@@ -894,11 +917,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+     const xml = typeof record.xml === 'string' ? record.xml : '';
+     const label = typeof record.label === 'string' ? record.label : 'collection';
+     try {
++      const documentsDir = app.getPath('documents');
++      const documentsBlocked = testRootWriteError(documentsDir);
++      if (documentsBlocked) return { ok: false as const, error: documentsBlocked };
+       const written = await writePentatonicDesktopMusicXml({
+-        documentsDir: app.getPath('documents'),
++        documentsDir,
+         xml,
+         label,
+       });
++      const writtenBlocked = testRootWriteError(written.fullPath);
++      if (writtenBlocked) return { ok: false as const, error: writtenBlocked };
+       return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
+     } catch (error) {
+       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+@@ -947,11 +975,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
+     const xml = typeof record.xml === 'string' ? record.xml : '';
+     const label = typeof record.label === 'string' ? record.label : 'collection';
+     try {
++      const documentsDir = app.getPath('documents');
++      const documentsBlocked = testRootWriteError(documentsDir);
++      if (documentsBlocked) return { ok: false as const, error: documentsBlocked };
+       const written = await writeHexatonicDesktopMusicXml({
+-        documentsDir: app.getPath('documents'),
++        documentsDir,
+         xml,
+         label,
+       });
++      const writtenBlocked = testRootWriteError(written.fullPath);
++      if (writtenBlocked) return { ok: false as const, error: writtenBlocked };
+       return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
+     } catch (error) {
+       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+diff --git a/apps/composer-os-desktop/electron/main.ts b/apps/composer-os-desktop/electron/main.ts
+index fe1be120..062d0e04 100644
+--- a/apps/composer-os-desktop/electron/main.ts
++++ b/apps/composer-os-desktop/electron/main.ts
+@@ -6,6 +6,7 @@
+ import { app, BrowserWindow, ipcMain } from 'electron';
+ import path from 'node:path';
+ import fs from 'node:fs';
++import os from 'node:os';
+ import dotenv from 'dotenv';
+ import type { StartupState } from './startupState';
+ import * as crypto from 'crypto';
+@@ -18,12 +19,8 @@ import {
+   resolveDesktopIpcBundlePath,
+   resolveBuildStampPath,
+ } from './config';
+-import {
+-  desktopChannelIdentity,
+-  devDocumentsExportRoot,
+-  devUserDataPath,
+-  loadDesktopChannel,
+-} from './desktopChannel';
++import { desktopChannelIdentity, loadDesktopChannel } from './desktopChannel';
++import { DEV_TEST_ROOT_ENV, startDesktopProcess, testRootWriteError } from './devTestIsolation';
+ import { releaseDisplayForChannel } from './releaseIdentity';
+ import {
+   verifyUiBundleAtPath,
+@@ -49,13 +46,24 @@ loadEnv();
+ 
+ const desktopChannel = loadDesktopChannel();
+ const desktopIdentity = desktopChannelIdentity(desktopChannel);
+-if (desktopChannel === 'dev') {
+-  app.setName(desktopIdentity.productName);
+-  app.setPath('userData', devUserDataPath(app.getPath('appData')));
+-  if (!process.env.COMPOSER_OS_OUTPUT_DIR?.trim()) {
+-    process.env.COMPOSER_OS_OUTPUT_DIR = devDocumentsExportRoot();
+-  }
+-}
++const startup = startDesktopProcess({
++  channel: desktopChannel,
++  productName: desktopIdentity.productName,
++  testRootEnv: process.env[DEV_TEST_ROOT_ENV],
++  outputDirEnv: process.env.COMPOSER_OS_OUTPUT_DIR,
++  homeDir: os.homedir(),
++  appDataDir: app.getPath('appData'),
++  setName: (name) => app.setName(name),
++  setPath: (key, value) => app.setPath(key as Parameters<typeof app.setPath>[0], value),
++  setOutputDir: (dir) => {
++    process.env.COMPOSER_OS_OUTPUT_DIR = dir;
++  },
++  requestLock: () => app.requestSingleInstanceLock(),
++  exit: (code) => {
++    process.exit(code);
++  },
++  mkdir: (dir) => fs.mkdirSync(dir, { recursive: true }),
++});
+ console.log('[desktop-channel]', desktopChannel, desktopIdentity.appId);
+ 
+ /** Packaged builds always use full React UI (`resources/ui`). */
+@@ -90,7 +98,7 @@ function isAllowedDevNavigation(url: string, devBase: string): boolean {
+   }
+ }
+ 
+-const gotLock = app.requestSingleInstanceLock();
++const gotLock = startup === 'locked';
+ if (!gotLock) {
+   app.quit();
+ } else {
+@@ -464,6 +472,12 @@ async function launchApp(): Promise<void> {
+   });
+ 
+   const outputDir = resolveDefaultOutputDir();
++  const outputBlocked = testRootWriteError(outputDir);
++  if (outputBlocked) {
++    setStartupState('fatal_error');
++    loadErrorPage(win, outputBlocked);
++    return;
++  }
+   try {
+     fs.mkdirSync(outputDir, { recursive: true });
+     fs.accessSync(outputDir, fs.constants.W_OK);
+diff --git a/apps/composer-os-desktop/install/installComposerOsDesktopMac.ts b/apps/composer-os-desktop/install/installComposerOsDesktopMac.ts
+index 5a6e2033..a149f955 100644
+--- a/apps/composer-os-desktop/install/installComposerOsDesktopMac.ts
++++ b/apps/composer-os-desktop/install/installComposerOsDesktopMac.ts
+@@ -5,6 +5,7 @@
+ import { execFileSync } from 'child_process';
+ import * as fs from 'fs';
+ import * as path from 'path';
++import { adhocSignMacAppInsideOut } from './signMacCandidate';
+ 
+ const APP_NAME = 'Composer OS Desktop.app';
+ const APPLICATIONS_DEST = path.join('/Applications', APP_NAME);
+@@ -54,33 +55,6 @@ function sleepMs(ms: number): void {
+   }
+ }
+ 
+-function codesignAdhoc(target: string): void {
+-  execFileSync('codesign', ['--force', '--sign', '-', target], { stdio: 'inherit' });
+-}
+-
+-/**
+- * Electron 28 rejects `codesign --deep` on Mantle / Electron Framework
+- * ("unsealed contents present in the root directory of an embedded framework").
+- * Sign versioned frameworks + helpers first, then the .app bundle.
+- */
+-function adhocSignMacApp(appPath: string): void {
+-  const frameworksDir = path.join(appPath, 'Contents', 'Frameworks');
+-  if (fs.existsSync(frameworksDir)) {
+-    for (const name of fs.readdirSync(frameworksDir)) {
+-      const full = path.join(frameworksDir, name);
+-      if (name.endsWith('.framework')) {
+-        const versionA = path.join(full, 'Versions', 'A');
+-        if (fs.existsSync(versionA)) {
+-          codesignAdhoc(versionA);
+-        }
+-      } else if (name.endsWith('.app')) {
+-        codesignAdhoc(full);
+-      }
+-    }
+-  }
+-  codesignAdhoc(appPath);
+-}
+-
+ function main(): void {
+   if (process.platform !== 'darwin') {
+     console.error('installComposerOsDesktopMac: macOS only.');
+@@ -114,7 +88,7 @@ function main(): void {
+   execFileSync('ditto', [packagedApp, APPLICATIONS_DEST], { stdio: 'inherit' });
+ 
+   console.log('Ad-hoc signing (inside-out; --deep fails on Electron 28 frameworks)...');
+-  adhocSignMacApp(APPLICATIONS_DEST);
++  adhocSignMacAppInsideOut(APPLICATIONS_DEST);
+ 
+   console.log('Clearing quarantine...');
+   try {
+diff --git a/apps/composer-os-desktop/package.json b/apps/composer-os-desktop/package.json
+index 9aa36512..9b29bd87 100644
+--- a/apps/composer-os-desktop/package.json
++++ b/apps/composer-os-desktop/package.json
+@@ -8,7 +8,7 @@
+     "desktop:dev": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
+     "desktop:prep:dev": "node scripts/copy-pdfjs-desktop-assets.js && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron",
+     "desktop:dev:electron": "electron .",
+-    "desktop:build": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-riff-phrase-corpus.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
++    "desktop:build": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-riff-phrase-corpus.js && node scripts/copy-wps-bryant-resources.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
+     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config.directories.output=release-build && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('release-build/Composer-OS.exe','release/Composer-OS.exe');try{fs.copyFileSync('release-build/Composer-OS-Setup.exe','release/Composer-OS-Setup.exe')}catch(e){}\" && tsx install/logReleaseArtifactsCli.ts",
+     "desktop:package:mac": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+@@ -28,7 +28,7 @@
+     "desktop:deploy": "npm run desktop:clean-install",
+     "desktop:install": "npm run desktop:clean-install",
+     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
+-    "build": "node scripts/copy-pdfjs-desktop-assets.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
++    "build": "node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-wps-bryant-resources.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+     "build:api": "node scripts/build-api-bundle.js",
+     "build:desktop-ipc": "node scripts/build-desktop-ipc-bundle.js",
+     "build:stamp": "node scripts/write-composer-os-build-stamp.js",
+@@ -151,6 +151,11 @@
+       {
+         "from": "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
+         "to": "test-fixtures/BE_Benchmark_LyricalBallad.musicxml"
++      },
++      {
++        "from": "resources/wps-bryant",
++        "to": "wps-bryant",
++        "filter": ["**/*"]
+       }
+     ],
+     "mac": {
+diff --git a/engines/composer-os-v2/core/wwh/wps/wpsBryantGates.ts b/engines/composer-os-v2/core/wwh/wps/wpsBryantGates.ts
+index d0522693..4a1f8740 100644
+--- a/engines/composer-os-v2/core/wwh/wps/wpsBryantGates.ts
++++ b/engines/composer-os-v2/core/wwh/wps/wpsBryantGates.ts
+@@ -18,10 +18,72 @@ import {
+   type ScaleRunFinding,
+ } from './wpsBryantDensity';
+ 
+-const HERE = path.dirname(fileURLToPath(import.meta.url));
++const SIGNATURE_NAME = 'wps-bryant-signature.json';
++const PREFERENCES_NAME = 'wps-bryant-preferences.md';
++const PACKAGED_DIR_NAME = 'wps-bryant';
+ 
+-export const BRYANT_SIGNATURE_PATH = path.join(HERE, 'wps-bryant-signature.json');
+-export const BRYANT_PREFERENCES_PATH = path.join(HERE, 'wps-bryant-preferences.md');
++function dirHasBryantResources(dir: string): boolean {
++  return fs.existsSync(path.join(dir, SIGNATURE_NAME)) && fs.existsSync(path.join(dir, PREFERENCES_NAME));
++}
++
++/** Source modules have a file URL. Packaged CommonJS leaves import.meta empty. */
++function importMetaDir(): string | null {
++  try {
++    const url = import.meta.url;
++    if (typeof url !== 'string' || !url.startsWith('file:')) return null;
++    return path.dirname(fileURLToPath(url));
++  } catch {
++    return null;
++  }
++}
++
++/**
++ * Locate both Bryant resources.
++ * Packaged layout is process.resourcesPath/wps-bryant (also __dirname/wps-bryant
++ * when the CommonJS bundle sits in Resources). Source layout is the module directory.
++ * No parent-directory walk back to the repository.
++ */
++export function resolveBryantResourceDir(): string {
++  const override = process.env.COMPOSER_OS_WPS_BRYANT_DIR?.trim();
++  if (override) {
++    const resolved = path.resolve(override);
++    if (!dirHasBryantResources(resolved)) {
++      throw new Error(`Bryant resources missing under COMPOSER_OS_WPS_BRYANT_DIR: ${resolved}`);
++    }
++    return resolved;
++  }
++
++  const candidates: string[] = [];
++  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
++  const resources = typeof resourcesPath === 'string' ? resourcesPath.trim() : '';
++  if (resources) candidates.push(path.join(resources, PACKAGED_DIR_NAME));
++  const fromMeta = importMetaDir();
++  if (fromMeta) candidates.push(fromMeta);
++  if (typeof __dirname === 'string' && __dirname.length > 0) {
++    candidates.push(path.join(__dirname, PACKAGED_DIR_NAME));
++    candidates.push(__dirname);
++  }
++
++  const seen = new Set<string>();
++  for (const candidate of candidates) {
++    const resolved = path.resolve(candidate);
++    if (seen.has(resolved)) continue;
++    seen.add(resolved);
++    if (dirHasBryantResources(resolved)) return resolved;
++  }
++  throw new Error(`Bryant resources not found (${SIGNATURE_NAME}, ${PREFERENCES_NAME}).`);
++}
++
++const bryantResources = (() => {
++  const dir = resolveBryantResourceDir();
++  return {
++    signature: path.join(dir, SIGNATURE_NAME),
++    preferences: path.join(dir, PREFERENCES_NAME),
++  };
++})();
++
++export const BRYANT_SIGNATURE_PATH = bryantResources.signature;
++export const BRYANT_PREFERENCES_PATH = bryantResources.preferences;
+ 
+ const PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+ const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+diff --git a/engines/composer-os-v2/core/wwh/wwhV8Session.ts b/engines/composer-os-v2/core/wwh/wwhV8Session.ts
+index 5121b19b..ab5b2267 100644
+--- a/engines/composer-os-v2/core/wwh/wwhV8Session.ts
++++ b/engines/composer-os-v2/core/wwh/wwhV8Session.ts
+@@ -144,9 +144,15 @@ function pitchHasFret(sounding: number, maxFret: number): boolean {
+   });
+ }
+ 
++function v8SessionRoot(): string {
++  const isolated = process.env.COMPOSER_OS_DEV_TEST_SESSION_ROOT?.trim();
++  if (isolated && path.isAbsolute(isolated)) return path.resolve(isolated);
++  return V8_SESSION_DIR;
++}
++
+ function assertSessionsDir(file: string): void {
+   const resolved = path.resolve(file);
+-  const root = path.resolve(V8_SESSION_DIR);
++  const root = path.resolve(v8SessionRoot());
+   const relative = path.relative(root, resolved);
+   if (relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Refusing to write outside the V8 session folder.');
+   const blocked = path.resolve(root, '..');
+@@ -296,7 +302,7 @@ export function generateWwhV8Session(request: V8SessionRequest, now = new Date()
+   if (sourceAfter !== sourceBefore) throw new Error('The Black Aura leadsheet changed during generation.');
+   const runId = `v8-${now.getTime().toString(36)}-${randomBytes(3).toString('hex')}`;
+   const slug = (pairLabel ?? request.approach).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+-  const dir = path.join(V8_SESSION_DIR, runId);
++  const dir = path.join(v8SessionRoot(), runId);
+   const musicXmlPath = path.join(dir, `Black-Aura-${slug}.musicxml`);
+   assertSessionsDir(musicXmlPath);
+   fs.mkdirSync(dir, { recursive: true });
+diff --git a/engines/composer-os-v2/tests/v34PartMtRepair.test.ts b/engines/composer-os-v2/tests/v34PartMtRepair.test.ts
+index 48c57727..e4e03bed 100644
+--- a/engines/composer-os-v2/tests/v34PartMtRepair.test.ts
++++ b/engines/composer-os-v2/tests/v34PartMtRepair.test.ts
+@@ -14,7 +14,7 @@ import { validateSibeliusUndottedBeatAtoms, validateStrictBarMath } from '../cor
+ import { runBehaviourGates } from '../core/score-integrity/behaviourGates';
+ import { lockedHarmonyChordSymbolsEquivalent } from '../core/harmony/chordProgressionParser';
+ import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
+-import type { CompositionContext } from '../core/compositionContext';
++import type { ArvoPartContextMode, CompositionContext } from '../core/compositionContext';
+ import type { NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
+ import { applyArvoPartTintinnabuliToDuoScore, arvoPartLockedBarMotifIssueIsWarning } from '../core/song-mode/arvoPartSlice';
+ import { planSectionRoles } from '../core/section-roles/sectionRolePlanner';
+@@ -122,7 +122,7 @@ function shell(): { guitar: ReturnType<typeof createPart>; bass: ReturnType<type
+   return { guitar, bass };
+ }
+ 
+-function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: 'fur_alina' | 'fratres'): CompositionContext {
++function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: ArvoPartContextMode): CompositionContext {
+   return {
+     seed: 3340,
+     form: { totalBars: 8, sections: [{ label: 'A', startBar: 1, length: 8 }] },
+@@ -135,7 +135,7 @@ function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternatin
+   } as CompositionContext;
+ }
+ 
+-function applyPair(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: 'fur_alina' | 'fratres') {
++function applyPair(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: ArvoPartContextMode) {
+   const built = shell();
+   const context = contextFor(mode, position, posture);
+   applyArvoPartTintinnabuliToDuoScore(built.guitar, built.bass, context, {

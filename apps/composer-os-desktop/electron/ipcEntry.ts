@@ -3,6 +3,7 @@
  */
 import { app, shell, type IpcMain } from 'electron';
 import { documentsSaveBase, loadDesktopChannel } from './desktopChannel';
+import { testRootWriteError } from './devTestIsolation';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'path';
@@ -180,6 +181,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       if (relToDoc.startsWith('..') || path.isAbsolute(relToDoc)) {
         return { ok: false, error: 'path outside Documents' };
       }
+      const blocked = testRootWriteError(full);
+      if (blocked) return { ok: false, error: blocked };
       try {
         const { mkdir, writeFile } = await import('fs/promises');
         await mkdir(path.dirname(full), { recursive: true });
@@ -209,6 +212,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     }
     const relDir = getOutputDir(eng);
     const target = path.join(app.getPath('documents'), ...relDir.split(/[/\\]/));
+    const blocked = testRootWriteError(target);
+    if (blocked) return;
     try {
       const fs = await import('fs/promises');
       await fs.mkdir(target, { recursive: true });
@@ -350,6 +355,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     if (!filepath || !session) {
       return { ok: false, error: 'missing filepath or session' };
     }
+    const blocked = testRootWriteError(filepath);
+    if (blocked) return { ok: false, error: blocked };
     return saveSessionFile(filepath, session);
   });
 
@@ -555,6 +562,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `wayne_shorter_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
+      const blocked = testRootWriteError(outPath);
+      if (blocked) throw new Error(blocked);
       await writeFile(outPath, stdout, 'utf8');
 
       return { path: outPath, filename };
@@ -643,6 +652,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `charlie_parker_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
+      const blocked = testRootWriteError(outPath);
+      if (blocked) throw new Error(blocked);
       await writeFile(outPath, stdout, 'utf8');
 
       return { path: outPath, filename };
@@ -724,6 +735,8 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
         .slice(0, 40);
       const filename = `monk_${safeTitle}.musicxml`;
       const outPath = path.join(outputDir, filename);
+      const blocked = testRootWriteError(outPath);
+      if (blocked) throw new Error(blocked);
       await writeFile(outPath, stdout, 'utf8');
       return { path: outPath, filename };
     }
@@ -796,14 +809,19 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       });
       if (picked.canceled || !picked.filePaths?.[0]) return { ok: false as const, canceled: true as const };
       const { runRespondSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcRespondSession');
+      const respondRoot = performanceComposerRespondRoot();
+      const respondBlocked = testRootWriteError(respondRoot);
+      if (respondBlocked) return { ok: false as const, error: respondBlocked };
       const result = runRespondSession({
         sourcePath: picked.filePaths[0],
-        outRoot: performanceComposerRespondRoot(),
+        outRoot: respondRoot,
         build: runningBuildForProvenance(),
       });
       // Plain-named copies of this run on the Desktop (replaces the previous run's copies only).
       const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
       const latest = path.join(app.getPath('desktop'), 'RESPOND LATEST');
+      const latestBlocked = testRootWriteError(latest);
+      if (latestBlocked) return { ok: false as const, error: latestBlocked };
       mkdirSync(latest, { recursive: true });
       for (const f of readdirSync(latest)) if (f.endsWith('.musicxml')) unlinkSync(path.join(latest, f));
       const piece = result.sourceFile
@@ -833,15 +851,20 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
       const rawSeed = body && typeof body === 'object' ? (body as { seed?: unknown }).seed : undefined;
       const seed = typeof rawSeed === 'number' && Number.isFinite(rawSeed) ? rawSeed : undefined;
       const { runTritonePairSession } = await import('../../../engines/composer-os-v2/core/performance-composer/pcTritonePairSession');
+      const tritoneRoot = performanceComposerTritonePairRoot();
+      const tritoneBlocked = testRootWriteError(tritoneRoot);
+      if (tritoneBlocked) return { ok: false as const, error: tritoneBlocked };
       const result = runTritonePairSession({
         sourcePath: picked.filePaths[0],
-        outRoot: performanceComposerTritonePairRoot(),
+        outRoot: tritoneRoot,
         build: runningBuildForProvenance(),
         seed,
       });
       // Plain-named copies on the Desktop (replaces the previous Tritone Pair copies only).
       const { copyFileSync, mkdirSync, readdirSync, unlinkSync } = await import('node:fs');
       const latest = path.join(app.getPath('desktop'), 'TRITONE PAIR LATEST');
+      const latestBlocked = testRootWriteError(latest);
+      if (latestBlocked) return { ok: false as const, error: latestBlocked };
       mkdirSync(latest, { recursive: true });
       for (const f of readdirSync(latest)) if (f.endsWith('.musicxml') || f.endsWith('.md')) unlinkSync(path.join(latest, f));
       copyFileSync(result.musicXmlPath, path.join(latest, path.basename(result.musicXmlPath)));
@@ -894,11 +917,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     const xml = typeof record.xml === 'string' ? record.xml : '';
     const label = typeof record.label === 'string' ? record.label : 'collection';
     try {
+      const documentsDir = app.getPath('documents');
+      const documentsBlocked = testRootWriteError(documentsDir);
+      if (documentsBlocked) return { ok: false as const, error: documentsBlocked };
       const written = await writePentatonicDesktopMusicXml({
-        documentsDir: app.getPath('documents'),
+        documentsDir,
         xml,
         label,
       });
+      const writtenBlocked = testRootWriteError(written.fullPath);
+      if (writtenBlocked) return { ok: false as const, error: writtenBlocked };
       return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
@@ -947,11 +975,16 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
     const xml = typeof record.xml === 'string' ? record.xml : '';
     const label = typeof record.label === 'string' ? record.label : 'collection';
     try {
+      const documentsDir = app.getPath('documents');
+      const documentsBlocked = testRootWriteError(documentsDir);
+      if (documentsBlocked) return { ok: false as const, error: documentsBlocked };
       const written = await writeHexatonicDesktopMusicXml({
-        documentsDir: app.getPath('documents'),
+        documentsDir,
         xml,
         label,
       });
+      const writtenBlocked = testRootWriteError(written.fullPath);
+      if (writtenBlocked) return { ok: false as const, error: writtenBlocked };
       return { ok: true as const, fullPath: written.fullPath, bytes: written.bytes };
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };

@@ -1,0 +1,11 @@
+{
+  "schema": "composer-os-dev-candidate-provenance/v1",
+  "baselineHead": "a46514b5fd280ffaff6e176a2c0f9461c0da6740",
+  "approvedSourceCommit": null,
+  "sourceManifestSha256": "0b35c038dd49a18e4d4a77eef9319397aedb5457d97c405cb81fdc71ca2cfa36",
+  "packagingPerformed": false,
+  "installationPerformed": false,
+  "candidateAppPath": null,
+  "launchAuthorised": false,
+  "note": "Packaging has not occurred. This file is not a launch authorization."
+}

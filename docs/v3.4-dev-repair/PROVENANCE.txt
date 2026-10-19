@@ -1,0 +1,89 @@
+V3.4 source repair provenance
+Status: source repair only. Packaging has not occurred. Installation has not occurred. No candidate was launched.
+
+Baseline HEAD: a46514b5fd280ffaff6e176a2c0f9461c0da6740
+Branch: main
+Local HEAD matches origin/main at this baseline.
+Approved repair commit: not created. This record is not a launch authorization.
+
+Tracked repair diff: docs/v3.4-dev-repair/tracked-repair.diff
+Tracked repair diff sha256: 2bbf0f8b125ca27f793d5470aea2992d8085af5132403bcb5d4913e2ceeb54cd
+
+Source manifest (changed and new repair source, tests, and scripts):
+docs/v3.4-dev-repair/SOURCE-MANIFEST.sha256
+Source manifest sha256: 0b35c038dd49a18e4d4a77eef9319397aedb5457d97c405cb81fdc71ca2cfa36
+
+Untracked repair files are listed in that manifest and must be committed with the tracked diff.
+git diff alone does not contain them.
+
+Packaging and installation have not occurred.
+No production bundle hash exists.
+The candidate output directory apps/composer-os-desktop/release-v34-dev-candidate-fixed/ is not authoritative and must not be committed.
+
+Typecheck command, from the repository root:
+npx tsc --noEmit --pretty false --strict --esModuleInterop --resolveJsonModule --module commonjs --target ES2020 --moduleResolution node --skipLibCheck --types node,jest engines/composer-os-v2/tests/v34PartMtRepair.test.ts
+
+Baseline comparison used a disposable worktree at a46514b5 with the repository TypeScript binary.
+engines/composer-os-v2/node_modules was linked into that worktree so module resolution matched the working tree.
+The working tree was not modified for the comparison.
+
+Pärt targeted diagnostics: PASS
+Zero diagnostics in engines/composer-os-v2/tests/v34PartMtRepair.test.ts on the repair.
+Baseline had one diagnostic in that file: spiegel was not assignable to "fur_alina" | "fratres". The repair removes it.
+
+Import-graph typecheck: FAIL
+Thirty-four diagnostics remain in the import graph. See typecheck-repair.txt.
+
+Import-graph regression: NO
+The same thirty-four diagnostics are present at the baseline. See typecheck-baseline.txt.
+The repair adds no diagnostic.
+
+Focused tests, no fixture regeneration, no desktop build, no package:
+- DEV isolation and path containment: vitest tests/devTestIsolation.test.ts, 10 passed
+- STABLE preservation: vitest tests/releaseIdentity.test.ts and tests/desktopChannel.test.ts, 5 passed
+- WPS Bryant bundled resource loading: vitest tests/wpsBryantPackagedResources.test.ts, 1 passed
+- Mac candidate-signing guards: vitest tests/macCandidateSign.test.ts, 3 passed
+- DEV prelaunch gate: vitest tests/devCandidatePrelaunch.test.ts, 6 passed
+- Pärt behavioural tests: runV34PartMtRepairTests(), 9 passed, fixtures not written
+
+Tracked MusicXML and MIDI aggregate sha256, path NUL file-bytes, 182 files, before and after those tests:
+051ced7b873cd69d94d449fb983c777ba868946a19029561bc0d5e87c2ff6f36
+
+Pärt example files, unchanged from the previous provenance record:
+a7f5a3e0e488c981bf0a0c73706efe1d145d36f17ec24a5fb29d0eea48db5f4b  docs/v3.4-part-mt/RULE.txt
+4013e353fdea2b639d4884a27f232087c7cf70ba4aad62702aa8153f45519397  docs/v3.4-part-mt/fur-alina-m1-below-seed3340.mid
+9f12b65efa8ce3cc56843d8cd30db3defad6a66b91670056d636d1dae7323e1a  docs/v3.4-part-mt/fur-alina-m1-below-seed3340.musicxml
+f8a2647b1c989fab4436aa086a8d99003dc4703147ad312379bfb26d2dd5e11f  docs/v3.4-part-mt/spiegel-m2-seed3341.mid
+b97545b1931a998b31097a60f1da6dd4241dedef0a8f0f2fc90ff2c37a4ecdf6  docs/v3.4-part-mt/spiegel-m2-seed3341.musicxml
+
+Corrected DEV packaging command: docs/v3.4-dev-repair/DEV-PACKAGING-COMMAND.txt
+Do not run it in this closure.
+COMPOSER_OS_PACK_CHANNEL=dev is set on the electron-builder process.
+scripts/writeDesktopChannel.js is the afterPack hook and reads that variable from the builder process.
+The same variable is set again on the later channel-file writer so that writer cannot replace dev with stable.
+Application id is com.mikeb55.composeros.dev.
+Product name is Composer OS DEV.
+Mac icon override is resources/icon-dev.png.
+desktop:build writes composer-os-build-stamp.json, including gitCommit and releaseIdentity.
+extraResources ships releaseIdentity.json, the stamp, wps-bryant, api.bundle.js, and desktop-ipc.bundle.cjs.
+finalizeMacCandidateResources.js refreshes the stamp, icons, and wps-bryant and does not change desktop-channel.json.
+signMacCandidateCli.ts is last.
+Run the command only after the approved repair commit, so the stamp records that commit.
+
+DEV prelaunch: apps/composer-os-desktop/install/devCandidatePrelaunch.ts
+A future launcher must call assertDevCandidatePrelaunch and spawn only the returned absolute executable with the returned env.
+COMPOSER_OS_DEV_TEST_ROOT alone is not authorization.
+The gate fails closed unless all of these agree:
+1. CFBundleIdentifier is com.mikeb55.composeros.dev.
+2. Contents/Resources/desktop-channel.json channel is exactly dev.
+3. Packaged release identity is V3.4, window title Composer OS DEV — V3.4.
+4. composer-os-build-stamp.json gitCommit equals the approved source commit.
+5. Repaired-source provenance matches that commit and this candidate path, and packagingPerformed is true.
+6. Required bundle resources are present, including wps-bryant, the stamp, release identity, and both bundles.
+7. codesign --verify --deep --strict passes.
+8. The fresh absolute test root passes validateDevTestRoot.
+The current provenance has packagingPerformed false, so the gate refuses a launch.
+Do not launch by application name, Spotlight, Launch Services, or an existing shortcut.
+Do not launch a bundle under /Applications.
+
+candidate-expectation.json is the machine record. It is not a launch approval.

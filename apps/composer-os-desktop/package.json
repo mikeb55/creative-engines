@@ -8,7 +8,7 @@
     "desktop:dev": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources && electron .",
     "desktop:prep:dev": "node scripts/copy-pdfjs-desktop-assets.js && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron",
     "desktop:dev:electron": "electron .",
-    "desktop:build": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-riff-phrase-corpus.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "desktop:build": "npm run build:icon && node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-riff-phrase-corpus.js && node scripts/copy-wps-bryant-resources.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "desktop:package": "tsx install/bumpDesktopVersionCli.ts && npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win && tsx install/logReleaseArtifactsCli.ts && tsx install/pruneOldPortableExesCli.ts && tsx install/verifyStableBuildOutputCli.ts",
     "desktop:package-no-bump": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --config.directories.output=release-build && node -e \"const fs=require('fs');fs.mkdirSync('release',{recursive:true});fs.copyFileSync('release-build/Composer-OS.exe','release/Composer-OS.exe');try{fs.copyFileSync('release-build/Composer-OS-Setup.exe','release/Composer-OS-Setup.exe')}catch(e){}\" && tsx install/logReleaseArtifactsCli.ts",
     "desktop:package:mac": "npm run desktop:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
@@ -28,7 +28,7 @@
     "desktop:deploy": "npm run desktop:clean-install",
     "desktop:install": "npm run desktop:clean-install",
     "verify:ui-resources": "node scripts/verify-ui-after-copy.js",
-    "build": "node scripts/copy-pdfjs-desktop-assets.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
+    "build": "node scripts/copy-pdfjs-desktop-assets.js && node scripts/copy-wps-bryant-resources.js && npm run build:api && npm run build:desktop-ipc && npm run build:stamp && npm run build:open-folder-helpers && npm run build:electron && npm run build:ui && npm run verify:ui-resources",
     "build:api": "node scripts/build-api-bundle.js",
     "build:desktop-ipc": "node scripts/build-desktop-ipc-bundle.js",
     "build:stamp": "node scripts/write-composer-os-build-stamp.js",
@@ -151,6 +151,11 @@
       {
         "from": "resources/test-fixtures/BE_Benchmark_LyricalBallad.musicxml",
         "to": "test-fixtures/BE_Benchmark_LyricalBallad.musicxml"
+      },
+      {
+        "from": "resources/wps-bryant",
+        "to": "wps-bryant",
+        "filter": ["**/*"]
       }
     ],
     "mac": {

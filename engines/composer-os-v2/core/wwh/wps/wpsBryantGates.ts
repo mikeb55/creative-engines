@@ -18,10 +18,72 @@ import {
   type ScaleRunFinding,
 } from './wpsBryantDensity';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
+const SIGNATURE_NAME = 'wps-bryant-signature.json';
+const PREFERENCES_NAME = 'wps-bryant-preferences.md';
+const PACKAGED_DIR_NAME = 'wps-bryant';
 
-export const BRYANT_SIGNATURE_PATH = path.join(HERE, 'wps-bryant-signature.json');
-export const BRYANT_PREFERENCES_PATH = path.join(HERE, 'wps-bryant-preferences.md');
+function dirHasBryantResources(dir: string): boolean {
+  return fs.existsSync(path.join(dir, SIGNATURE_NAME)) && fs.existsSync(path.join(dir, PREFERENCES_NAME));
+}
+
+/** Source modules have a file URL. Packaged CommonJS leaves import.meta empty. */
+function importMetaDir(): string | null {
+  try {
+    const url = import.meta.url;
+    if (typeof url !== 'string' || !url.startsWith('file:')) return null;
+    return path.dirname(fileURLToPath(url));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Locate both Bryant resources.
+ * Packaged layout is process.resourcesPath/wps-bryant (also __dirname/wps-bryant
+ * when the CommonJS bundle sits in Resources). Source layout is the module directory.
+ * No parent-directory walk back to the repository.
+ */
+export function resolveBryantResourceDir(): string {
+  const override = process.env.COMPOSER_OS_WPS_BRYANT_DIR?.trim();
+  if (override) {
+    const resolved = path.resolve(override);
+    if (!dirHasBryantResources(resolved)) {
+      throw new Error(`Bryant resources missing under COMPOSER_OS_WPS_BRYANT_DIR: ${resolved}`);
+    }
+    return resolved;
+  }
+
+  const candidates: string[] = [];
+  const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
+  const resources = typeof resourcesPath === 'string' ? resourcesPath.trim() : '';
+  if (resources) candidates.push(path.join(resources, PACKAGED_DIR_NAME));
+  const fromMeta = importMetaDir();
+  if (fromMeta) candidates.push(fromMeta);
+  if (typeof __dirname === 'string' && __dirname.length > 0) {
+    candidates.push(path.join(__dirname, PACKAGED_DIR_NAME));
+    candidates.push(__dirname);
+  }
+
+  const seen = new Set<string>();
+  for (const candidate of candidates) {
+    const resolved = path.resolve(candidate);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    if (dirHasBryantResources(resolved)) return resolved;
+  }
+  throw new Error(`Bryant resources not found (${SIGNATURE_NAME}, ${PREFERENCES_NAME}).`);
+}
+
+const bryantResources = (() => {
+  const dir = resolveBryantResourceDir();
+  return {
+    signature: path.join(dir, SIGNATURE_NAME),
+    preferences: path.join(dir, PREFERENCES_NAME),
+  };
+})();
+
+export const BRYANT_SIGNATURE_PATH = bryantResources.signature;
+export const BRYANT_PREFERENCES_PATH = bryantResources.preferences;
 
 const PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];

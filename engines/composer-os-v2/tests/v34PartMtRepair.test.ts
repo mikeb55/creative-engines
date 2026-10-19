@@ -14,7 +14,7 @@ import { validateSibeliusUndottedBeatAtoms, validateStrictBarMath } from '../cor
 import { runBehaviourGates } from '../core/score-integrity/behaviourGates';
 import { lockedHarmonyChordSymbolsEquivalent } from '../core/harmony/chordProgressionParser';
 import { extractHarmoniesFromFirstPartXml } from '../core/export/chordSymbolMusicXml';
-import type { CompositionContext } from '../core/compositionContext';
+import type { ArvoPartContextMode, CompositionContext } from '../core/compositionContext';
 import type { NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
 import { applyArvoPartTintinnabuliToDuoScore, arvoPartLockedBarMotifIssueIsWarning } from '../core/song-mode/arvoPartSlice';
 import { planSectionRoles } from '../core/section-roles/sectionRolePlanner';
@@ -122,7 +122,7 @@ function shell(): { guitar: ReturnType<typeof createPart>; bass: ReturnType<type
   return { guitar, bass };
 }
 
-function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: 'fur_alina' | 'fratres'): CompositionContext {
+function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: ArvoPartContextMode): CompositionContext {
   return {
     seed: 3340,
     form: { totalBars: 8, sections: [{ label: 'A', startBar: 1, length: 8 }] },
@@ -135,7 +135,7 @@ function contextFor(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternatin
   } as CompositionContext;
 }
 
-function applyPair(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: 'fur_alina' | 'fratres') {
+function applyPair(mode: 'M1' | 'M2', position: 'below' | 'above' | 'alternating', posture: ArvoPartContextMode) {
   const built = shell();
   const context = contextFor(mode, position, posture);
   applyArvoPartTintinnabuliToDuoScore(built.guitar, built.bass, context, {
