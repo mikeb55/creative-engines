@@ -151,6 +151,21 @@ export function resolveSymphonicRoster(): {
   return { parts, omissions };
 }
 
+export const SYMPHONIC_DEFAULT_SCORE_END_BAR = 24;
+export const SYMPHONIC_EXTENDED_SCORE_END_BAR = 48;
+
+export function symphonicScoreEndBar(phrases: ReadonlyArray<{ endBar: number }>): number {
+  let end = SYMPHONIC_DEFAULT_SCORE_END_BAR;
+  for (const phrase of phrases) {
+    if (phrase.endBar > end) end = phrase.endBar;
+  }
+  return end;
+}
+
+export function isSymphonicScoreEnding(phraseEndBar: number, scoreEndBar: number): boolean {
+  return phraseEndBar === scoreEndBar;
+}
+
 export interface ResolvedSymphonicSettings {
   activity: SymphonicDensity;
   families: Record<SymphonicFamilyId, SymphonicFamilyActivity>;
@@ -262,6 +277,7 @@ export function planSymphonicPhrases(
   centreFor: (phraseId: string) => number,
   melodyCount: (phraseId: string) => number,
   settings: ResolvedSymphonicSettings,
+  scoreEndBar: number = SYMPHONIC_DEFAULT_SCORE_END_BAR,
 ): SymphonicPhrasePlan[] {
   let previous: 'woodwind' | 'brass' | 'strings' | null = null;
   let opening: 'woodwind' | 'brass' | 'strings' | null = null;
@@ -297,7 +313,7 @@ export function planSymphonicPhrases(
     ).filter((id) => !foregroundIds.slice(0, 1).includes(id));
     const supportIds = allowed(supportPool, settings, new Set(settings.families[foregroundFamily] === 'limited' ? [foregroundFamily] : []));
     const bassIds = allowed(['db', 'vc', 'bn1', 'tba', 'cbn', 'bcl'], settings, new Set());
-    const ending = phrase.endBar === 24;
+    const ending = isSymphonicScoreEnding(phrase.endBar, scoreEndBar);
     const counterline = !ending && phrase.kind === 'development' && settings.counterline === 'when-source-allows' && melodyCount(phrase.id) >= 3 && settings.activity !== 'sparse'
       ? 'offer'
       : 'silence';

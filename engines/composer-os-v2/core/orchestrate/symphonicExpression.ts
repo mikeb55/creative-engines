@@ -6,8 +6,7 @@
  */
 
 import type { ArticulationV34, DynamicMark, NoteEvent, PartDynamicEvent, ScoreModel } from '../score-model/scoreModelTypes';
-import type { SymphonicPhrasePlan } from './symphonicWriting';
-import { SYMPHONIC_SLOTS } from './symphonicWriting';
+import { isSymphonicScoreEnding, symphonicScoreEndBar, SYMPHONIC_SLOTS, type SymphonicPhrasePlan } from './symphonicWriting';
 
 export interface ExpressionDecision {
   phraseId: string;
@@ -609,6 +608,7 @@ export function applySymphonicExpression(
     return byFamily[family]!;
   };
   const orderedPlans = [...plans].sort((a, b) => a.startBar - b.startBar || a.endBar - b.endBar);
+  const scoreEndBar = symphonicScoreEndBar(orderedPlans);
   const attacksByPart = new Map<string, Attack[]>();
   const spansByPart = new Map<string, Map<number, number>>();
   for (const part of score.parts) {
@@ -643,7 +643,7 @@ export function applySymphonicExpression(
       const melody = plan.foregroundIds.flatMap((id) => (attacksByPart.get(id) ?? []).filter((attack) => attack.bar >= plan.startBar && attack.bar <= plan.endBar));
       melody.sort((a, b) => a.onset - b.onset || a.note.pitch - b.note.pitch);
       const contour = family === 'percussion' ? 'static' : contourOf(phraseAttacks);
-      const ending = plan.endBar === 24;
+      const ending = isSymphonicScoreEnding(plan.endBar, scoreEndBar);
       const tension = Math.round(((tensionOf(phraseAttacks, plan.kind, ending) + tensionOf(melody.length ? melody : phraseAttacks, plan.kind, ending)) / 2) * 100) / 100;
       const shaped = shapePhrase(family, role, contour, tension, phraseAttacks, phraseIndex, ending, plan.kind, breath, previousMarcato);
       const varied = avoidRepeat(shaped, previousSignature, family, tension, phraseAttacks.length >= 3);

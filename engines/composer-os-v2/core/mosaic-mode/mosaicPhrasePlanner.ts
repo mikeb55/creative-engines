@@ -18,6 +18,30 @@ export function resolvePhraseRole(section: MosaicModeSectionPlanEntry): PhraseRo
   return section.phraseRole ?? null;
 }
 
+/** Symphonic Phase 2 phrase kinds (orchestration API) → one editable-accompaniment operator plan. */
+export type SymphonicPhraseKind = 'statement' | 'development' | 'return';
+
+export type SymphonicAccompanimentOperatorId = 'fragment-head' | 'augment' | 'displace';
+
+export type SymphonicAccompanimentOperatorPlan = {
+  operator: SymphonicAccompanimentOperatorId;
+  params: Record<string, number>;
+  subdivisions: number;
+  phraseEndRestQuarters: number;
+};
+
+const SYMPHONIC_ACCOMPANIMENT_BY_KIND: Record<SymphonicPhraseKind, SymphonicAccompanimentOperatorPlan> = {
+  statement: { operator: 'displace', params: { beats: 0.5 }, subdivisions: 4, phraseEndRestQuarters: 0 },
+  development: { operator: 'fragment-head', params: { count: 2 }, subdivisions: 4, phraseEndRestQuarters: 1 },
+  return: { operator: 'displace', params: { beats: 1 }, subdivisions: 4, phraseEndRestQuarters: 1 },
+};
+
+export function symphonicAccompanimentOperatorForPhraseKind(
+  kind: SymphonicPhraseKind,
+): SymphonicAccompanimentOperatorPlan {
+  return SYMPHONIC_ACCOMPANIMENT_BY_KIND[kind];
+}
+
 export function buildPhraseRoleHints(role: PhraseRole): PhraseRoleHints {
   switch (role) {
     case 'statement':

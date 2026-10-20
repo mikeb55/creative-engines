@@ -274,6 +274,31 @@ export function mosaicVrbTilesMotifAcrossSection(songwriterStyleId: string): boo
 
 export type MosaicMotifBarNote = { pitch: number; startBeat: number; duration: number };
 
+const FORTY_EIGHT_BAR_MELODY_STYLE = 'bill_evans';
+
+/** One 4/4 melody bar from a CoreMotif — V4.0 48-bar piano source (not locked export truth). */
+export function mosaicMelodyNotesForFourFourBar(
+  core: CoreMotif,
+  seed: number,
+  barIndexInSection: number,
+  startMidi: number,
+  continueFromPitch?: number
+): MosaicMotifBarNote[] {
+  const low = startMidi - 12;
+  const high = startMidi + 12;
+  return mosaicMotifNotesForBar(
+    core,
+    FORTY_EIGHT_BAR_MELODY_STYLE,
+    seed,
+    4,
+    barIndexInSection,
+    startMidi,
+    low,
+    high,
+    continueFromPitch
+  );
+}
+
 function nudgePitchAwayFromBluesInterval(
   pitch: number,
   prevPitch: number,

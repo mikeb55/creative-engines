@@ -1,0 +1,46 @@
+{
+  "bars48": true,
+  "phraseRolesMatch": true,
+  "motifBDiffersFromA": true,
+  "motifAPrimeReturn": true,
+  "lockedSourceRetained": true,
+  "codaEnding": true,
+  "seed": 48042,
+  "sourceSha256": "a507dc67c50bcbea058e2d4c29285318eee73ef26ceb9604f6b73f52babb4b1d",
+  "symphonySha256": "3685d823fcf99435676d6d7296984c87ce39579e697b5c3cf8a3a9b985834d0d",
+  "motifSimilarity": {
+    "a": 1,
+    "b": 0.75,
+    "aPrime": 0.9791666666666666
+  },
+  "formId": "form_48_intro_a_b_a_prime_coda",
+  "thematic": [
+    {
+      "sectionId": "intro",
+      "label": "Intro",
+      "role": "intro"
+    },
+    {
+      "sectionId": "a",
+      "label": "A",
+      "role": "statement"
+    },
+    {
+      "sectionId": "b",
+      "label": "B",
+      "role": "development_fragmentation"
+    },
+    {
+      "sectionId": "a_prime",
+      "label": "A'",
+      "role": "transformed_return",
+      "transformedReturnOfSectionId": "a"
+    },
+    {
+      "sectionId": "coda",
+      "label": "Coda",
+      "role": "coda"
+    }
+  ],
+  "protectedEventCount": 130
+}

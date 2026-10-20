@@ -31,6 +31,10 @@ import type { BarMeterMap } from '../rhythm/barMeterTypes';
 import type { E2RealisedPlacement } from './harmonicRealisation';
 import type { SpelledRegister } from './harmonicColourTypes';
 import type { EventLineage } from './sourceFoundation';
+import {
+  planFortyEightBarForm,
+  symphonicPhrasesFromFortyEightBarPlan,
+} from '../form/macroFormPlanner';
 import { applyPianoChamberHarmonic, type ScheduledHarmonicNote } from './pianoChamberHarmonic';
 import { buildSymphonicMidiSet, type SymphonicMidiManifest } from './symphonicMidiSet';
 import {
@@ -41,9 +45,12 @@ import {
   TIMPANI_RANGE,
   foldIntoRange,
   isSymphonicWind,
+  isSymphonicScoreEnding,
   planSymphonicPhrases,
   resolveSymphonicRoster,
   resolveSymphonicSettings,
+  SYMPHONIC_DEFAULT_SCORE_END_BAR,
+  SYMPHONIC_EXTENDED_SCORE_END_BAR,
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
 import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt } from './symphonicDistribution';
@@ -82,7 +89,7 @@ export interface PianoPhraseProposal {
 
 export interface PianoChamberProposal {
   sourceSha256: string;
-  bars: 24;
+  bars: typeof SYMPHONIC_DEFAULT_SCORE_END_BAR | typeof SYMPHONIC_EXTENDED_SCORE_END_BAR;
   beats: number;
   beatType: number;
   /** Contiguous runs. One run when the excerpt stays in one signature. */
@@ -291,6 +298,7 @@ interface ChamberMetre {
   beatType: number;
   barLen: ExactQuarter;
   uniform: boolean;
+  scoreEndBar: number;
   metres: BarMeterMap;
   spans: Array<{ bar: number; start: ExactQuarter; length: ExactQuarter }>;
   runs: Array<{ bar: number; throughBar: number; beats: number; beatType: number; groups: number[] | null }>;
@@ -390,19 +398,24 @@ function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { 
   }
   const measures = bundle.score.measures.filter((measure) => selected.some((part) => part.id === measure.partId));
   const bars = [...new Set(measures.map((measure) => measure.bar))].sort((a, b) => a - b);
-  if (bars.length !== 24 || bars[0] !== 1 || bars[23] !== 24) {
-    return { error: `Phase 1 needs a supplied 24-bar score, bars 1–24. This selection has ${bars.length} bar numbers (${bars[0] ?? 'none'}–${bars[bars.length - 1] ?? 'none'}). Prepare the excerpt. The ending was not invented.` };
+  const scoreEndBar = bars[bars.length - 1] ?? 0;
+  if (
+    bars[0] !== 1
+    || bars.length !== scoreEndBar
+    || (scoreEndBar !== SYMPHONIC_DEFAULT_SCORE_END_BAR && scoreEndBar !== SYMPHONIC_EXTENDED_SCORE_END_BAR)
+  ) {
+    return { error: `Phase 1 needs a supplied ${SYMPHONIC_DEFAULT_SCORE_END_BAR}- or ${SYMPHONIC_EXTENDED_SCORE_END_BAR}-bar score, bars 1–${SYMPHONIC_DEFAULT_SCORE_END_BAR} or 1–${SYMPHONIC_EXTENDED_SCORE_END_BAR}. This selection has ${bars.length} bar numbers (${bars[0] ?? 'none'}–${bars[bars.length - 1] ?? 'none'}). Prepare the excerpt. The ending was not invented.` };
   }
   if (measures.some((measure) => measure.pickup)) return { error: 'Pickup bars are outside Phase 1. The metre was not changed.' };
   for (const part of selected) {
     const present = new Set(measures.filter((measure) => measure.partId === part.id).map((measure) => measure.bar));
-    for (let bar = 1; bar <= 24; bar += 1) {
+    for (let bar = 1; bar <= scoreEndBar; bar += 1) {
       if (!present.has(bar)) return { error: `Bar ${bar} is missing from ${part.id}. The bar was not invented.` };
     }
   }
   const metres: BarMeterMap = {};
   const runs: ChamberMetre['runs'] = [];
-  for (let bar = 1; bar <= 24; bar += 1) {
+  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
     const group = measures.filter((measure) => measure.bar === bar);
     const first = group[0];
     if (!first) return { error: `Bar ${bar} is missing. The bar was not invented.` };
@@ -446,7 +459,7 @@ function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { 
       return { error: `Source event ${record.canonical.id} extends past bar ${record.canonical.bar} (${measure.beats}/${measure.beatType}). The note was not shortened or moved.` };
     }
   }
-  const spans = barSpans(metres, 24);
+  const spans = barSpans(metres, scoreEndBar);
   return {
     records,
     metre: {
@@ -454,6 +467,7 @@ function validateBundle(bundle: SourceBundle, partIds: string[] | undefined): { 
       beatType,
       barLen: quarterLength(beats, beatType),
       uniform,
+      scoreEndBar,
       metres,
       spans,
       runs,
@@ -540,10 +554,27 @@ function assignRoles(rows: NoteRow[]): string[] {
   return uncertain;
 }
 
-function proposePhrases(rows: NoteRow[], barLen: ExactQuarter): { phrases: Phrase[]; uncertain: string[] } {
+function proposePhrasesFromFortyEightBarForm(): { phrases: Phrase[]; uncertain: string[] } {
+  const plan = planFortyEightBarForm(null);
+  const slices = symphonicPhrasesFromFortyEightBarPlan(plan);
+  const phrases: Phrase[] = slices.map((slice) => ({
+    id: slice.id,
+    startBar: slice.startBar,
+    endBar: slice.endBar,
+    reason: `48-bar form: ${slice.label} (${slice.thematicRole}) → symphonic ${slice.phraseRole}.`,
+    confidence: 'medium' as const,
+    kind: slice.phraseRole,
+  }));
+  return { phrases, uncertain: [] };
+}
+
+function proposePhrases(rows: NoteRow[], barLen: ExactQuarter, scoreEndBar: number): { phrases: Phrase[]; uncertain: string[] } {
+  if (scoreEndBar === SYMPHONIC_EXTENDED_SCORE_END_BAR) {
+    return proposePhrasesFromFortyEightBarForm();
+  }
   const melody = rows.filter((row) => row.role === 'melody').sort((a, b) => qCmp(a.onset, b.onset));
   const uncertain: string[] = [];
-  if (!melody.length) return { phrases: [{ id: 'p1', startBar: 1, endBar: 24, reason: 'No melody lane was inferred.', confidence: 'low', kind: 'statement' }], uncertain: ['No melody lane.'] };
+  if (!melody.length) return { phrases: [{ id: 'p1', startBar: 1, endBar: scoreEndBar, reason: 'No melody lane was inferred.', confidence: 'low', kind: 'statement' }], uncertain: ['No melody lane.'] };
   const breaks: number[] = [melody[0]!.event.bar];
   for (let index = 1; index < melody.length; index += 1) {
     const previous = melody[index - 1]!;
@@ -555,13 +586,13 @@ function proposePhrases(rows: NoteRow[], barLen: ExactQuarter): { phrases: Phras
   const gridStarts = new Set<number>();
   if (unique.length === 1) {
     uncertain.push('No melody rest long enough to mark a phrase. An 8-bar grid is only a proposal.');
-    for (const bar of [9, 17]) {
+    for (let bar = 9; bar < scoreEndBar; bar += 8) {
       unique.push(bar);
       gridStarts.add(bar);
     }
   }
   const phrases: Phrase[] = unique.map((startBar, index) => {
-    const endBar = (unique[index + 1] ?? 25) - 1;
+    const endBar = (unique[index + 1] ?? scoreEndBar + 1) - 1;
     const forced = gridStarts.has(startBar) || (melody.length > 0 && gapReason(rows, startBar) === false);
     return {
       id: `p${index + 1}`,
@@ -606,7 +637,12 @@ function intervalsOf(rows: NoteRow[]): number[] {
   return intervals;
 }
 
-function applyCorrections(rows: NoteRow[], phrases: Phrase[], correction: PianoChamberCorrection | undefined): Phrase[] {
+function applyCorrections(
+  rows: NoteRow[],
+  phrases: Phrase[],
+  correction: PianoChamberCorrection | undefined,
+  freezePhraseKinds = false,
+): Phrase[] {
   const roles = correction?.roles ?? {};
   for (const row of rows) {
     const next = roles[row.event.id];
@@ -632,7 +668,9 @@ function applyCorrections(rows: NoteRow[], phrases: Phrase[], correction: PianoC
       }));
     }
   }
-  if (correction?.roles || (correction?.phrases?.length && next !== phrases)) classifyPhraseKinds(rows, next);
+  if (!freezePhraseKinds && (correction?.roles || (correction?.phrases?.length && next !== phrases))) {
+    classifyPhraseKinds(rows, next);
+  }
   return next;
 }
 
@@ -754,8 +792,13 @@ export function proposePianoChamber(xml: string, partIds?: string[], correction?
   const rows = buildRows(validated.records, validated.metre);
   if (!rows.length) return fail('The piano selection has no sounding notes.');
   const roleUncertainty = assignRoles(rows);
-  const phrased = proposePhrases(rows, validated.metre.barLen);
-  const phrases = applyCorrections(rows, phrased.phrases, correction);
+  const phrased = proposePhrases(rows, validated.metre.barLen, validated.metre.scoreEndBar);
+  const phrases = applyCorrections(
+    rows,
+    phrased.phrases,
+    correction,
+    validated.metre.scoreEndBar === SYMPHONIC_EXTENDED_SCORE_END_BAR && !correction?.phrases?.length,
+  );
   const discovered = discoverMotifs(bundle.score);
   const tempo = tempoOf(bundle);
   const selectedParts = partIds?.length
@@ -766,7 +809,7 @@ export function proposePianoChamber(xml: string, partIds?: string[], correction?
     ok: true,
     proposal: {
       sourceSha256: bundle.sha256,
-      bars: 24,
+      bars: validated.metre.scoreEndBar as typeof SYMPHONIC_DEFAULT_SCORE_END_BAR | typeof SYMPHONIC_EXTENDED_SCORE_END_BAR,
       beats: validated.metre.beats,
       beatType: validated.metre.beatType,
       metres: validated.metre.runs,
@@ -851,6 +894,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     return fail('The score has no numeric tempo. Set correction.tempoBpm. The tempo was not guessed.');
   }
   const metre = validated.metre;
+  const scoreEndBar = metre.scoreEndBar;
   const variableSpans = metre.uniform ? undefined : metre.spans;
   const phraseBounds = (phrase: { startBar: number; endBar: number }): { start: number; end: number } => {
     if (metre.uniform) {
@@ -871,14 +915,19 @@ export function realisePianoChamber(request: OrchestrateRequest):
       const end = start + num(span.length);
       if (value >= start - 1e-9 && value < end - 1e-9) return span.bar;
     }
-    return 24;
+    return scoreEndBar;
   };
   const rows = buildRows(validated.records, metre);
   assignRoles(rows);
-  let phrases = proposePhrases(rows, metre.barLen).phrases;
-  phrases = applyCorrections(rows, phrases, correction);
-  if (phrases.some((phrase) => phrase.startBar < 1 || phrase.endBar > 24 || phrase.endBar < phrase.startBar)) {
-    return fail('Phrase boundaries must stay inside bars 1–24.');
+  let phrases = proposePhrases(rows, metre.barLen, scoreEndBar).phrases;
+  phrases = applyCorrections(
+    rows,
+    phrases,
+    correction,
+    scoreEndBar === SYMPHONIC_EXTENDED_SCORE_END_BAR && !correction?.phrases?.length,
+  );
+  if (phrases.some((phrase) => phrase.startBar < 1 || phrase.endBar > scoreEndBar || phrase.endBar < phrase.startBar)) {
+    return fail(`Phrase boundaries must stay inside bars 1–${scoreEndBar}.`);
   }
   const mode: PianoChamberMode = correction.mode === 'faithful' ? 'faithful' : 'developing';
   const locked = new Set(defaultLocks(rows, phrases));
@@ -914,7 +963,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       textureTendency: 'mixed' as const,
     },
   }));
-  const densityCurve = planDensityCurve(sectionRoles, 24);
+  const densityCurve = planDensityCurve(sectionRoles, scoreEndBar);
   const busy = new Map<string, Array<{ start: number; end: number }>>();
   const placed: Placed[] = [];
   const warnings: string[] = [];
@@ -932,7 +981,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     });
   }
   const silentBars = new Set<number>();
-  for (let bar = 1; bar <= 24; bar += 1) {
+  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
     if (!rows.some((row) => row.event.bar === bar)) {
       silentBars.add(bar);
       silence.push({ bar, reason: 'Source bar has no sounding attack. The rest stays empty.' });
@@ -962,6 +1011,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       return melodyRows.filter((row) => phrase && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar).length;
     },
     symphonicSettings,
+    scoreEndBar,
   ) : null;
   const planFor = (id: string): SymphonicPhrasePlan | null => phrasePlans?.find((plan) => plan.phraseId === id) ?? null;
 
@@ -1153,7 +1203,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     if (row.role !== 'countermelody' && row.role !== 'harmonic_support' && row.role !== 'rhythmic_figure') continue;
     if (silentBars.has(row.event.bar)) continue;
     const phrase = phraseOf(phrases, row.event.bar);
-    const ending = phrase.endBar === 24 && row.event.bar === 24 && row.role !== 'countermelody';
+    const ending = isSymphonicScoreEnding(phrase.endBar, scoreEndBar) && row.event.bar === scoreEndBar && row.role !== 'countermelody';
     if (ending && !locked.has(row.event.id)) {
       classification.set(row.event.id, { eventId: row.event.id, disposition: 'omitted', partId: null, octaveShift: 0, reason: 'Ending release. Inner notes drop so the close can decay.' });
       omissions.push({ eventId: row.event.id, reason: 'Ending release.' });
@@ -1208,7 +1258,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
 
   if (mode === 'developing') {
     const repeated = new Map<string, number>();
-    for (let bar = 1; bar <= 24; bar += 1) {
+    for (let bar = 1; bar <= scoreEndBar; bar += 1) {
       const signature = rows
         .filter((row) => row.role === 'harmonic_support' && row.event.bar === bar)
         .map((row) => `${pcOf(row.midi)}@${num(rat(row.event.onsetInBar))}`)
@@ -1232,7 +1282,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   for (const [phraseIndex, phrase] of phrases.entries()) {
     const answerPlan = planFor(phrase.id);
     if (answerPlan && answerPlan.counterline === 'silence') continue;
-    if (mode !== 'developing' || phrase.kind === 'statement' || phrase.kind === 'return' || phrase.endBar === 24) continue;
+    if (mode !== 'developing' || phrase.kind === 'statement' || phrase.kind === 'return' || isSymphonicScoreEnding(phrase.endBar, scoreEndBar)) continue;
     if ([...Array(phrase.endBar - phrase.startBar + 1).keys()].every((offset) => silentBars.has(phrase.startBar + offset))) {
       silence.push({ bar: phrase.startBar, reason: 'Answer omitted. The phrase is protected silence.' });
       continue;
@@ -1584,7 +1634,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
     built = buildE2Score({
       title: symphonic ? 'Piano to symphony' : 'Piano to chamber',
       tempo,
-      bars: 24,
+      bars: scoreEndBar,
       metres: metre.metres,
       parts: specs,
       placements,
@@ -1598,7 +1648,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   for (const phrase of phrases) {
     const partId = foregroundByPhrase.get(phrase.id);
     if (!partId) continue;
-    const mark = dynamicFor(phrase.kind, melodyRows.some((row) => row.midi === highestMidi && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar), phrase.endBar === 24);
+    const mark = dynamicFor(phrase.kind, melodyRows.some((row) => row.midi === highestMidi && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar), isSymphonicScoreEnding(phrase.endBar, scoreEndBar));
     const list = dynamics[partId] ?? [];
     list.push({ bar: phrase.startBar, beat: 0, mark });
     dynamics[partId] = list;
@@ -1706,11 +1756,11 @@ export function realisePianoChamber(request: OrchestrateRequest):
       answerOperator: answers.find((item) => item.phraseId === phrase.id)?.operator ?? null,
       register: registerPlan.entries.find((entry) => entry.sectionIndex === index && entry.partId === foregroundByPhrase.get(phrase.id))?.registerBand ?? 'middle',
       density: getDensityForBar(densityCurve, phrase.startBar),
-      dynamic: dynamicFor(phrase.kind, false, phrase.endBar === 24) ?? 'mf',
+      dynamic: dynamicFor(phrase.kind, false, isSymphonicScoreEnding(phrase.endBar, scoreEndBar)) ?? 'mf',
       handover: phase2
         ? phase2Handovers[phrase.id] === true || (index > 0 && foregroundByPhrase.get(phrase.id) !== foregroundByPhrase.get(phrases[index - 1]!.id))
         : index > 0 && foregroundByPhrase.get(phrase.id) !== foregroundByPhrase.get(phrases[index - 1]!.id),
-      ending: phrase.endBar === 24,
+      ending: isSymphonicScoreEnding(phrase.endBar, scoreEndBar),
     })),
     classifications: [...classification.values()],
     protectedEventIds: [...locked],
