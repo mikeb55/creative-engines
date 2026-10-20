@@ -14,6 +14,7 @@ import {
   type MosaicMotifBarNote,
 } from '../mosaic-mode/mosaicMotifEngine';
 import { notateTicks } from '../performance-composer/pcLane';
+import { seededUnit } from '../goldenPath/guitarBassDuoHarmony';
 import {
   toCompositionSection,
   validateSectionPartition,
@@ -402,15 +403,115 @@ const FORTY_EIGHT_PHRASE_BREATH_BEATS = 0.5;
 const FORTY_EIGHT_BASS_PEDALS = [48, 45, 43, 41, 53, 48, 43, 41] as const;
 const FORTY_EIGHT_MELODY_START_MIDI = 72;
 
-/** A′ rhythmic identity: MOSAIC rhythm operators on the transformed-return cell (intervals unchanged). */
-const FORTY_EIGHT_A_PRIME_RHYTHM_TRANSFORM: DerivedMotifTransform = {
+const FORTY_EIGHT_RHYTHM_ONLY_BASE: Omit<DerivedMotifTransform, 'rhythmScale' | 'onsetDisplace'> = {
   intervalNudge: 0,
   intervalClamp: 12,
-  rhythmScale: 0.75,
-  onsetDisplace: true,
   preserveContour: true,
   preserveSalientLeap: true,
 };
+
+/** Statement phrase: canonical MOSAIC rhythm (identity scale, on-beat). */
+const FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM: DerivedMotifTransform = {
+  ...FORTY_EIGHT_RHYTHM_ONLY_BASE,
+  rhythmScale: 1.0,
+  onsetDisplace: false,
+};
+
+/** Development phrase: stretched attacks + mild syncopation (intervals unchanged). */
+const FORTY_EIGHT_DEVELOPMENT_RHYTHM_TRANSFORM: DerivedMotifTransform = {
+  ...FORTY_EIGHT_RHYTHM_ONLY_BASE,
+  rhythmScale: 1.25,
+  onsetDisplace: true,
+};
+
+/** Return phrase: compressed rhythm + displacement on the return cell (intervals unchanged). */
+const FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM: DerivedMotifTransform = {
+  ...FORTY_EIGHT_RHYTHM_ONLY_BASE,
+  rhythmScale: 0.75,
+  onsetDisplace: true,
+};
+
+const FORTY_EIGHT_PHRASE_RHYTHM_TRANSFORM: Record<SymphonicPhraseRole, DerivedMotifTransform> = {
+  statement: FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM,
+  development: FORTY_EIGHT_DEVELOPMENT_RHYTHM_TRANSFORM,
+  return: FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM,
+};
+
+/** Rhythm-only slice of the existing B fragmentation operator (intervals untouched downstream). */
+const FORTY_EIGHT_BAR_B_RHYTHM_ONLY: DerivedMotifTransform = {
+  ...FORTY_EIGHT_RHYTHM_ONLY_BASE,
+  rhythmScale: FORTY_EIGHT_BAR_B_TRANSFORM.rhythmScale,
+  onsetDisplace: FORTY_EIGHT_BAR_B_TRANSFORM.onsetDisplace,
+};
+
+function fortyEightMosaicRhythmCarrier(
+  phraseRole: SymphonicPhraseRole,
+  motifs: FortyEightBarMotifDevelopmentPlan,
+  barInSection: number,
+  sectionLength: number
+): CoreMotif {
+  if (phraseRole === 'return') {
+    return transformMotifForSection(motifs.a, "A'", '', 0);
+  }
+  if (phraseRole === 'development') {
+    const fragAt = Math.max(2, Math.floor(sectionLength * 0.35));
+    if (barInSection >= fragAt) {
+      const fragmented = applyDerivedTransform(motifs.a, FORTY_EIGHT_BAR_B_TRANSFORM, 0);
+      return { ...motifs.a, rhythmPattern: fragmented.rhythmPattern };
+    }
+  }
+  return motifs.a;
+}
+
+function fortyEightMosaicBarRhythmTransform(
+  phraseRole: SymphonicPhraseRole,
+  phraseTransform: DerivedMotifTransform,
+  barInSection: number,
+  sectionLength: number,
+  seed: number,
+  bar: number
+): DerivedMotifTransform {
+  const progress = sectionLength <= 1 ? 0 : barInSection / Math.max(1, sectionLength - 1);
+  const u = seededUnit(seed, 94001, bar);
+  const v = seededUnit(seed, 94002, bar * 17 + barInSection);
+  const roleDrift =
+    phraseRole === 'development' ? 0.12 * progress : phraseRole === 'return' ? -0.08 * progress : 0.06 * progress;
+  const rhythmScale = Math.max(
+    0.55,
+    Math.min(1.45, phraseTransform.rhythmScale + roleDrift + (u - 0.5) * 0.14)
+  );
+  return {
+    ...FORTY_EIGHT_RHYTHM_ONLY_BASE,
+    rhythmScale,
+    onsetDisplace: phraseTransform.onsetDisplace || (barInSection > 0 && v > 0.52),
+  };
+}
+
+/** Phrase-role + per-bar MOSAIC rhythm (applyDerivedTransform / transformMotifForSection only). */
+function fortyEightMosaicRhythmPatternForBar(
+  phraseRole: SymphonicPhraseRole,
+  motifs: FortyEightBarMotifDevelopmentPlan,
+  barInSection: number,
+  sectionLength: number,
+  seed: number,
+  bar: number
+): CoreMotif['rhythmPattern'] {
+  const phraseTransform = FORTY_EIGHT_PHRASE_RHYTHM_TRANSFORM[phraseRole];
+  const carrier = fortyEightMosaicRhythmCarrier(phraseRole, motifs, barInSection, sectionLength);
+  let phraseMotif = applyDerivedTransform(carrier, phraseTransform, 0);
+  if (phraseRole === 'development' && barInSection > 0 && seededUnit(seed, 94150, bar + barInSection * 13) > 0.48) {
+    phraseMotif = applyDerivedTransform(phraseMotif, FORTY_EIGHT_BAR_B_RHYTHM_ONLY, 0);
+  }
+  const barTransform = fortyEightMosaicBarRhythmTransform(
+    phraseRole,
+    phraseTransform,
+    barInSection,
+    sectionLength,
+    seed,
+    bar
+  );
+  return applyDerivedTransform(phraseMotif, barTransform, 0).rhythmPattern;
+}
 
 function assertFortyEightBarMotifSourceLocks(motifs: FortyEightBarMotifDevelopmentPlan): void {
   if (!motifs.locks.preserveBhlHarmony || !motifs.locks.preserveSourceNoteLocks) {
@@ -450,15 +551,33 @@ function motifForThematicRole(
   return motifs.a;
 }
 
+/**
+ * Mosaic_rhythm: pitches/order from thematic cell; phrase-role base rhythm on motif A,
+ * then per-bar development inside the section (avoids one frozen template per phrase).
+ */
 function motifForRhythmicSourceBar(
-  role: FortyEightBarThematicRole,
-  motifs: FortyEightBarMotifDevelopmentPlan
+  phraseRole: SymphonicPhraseRole,
+  thematicRole: FortyEightBarThematicRole,
+  motifs: FortyEightBarMotifDevelopmentPlan,
+  barInSection: number,
+  sectionLength: number,
+  seed: number,
+  bar: number
 ): CoreMotif {
-  if (role === 'transformed_return') {
-    const rhythmShifted = applyDerivedTransform(motifs.aPrime, FORTY_EIGHT_A_PRIME_RHYTHM_TRANSFORM, 0);
-    return { ...rhythmShifted, id: motifs.aPrime.id };
-  }
-  return motifForThematicRole(role, motifs);
+  const pitchCore = motifForThematicRole(thematicRole, motifs);
+  const rhythmPattern = fortyEightMosaicRhythmPatternForBar(
+    phraseRole,
+    motifs,
+    barInSection,
+    sectionLength,
+    seed,
+    bar
+  );
+  return {
+    ...pitchCore,
+    rhythmPattern,
+    id: pitchCore.id,
+  };
 }
 
 function pianoTimedNoteXml(
@@ -560,9 +679,18 @@ export function buildFortyEightBarPianoSourceMusicXml(
   for (let bar = 1; bar <= 48; bar += 1) {
     const slice = slices.find((s) => bar >= s.startBar && bar <= s.endBar)!;
     const barInSection = bar - slice.startBar;
+    const sectionLength = slice.endBar - slice.startBar + 1;
     const core =
       rhythmMode === 'mosaic_rhythm'
-        ? motifForRhythmicSourceBar(slice.thematicRole, motifs)
+        ? motifForRhythmicSourceBar(
+            slice.phraseRole,
+            slice.thematicRole,
+            motifs,
+            barInSection,
+            sectionLength,
+            seed,
+            bar
+          )
         : motifForThematicRole(slice.thematicRole, motifs);
     const sparseIntro = slice.thematicRole === 'intro' && barInSection >= 2;
     const codaRelease = slice.thematicRole === 'coda' && bar === 48;
