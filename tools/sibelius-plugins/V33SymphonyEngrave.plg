@@ -1,0 +1,35 @@
+{
+	Initialize "() {
+AddToPluginsMenu(_PluginMenuName,'Run');
+}"
+	_PluginMenuName "V3.3 Symphony Engrave"
+	Run "() {
+return 'ready';
+}"
+	EngraveProof "(xmlPath, sibPath, pdfPath) {
+if (Sibelius.Open(xmlPath, True) = False)
+{
+	return 'OPEN_FAIL';
+}
+score = Sibelius.ActiveScore;
+Sibelius.SetCurrentScoreViewType(ViewTypePage);
+Sibelius.Execute(Cmd('Unlock Format'));
+ds = score.DocumentSetup;
+ds.Units = DocumentSetupUnitsmm;
+ds.PageSize = PageSizeA3;
+ds.Orientation = OrientationLandscape;
+ds.StaffSize = 7;
+score.AutoOptimizeEnabled = True;
+Sibelius.Execute(Cmd('Select All'));
+Sibelius.Execute(Cmd('Reset Note Spacing'));
+nStaff = score.StaffCount;
+nBar = score.SystemStaff.BarCount;
+score.HideEmptyStaves(1, nStaff, 1, nBar);
+Sibelius.Execute(Cmd('Hide Empty Staves'));
+score.OptimizeStaffSpacing(1);
+score.Save(sibPath);
+score.ExportScoreAsPDF(pdfPath);
+Sibelius.Close(False);
+return 'OK';
+}"
+}
