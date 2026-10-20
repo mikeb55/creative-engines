@@ -1,0 +1,35 @@
+{
+  "source": "docs/v3.5-phase1/contrapuntal/source.musicxml",
+  "seed": 11,
+  "mode": "developing",
+  "settings": {
+    "allocation": "phase-2",
+    "expression": "expressive",
+    "activity": "moderate",
+    "foreground": "source-register",
+    "counterline": "when-source-allows",
+    "families": {
+      "woodwind": "open",
+      "brass": "off",
+      "strings": "open",
+      "harp": "off",
+      "percussion": "off"
+    }
+  },
+  "expressiveMusicXmlSha256": "e2a8f411876dce0bcb45471a4025f9421edf31c4cc0250f30109493b212dc2bc",
+  "phase2MusicXmlSha256": "4f8db2270ab85cdd4fbb1254d469d1e457c757764e17c2e586deceb7d2067dbd",
+  "midiZipSha256": "199b67026d2c15e2e880534921cd5a0cbbb2b4c2a01ec1199bdcb6853ac4eb5e",
+  "expression": {
+    "dynamicMarks": 44,
+    "wedges": 8,
+    "slurs": 25,
+    "articulations": 31,
+    "marcato": 0,
+    "midiExpressionEvents": 20,
+    "plannedVelocityLevels": 14,
+    "exportedPositiveNoteOnVelocityLevels": 14,
+    "identicalConsecutiveLong": 0
+  },
+  "artisticApproval": "PENDING",
+  "note": "Expressive orchestration keeps Phase 2 pitches, durations, and ties. MusicXML differs in dynamics, hairpins, slurs, and articulations. MIDI note-on and note-off ticks match. Planned velocity levels are the distinct velocities written on attacks. Exported positive note-on velocity levels are decoded from MIDI after the existing 1-127 to 1-100 writer scale. Those two counts are separate. Velocity 0 note-ons are excluded. CC11 is written only for hairpins."
+}

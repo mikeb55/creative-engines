@@ -1,0 +1,413 @@
+{
+  "expression": "expressive",
+  "dynamicMarks": 44,
+  "wedges": 8,
+  "slurs": 25,
+  "articulations": 31,
+  "marcato": 0,
+  "midiExpressionEvents": 20,
+  "velocityLevels": 14,
+  "plannedVelocityLevels": 14,
+  "identicalConsecutiveLong": 0,
+  "breathingWarnings": [
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval.",
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval.",
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval.",
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval.",
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval.",
+    "Breathing warning: Flute 1 sounds 6 quarters without a rest. The notes and ties stay on Flute 1. Expression did not move the line. This is not player approval."
+  ],
+  "byFamily": {
+    "woodwind": {
+      "slurs": 12,
+      "articulations": 12,
+      "wedges": 0,
+      "dynamicMarks": 15,
+      "marcato": 0
+    },
+    "strings": {
+      "slurs": 13,
+      "articulations": 19,
+      "wedges": 8,
+      "dynamicMarks": 29,
+      "marcato": 0
+    }
+  },
+  "decisions": [
+    {
+      "phraseId": "p1",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0.2,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p2",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0.12,
+      "marks": [
+        "mp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p3",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0.42,
+      "marks": [
+        "mf"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p4",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0.12,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p5",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0.12,
+      "marks": [
+        "mp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p6",
+      "partId": "fl1",
+      "role": "foreground",
+      "contour": "static",
+      "tension": 0,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p1",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "falling",
+      "tension": 0.22,
+      "marks": [
+        "p",
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p2",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "rising",
+      "tension": 0.17,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p3",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "falling",
+      "tension": 0.44,
+      "marks": [
+        "mp",
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p4",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "rising",
+      "tension": 0.17,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p5",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "falling",
+      "tension": 0.14,
+      "marks": [
+        "p",
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p6",
+      "partId": "cl1",
+      "role": "support",
+      "contour": "rising",
+      "tension": 0.02,
+      "marks": [
+        "p"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p1",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0.2,
+      "marks": [
+        "p",
+        "mp",
+        "pp"
+      ],
+      "wedge": "arch",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p2",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0.12,
+      "marks": [
+        "p",
+        "mp",
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p3",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0.42,
+      "marks": [
+        "mf",
+        "f",
+        "mp"
+      ],
+      "wedge": "arch",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p4",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0.12,
+      "marks": [
+        "pp",
+        "p",
+        "pp"
+      ],
+      "wedge": "arch",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p5",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0.12,
+      "marks": [
+        "p",
+        "mp",
+        "pp"
+      ],
+      "wedge": "arch",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p6",
+      "partId": "vn1",
+      "role": "foreground",
+      "contour": "arch",
+      "tension": 0,
+      "marks": [
+        "pp",
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p1",
+      "partId": "vn2",
+      "role": "answer",
+      "contour": "static",
+      "tension": 0.16,
+      "marks": [
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p1",
+      "partId": "va",
+      "role": "support",
+      "contour": "arch",
+      "tension": 0.22,
+      "marks": [
+        "pp",
+        "p",
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p2",
+      "partId": "va",
+      "role": "support",
+      "contour": "static",
+      "tension": 0.08,
+      "marks": [
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p3",
+      "partId": "va",
+      "role": "support",
+      "contour": "arch",
+      "tension": 0.44,
+      "marks": [
+        "p",
+        "mp",
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p4",
+      "partId": "va",
+      "role": "support",
+      "contour": "static",
+      "tension": 0.08,
+      "marks": [
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p5",
+      "partId": "va",
+      "role": "support",
+      "contour": "arch",
+      "tension": 0.14,
+      "marks": [
+        "pp",
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    },
+    {
+      "phraseId": "p6",
+      "partId": "va",
+      "role": "support",
+      "contour": "static",
+      "tension": 0,
+      "marks": [
+        "pp"
+      ],
+      "wedge": "none",
+      "articulations": [
+        "accent",
+        "tenuto"
+      ]
+    }
+  ]
+}

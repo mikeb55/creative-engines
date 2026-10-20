@@ -462,6 +462,7 @@ function drumKitNoteXml(opts: {
   instrumentId: string;
   /** Optional (e.g. `<accidental>sharp</accidental>`). Must follow &lt;type&gt;/&lt;dot&gt; and precede &lt;stem&gt; (MusicXML note content model — Sibelius rejects accidental after &lt;unpitched&gt;). */
   accidentalXml?: string;
+  notationsXml?: string;
 }): string {
   const spec = tickSpecForLength(opts.ticks480);
   const typeDots = typeAndDotsXml(spec);
@@ -474,7 +475,7 @@ function drumKitNoteXml(opts: {
         : '';
   const chordEl = opts.chord ? '<chord/>' : '';
   const acc = opts.accidentalXml ?? '';
-  return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}${acc}<stem>${opts.stem}</stem>${nh}<staff>1</staff></note>\n`;
+  return `        <note>${chordEl}${drumUnpitchedDisplay(opts.step, opts.octave)}<duration>${durXml}</duration><instrument id="${opts.instrumentId}"/><voice>${opts.voice}</voice>${typeDots}${acc}<stem>${opts.stem}</stem>${nh}<staff>1</staff>${opts.notationsXml ?? ''}</note>\n`;
 }
 
 /** Fela kit instrument ids — one score-instrument per GM pitch for Sibelius unpitched playback. */
@@ -1548,6 +1549,14 @@ function orchestralPercussionEventsToXml(measure: MeasureModel, part: PartModel,
     } else {
       const gm = event.pitch;
       if (gm !== 36 && gm !== 57) throw new Error(`Orchestral percussion refuses GM note ${gm}. Bass drum is 36 and suspended cymbal is 57.`);
+      const articulationNames = event.notation?.articulations ?? [];
+      const articulationTags = articulationNames.map((name) => {
+        if (name === 'accent_staccato') return '<accent/><staccato/>';
+        if (name === 'marcato') return '<strong-accent/>';
+        if (name === 'staccatissimo') return '<staccatissimo/>';
+        return `<${name}/>`;
+      }).join('');
+      const accent = articulationTags ? `<notations><articulations>${articulationTags}</articulations></notations>` : '';
       xml += drumKitNoteXml({
         chord: false,
         step: gm === 36 ? 'F' : 'G',
@@ -1557,6 +1566,7 @@ function orchestralPercussionEventsToXml(measure: MeasureModel, part: PartModel,
         stem: 'up',
         notehead: gm === 57 ? 'x' : 'normal',
         instrumentId: gm === 36 ? `${part.id}-bd` : `${part.id}-cym`,
+        ...(accent ? { notationsXml: accent } : {}),
       });
     }
     cursor += duration;

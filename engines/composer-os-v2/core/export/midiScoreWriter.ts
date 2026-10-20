@@ -354,8 +354,138 @@ export function writeScoreModelMidiFile(score: ScoreModel, outputPath: string, o
   });
 
   const writer = new MidiWriter.Writer(tracks, { ticksPerBeat: SCORE_MIDI_PPQ });
-  fs.writeFileSync(outputPath, Buffer.from(writer.buildFile()));
+  let bytes = Buffer.from(writer.buildFile());
+  if (score.midiExpression && score.midiExpression.length > 0) {
+    const inserts: MidiControllerInsert[] = [];
+    score.parts.forEach((part, partIndex) => {
+      const events = score.midiExpression!.filter((event) => event.partId === part.id);
+      for (const event of events) {
+        const tick = (barStarts[event.bar - 1] ?? 0) + Math.round(event.beat * SCORE_MIDI_PPQ);
+        inserts.push({
+          trackIndex: partIndex + 1,
+          tick,
+          channelNibble: midiChannelForPart(part, partIndex, e2) - 1,
+          controller: event.controller,
+          value: Math.max(0, Math.min(127, Math.round(event.value))),
+        });
+      }
+    });
+    bytes = Buffer.from(spliceMidiControllers(bytes, inserts));
+  }
+  fs.writeFileSync(outputPath, bytes);
   return true;
+}
+
+interface MidiControllerInsert {
+  trackIndex: number;
+  tick: number;
+  channelNibble: number;
+  controller: number;
+  value: number;
+}
+
+function readVariableLength(data: Buffer, pos: number): { value: number; pos: number } {
+  let value = 0;
+  let byte = 0;
+  do {
+    byte = data[pos++]!;
+    value = (value << 7) | (byte & 0x7f);
+  } while (byte & 0x80);
+  return { value, pos };
+}
+
+function writeVariableLength(value: number): number[] {
+  const bytes = [value & 0x7f];
+  let rest = value >> 7;
+  while (rest > 0) {
+    bytes.unshift((rest & 0x7f) | 0x80);
+    rest >>= 7;
+  }
+  return bytes;
+}
+
+/** Inserts controller events without moving existing note ticks. No inserts leaves the file unread. */
+export function spliceMidiControllers(data: Buffer, inserts: readonly MidiControllerInsert[]): Buffer {
+  if (!inserts.length) return data;
+  const headerLength = data.readUInt32BE(4);
+  let pos = 8 + headerLength;
+  const trackStarts: number[] = [];
+  const trackEnds: number[] = [];
+  while (pos + 8 <= data.length && data.toString('ascii', pos, pos + 4) === 'MTrk') {
+    const length = data.readUInt32BE(pos + 4);
+    trackStarts.push(pos);
+    trackEnds.push(pos + 8 + length);
+    pos += 8 + length;
+  }
+  const rebuilt: Buffer[] = [data.subarray(0, trackStarts[0] ?? data.length)];
+  for (let trackIndex = 0; trackIndex < trackStarts.length; trackIndex += 1) {
+    const events = readTrackEvents(data, trackStarts[trackIndex]! + 8, trackEnds[trackIndex]!);
+    const additions = inserts.filter((insert) => insert.trackIndex === trackIndex);
+    for (const insert of additions) {
+      const noteOrder = events
+        .filter((event) => event.tick === insert.tick && (event.body[0]! & 0xf0) === 0x90)
+        .map((event) => event.order);
+      events.push({
+        tick: insert.tick,
+        order: noteOrder.length ? Math.min(...noteOrder) - 0.1 : 1_000_000 + insert.controller,
+        body: [0xb0 | (insert.channelNibble & 0x0f), insert.controller & 0x7f, insert.value & 0x7f],
+      });
+    }
+    events.sort((a, b) => a.tick - b.tick || a.order - b.order);
+    const end = events.findIndex((event) => event.body[0] === 0xff && event.body[1] === 0x2f);
+    if (end >= 0 && end !== events.length - 1) {
+      const [ending] = events.splice(end, 1);
+      if (ending) events.push(ending);
+    }
+    rebuilt.push(encodeTrack(events));
+  }
+  return Buffer.concat(rebuilt);
+}
+
+function readTrackEvents(data: Buffer, start: number, end: number): Array<{ tick: number; order: number; body: number[] }> {
+  const events: Array<{ tick: number; order: number; body: number[] }> = [];
+  let pos = start;
+  let tick = 0;
+  let status = 0;
+  let order = 0;
+  while (pos < end) {
+    const delta = readVariableLength(data, pos);
+    pos = delta.pos;
+    tick += delta.value;
+    if (data[pos]! >= 0x80) status = data[pos++]!;
+    let body: number[];
+    if (status === 0xff) {
+      const type = data[pos++]!;
+      const length = readVariableLength(data, pos);
+      pos = length.pos;
+      body = [0xff, type, ...writeVariableLength(length.value), ...data.subarray(pos, pos + length.value)];
+      pos += length.value;
+    } else if (status === 0xf0 || status === 0xf7) {
+      const length = readVariableLength(data, pos);
+      pos = length.pos;
+      body = [status, ...writeVariableLength(length.value), ...data.subarray(pos, pos + length.value)];
+      pos += length.value;
+    } else {
+      const kind = status & 0xf0;
+      const size = kind === 0xc0 || kind === 0xd0 ? 1 : 2;
+      body = [status, ...data.subarray(pos, pos + size)];
+      pos += size;
+    }
+    events.push({ tick, order: order++, body });
+  }
+  return events;
+}
+
+function encodeTrack(events: Array<{ tick: number; body: number[] }>): Buffer {
+  const bytes: number[] = [];
+  let previous = 0;
+  for (const event of events) {
+    bytes.push(...writeVariableLength(event.tick - previous), ...event.body);
+    previous = event.tick;
+  }
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(bytes.length, 0);
+  return Buffer.concat([Buffer.from('MTrk'), length, Buffer.from(bytes)]);
 }
 
 /**

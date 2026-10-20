@@ -363,6 +363,11 @@ export interface ScoreModel {
    */
   partDynamics?: Record<string, PartDynamicEvent[]>;
   /**
+   * V4.0 Phase 3 MIDI CC11 expression. Absent leaves MIDI bytes unchanged.
+   * Beat is a 0-based quarter offset inside the bar.
+   */
+  midiExpression?: Array<{ partId: string; bar: number; beat: number; controller: 11; value: number }>;
+  /**
    * Sustain-pedal directions for a piano grand staff.
    * Absent leaves export unchanged.
    */

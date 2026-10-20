@@ -50,7 +50,10 @@ interface Fidelity {
     protectedEventIds: string[];
     notes: Array<{ control: string; partId: string; onset: number; duration: number; midi: number; reason: string }>;
   };
-  symphonic?: { distribution?: { allocation: 'phase-2' } };
+  symphonic?: {
+    distribution?: { allocation: 'phase-2' };
+    expression?: { expression: 'expressive'; dynamicMarks: number; wedges: number; slurs: number; articulations: number; marcato: number; midiExpressionEvents: number; velocityLevels: number };
+  };
 }
 
 const PITCH_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -122,6 +125,7 @@ export function PianoChamberPage() {
   const [foregroundPref, setForegroundPref] = useState<'source-register' | 'strings' | 'woodwind' | 'brass'>('source-register');
   const [counterline, setCounterline] = useState<'off' | 'when-source-allows'>('when-source-allows');
   const [allocation, setAllocation] = useState<'phase-1' | 'phase-2'>('phase-1');
+  const [expression, setExpression] = useState<'legacy' | 'expressive'>('legacy');
   const [familyActivity, setFamilyActivity] = useState<Record<string, 'off' | 'limited' | 'open'>>({
     woodwind: 'open', brass: 'open', strings: 'open', harp: 'limited', percussion: 'limited',
   });
@@ -294,6 +298,7 @@ export function PianoChamberPage() {
                 foreground: foregroundPref,
                 counterline,
                 ...(allocation === 'phase-2' ? { allocation } : {}),
+                ...(allocation === 'phase-2' && expression === 'expressive' ? { expression } : {}),
               },
             } : {}),
           },
@@ -333,6 +338,9 @@ export function PianoChamberPage() {
     }
   }
   const anchorBars = [...anchorsByBar.keys()].sort((a, b) => a - b);
+  let harmonicLine = 'Harmonic development off. Phase 1 arrangement.';
+  if (fidelity?.symphonic?.expression) harmonicLine = 'Harmonic development off. Expressive orchestration on Phase 2 distribution.';
+  else if (fidelity?.symphonic?.distribution?.allocation === 'phase-2') harmonicLine = 'Harmonic development off. Phase 2 distribution.';
 
   return (
     <section data-testid="piano-chamber" style={{ display: 'grid', gap: '0.75rem', maxWidth: 920 }}>
@@ -377,6 +385,15 @@ export function PianoChamberPage() {
                   <option value="phase-2">Phase 2 distribution</option>
                 </select>
               </label>
+              {allocation === 'phase-2' ? (
+                <label>
+                  Expression
+                  <select aria-label="symphonic expression" data-testid="piano-chamber-expression" value={expression} onChange={(event) => { setExpression(event.target.value as 'legacy' | 'expressive'); dropStaleArrangement(); }}>
+                    <option value="legacy">Legacy</option>
+                    <option value="expressive">Expressive</option>
+                  </select>
+                </label>
+              ) : null}
               <label>
                 Activity
                 <select aria-label="symphonic activity" value={activity} onChange={(event) => { setActivity(event.target.value as 'sparse' | 'moderate' | 'full'); dropStaleArrangement(); }}>
@@ -650,12 +667,13 @@ export function PianoChamberPage() {
               </ul>
             </div>
           ) : (
-            <p data-testid="piano-chamber-harmonic-off">
-              {fidelity.symphonic?.distribution?.allocation === 'phase-2'
-                ? 'Harmonic development off. Phase 2 distribution.'
-                : 'Harmonic development off. Phase 1 arrangement.'}
-            </p>
+            <p data-testid="piano-chamber-harmonic-off">{harmonicLine}</p>
           )}
+          {fidelity.symphonic?.expression ? (
+            <p data-testid="piano-chamber-expression-result">
+              Written marks {fidelity.symphonic.expression.dynamicMarks}. Hairpins {fidelity.symphonic.expression.wedges}. Slurs {fidelity.symphonic.expression.slurs}. Articulations {fidelity.symphonic.expression.articulations}. Marcato {fidelity.symphonic.expression.marcato}. MIDI velocity levels {fidelity.symphonic.expression.velocityLevels}. Hairpin CC11 events {fidelity.symphonic.expression.midiExpressionEvents}.
+            </p>
+          ) : null}
           <ul>
             {fidelity.phrases.map((phrase) => (
               <li key={phrase.id}>

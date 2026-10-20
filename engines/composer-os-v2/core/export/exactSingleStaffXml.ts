@@ -24,6 +24,19 @@ function typeXml(exact: PianoExactTiming): string {
   return `<type>${exact.writtenType}</type>${dots}${mod}`;
 }
 
+function expressionXml(note: NoteEvent): { slur: string; articulations: string } {
+  const slur = note.notation?.slur === 'start' || note.notation?.slur === 'stop'
+    ? `<slur type="${note.notation.slur}"/>`
+    : '';
+  const tags = (note.notation?.articulations ?? []).map((name) => {
+    if (name === 'accent_staccato') return '<accent/><staccato/>';
+    if (name === 'marcato') return '<strong-accent/>';
+    if (name === 'staccatissimo') return '<staccatissimo/>';
+    return `<${name}/>`;
+  }).join('');
+  return { slur, articulations: tags ? `<articulations>${tags}</articulations>` : '' };
+}
+
 function tieXml(exact: PianoExactTiming, note: NoteEvent): { sound: string; notations: string } {
   const cross = note.notation?.tie;
   const stop = cross === 'stop' || cross === 'continue';
@@ -33,7 +46,10 @@ function tieXml(exact: PianoExactTiming, note: NoteEvent): { sound: string; nota
   const tuplet = exact.tuplet && exact.tuplet.bracket !== 'continue'
     ? `<tuplet type="${exact.tuplet.bracket}" number="1" bracket="yes"/>`
     : '';
-  const notations = tied || tuplet ? `<notations>${tied}${tuplet}</notations>` : '';
+  const expression = expressionXml(note);
+  const notations = tied || expression.slur || tuplet || expression.articulations
+    ? `<notations>${tied}${expression.slur}${tuplet}${expression.articulations}</notations>`
+    : '';
   return { sound, notations };
 }
 

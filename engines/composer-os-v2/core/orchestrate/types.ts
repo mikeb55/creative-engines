@@ -127,6 +127,12 @@ export interface SymphonicOrchestrationSettings {
    * `phase-2` selects source-led distribution on the same roster.
    */
   allocation?: 'phase-1' | 'phase-2';
+  /**
+   * Absent or `legacy` leaves Phase 2 dynamics and MIDI velocity on the note pass.
+   * `expressive` is read only when `allocation` is `phase-2`.
+   * It writes phrase expression and does not move pitches, durations, or ties.
+   */
+  expression?: 'legacy' | 'expressive';
 }
 
 export interface PianoChamberHarmonicDevelopment {

@@ -47,6 +47,7 @@ import {
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
 import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt } from './symphonicDistribution';
+import { applySymphonicExpression, type Phase3ExpressionReceipt } from './symphonicExpression';
 import type {
   OrchestrateReceipt,
   OrchestrateRequest,
@@ -142,6 +143,8 @@ export interface PianoChamberFidelity {
     conventions: string[];
     /** Present only for allocation phase-2. Phase 1 receipts omit it. */
     distribution?: Phase2DistributionReceipt;
+    /** Present only when Phase 2 allocation runs expressive orchestration. */
+    expression?: Phase3ExpressionReceipt;
   };
   /** Present only when a Phase 2 control wrote notes. */
   harmonicDevelopment?: {
@@ -1649,6 +1652,12 @@ export function realisePianoChamber(request: OrchestrateRequest):
       }
     }
   }
+  const expressive = !!(phase2 && symphonicSettings && symphonicSettings.expression === 'expressive' && phrasePlans);
+  let expressionReceipt: Phase3ExpressionReceipt | null = null;
+  if (expressive && phrasePlans) {
+    expressionReceipt = applySymphonicExpression(built.score, phrasePlans);
+    warnings.push(...expressionReceipt.breathingWarnings);
+  }
   const exported = runEnsembleExportPipeline(built.score);
   if (!exported.ok || !exported.xml) return fail(exported.errors.join(' ') || 'MusicXML export failed.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'piano-chamber-'));
@@ -1731,6 +1740,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
           'Percussion is one player: bass drum GM 36 and suspended cymbal GM 57.',
         ],
         ...(phase2Distribution ? { distribution: phase2Distribution } : {}),
+        ...(expressionReceipt ? { expression: expressionReceipt } : {}),
       },
     } : {}),
     listeningQuestions: [
@@ -1740,6 +1750,10 @@ export function realisePianoChamber(request: OrchestrateRequest):
       ...(phase2Distribution ? [
         'Where the melody changes instrument, does the phrase still read as one line?',
         'Do Violin II, viola, or cello sound like they have a job, or only a copy?',
+      ] : []),
+      ...(expressionReceipt ? [
+        'Do the hairpins follow the phrase contour, or do they only get louder?',
+        'Where a wind is marked as too long for one breath, is the warning enough, or should a player hand the line over?',
       ] : []),
       ...(harmonicNotes.length ? [
         'Does the new inner line change the harmony, or does it only double a note that was already there?',
