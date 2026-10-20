@@ -551,6 +551,10 @@ function motifForThematicRole(
   return motifs.a;
 }
 
+function fortyEightRhythmPatternKey(rhythm: CoreMotif['rhythmPattern']): string {
+  return rhythm.map((row) => `${row.startBeat}:${row.duration}`).join(',');
+}
+
 /**
  * Mosaic_rhythm: pitches/order from thematic cell; phrase-role base rhythm on motif A,
  * then per-bar development inside the section (avoids one frozen template per phrase).
@@ -565,14 +569,143 @@ function motifForRhythmicSourceBar(
   bar: number
 ): CoreMotif {
   const pitchCore = motifForThematicRole(thematicRole, motifs);
-  const rhythmPattern = fortyEightMosaicRhythmPatternForBar(
-    phraseRole,
-    motifs,
-    barInSection,
-    sectionLength,
-    seed,
-    bar
-  );
+  const carrier = fortyEightMosaicRhythmCarrier(phraseRole, motifs, barInSection, sectionLength);
+  const phraseMotif = applyDerivedTransform(carrier, FORTY_EIGHT_PHRASE_RHYTHM_TRANSFORM[phraseRole], 0);
+  const symphonicSlices = symphonicPhrasesFromFortyEightBarPlan(planFortyEightBarForm(null));
+
+  const resolveSlotTransform = (
+    targetBar: number,
+    targetBarInSection: number,
+    targetThematicRole: FortyEightBarThematicRole,
+    targetPhraseRole: SymphonicPhraseRole
+  ): DerivedMotifTransform => {
+    const targetPhraseEnd = symphonicSlices.some((phrase) => phrase.endBar === targetBar);
+    if (targetThematicRole === 'coda' && targetBar >= 43) {
+      const codaIndex = targetBar - 43;
+      if (targetBar === 48) {
+        return {
+          ...FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM,
+          rhythmScale: 1.48,
+          onsetDisplace: false,
+        };
+      }
+      const codaOperators: DerivedMotifTransform[] = [
+        FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM,
+        {
+          ...FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM,
+          rhythmScale: 1.18,
+          onsetDisplace: true,
+        },
+        {
+          ...FORTY_EIGHT_DEVELOPMENT_RHYTHM_TRANSFORM,
+          rhythmScale: 1.32,
+          onsetDisplace: true,
+        },
+        {
+          ...FORTY_EIGHT_BAR_B_RHYTHM_ONLY,
+          rhythmScale: 1.22,
+          onsetDisplace: false,
+        },
+        {
+          ...FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM,
+          rhythmScale: 1.05,
+          onsetDisplace: true,
+        },
+      ];
+      return codaOperators[Math.min(codaIndex, codaOperators.length - 1)]!;
+    }
+
+    const targetSlot = targetBarInSection % 4;
+    if (targetSlot === 0) {
+      return FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM;
+    }
+    if (targetSlot === 1) {
+      return {
+        ...FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM,
+        rhythmScale: 1.08,
+        onsetDisplace: true,
+      };
+    }
+    if (targetSlot === 2) {
+      if (targetPhraseRole === 'development') {
+        return {
+          ...FORTY_EIGHT_BAR_B_RHYTHM_ONLY,
+          rhythmScale: FORTY_EIGHT_DEVELOPMENT_RHYTHM_TRANSFORM.rhythmScale,
+          onsetDisplace: true,
+        };
+      }
+      return FORTY_EIGHT_BAR_B_RHYTHM_ONLY;
+    }
+
+    const cadenceU = seededUnit(seed, 94210, targetBar + targetPhraseRole.length);
+    const phraseEndCadence = targetPhraseEnd && targetBar < 48;
+    const cadenceScale = phraseEndCadence
+      ? 0.58 + cadenceU * 0.14
+      : 0.72 + cadenceU * 0.1;
+    if (targetPhraseRole === 'return') {
+      return {
+        ...FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM,
+        rhythmScale: Math.min(cadenceScale, 0.7),
+        onsetDisplace: cadenceU > 0.28,
+      };
+    }
+    return {
+      ...FORTY_EIGHT_RETURN_RHYTHM_TRANSFORM,
+      rhythmScale: cadenceScale,
+      onsetDisplace: phraseEndCadence ? cadenceU > 0.22 : cadenceU > 0.55,
+    };
+  };
+
+  const rhythmFromSlot = (slotTransform: DerivedMotifTransform): CoreMotif['rhythmPattern'] =>
+    applyDerivedTransform(phraseMotif, slotTransform, 0).rhythmPattern;
+
+  let rhythmPattern = rhythmFromSlot(resolveSlotTransform(bar, barInSection, thematicRole, phraseRole));
+
+  if (thematicRole === 'coda' && bar === 48) {
+    rhythmPattern = [{ startBeat: 0, duration: 3.5 }];
+  }
+
+  if (barInSection >= 4 && thematicRole !== 'intro') {
+    const prevBar = bar - 4;
+    const prevSlice = symphonicSlices.find((s) => prevBar >= s.startBar && prevBar <= s.endBar);
+    if (!prevSlice) {
+      return { ...pitchCore, rhythmPattern, id: pitchCore.id };
+    }
+    const prevBarInSection = prevBar - prevSlice.startBar;
+    const prevPhraseMotif = applyDerivedTransform(
+      fortyEightMosaicRhythmCarrier(
+        prevSlice.phraseRole,
+        motifs,
+        prevBarInSection,
+        prevSlice.endBar - prevSlice.startBar + 1
+      ),
+      FORTY_EIGHT_PHRASE_RHYTHM_TRANSFORM[prevSlice.phraseRole],
+      0
+    );
+    const prevSlot = resolveSlotTransform(
+      prevBar,
+      prevBarInSection,
+      prevSlice.thematicRole,
+      prevSlice.phraseRole
+    );
+    const prevPattern = applyDerivedTransform(prevPhraseMotif, prevSlot, 0).rhythmPattern;
+    if (fortyEightRhythmPatternKey(prevPattern) === fortyEightRhythmPatternKey(rhythmPattern)) {
+      const vary =
+        seededUnit(seed, 94220, bar) > 0.5
+          ? {
+              ...FORTY_EIGHT_BAR_B_RHYTHM_ONLY,
+              rhythmScale: 1.06 + seededUnit(seed, 94221, bar) * 0.12,
+              onsetDisplace: true,
+            }
+          : {
+              ...FORTY_EIGHT_STATEMENT_RHYTHM_TRANSFORM,
+              rhythmScale: 1.1 + seededUnit(seed, 94222, bar) * 0.1,
+              onsetDisplace: true,
+            };
+      rhythmPattern = applyDerivedTransform({ ...phraseMotif, rhythmPattern }, vary, 0).rhythmPattern;
+    }
+  }
+
   return {
     ...pitchCore,
     rhythmPattern,

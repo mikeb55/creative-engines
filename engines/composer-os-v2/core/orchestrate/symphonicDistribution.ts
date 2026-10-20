@@ -1081,7 +1081,7 @@ export function planSymphonicDistribution(input: {
     const canAnswer = mode === 'developing'
       && settings.counterline === 'when-source-allows'
       && energyAllowsAnswer
-      && (texture === 'layered' || texture === 'dialogue')
+      && (texture === 'layered' || texture === 'dialogue' || (texture === 'subgroup' && scoreEndBar >= SYMPHONIC_EXTENDED_SCORE_END_BAR))
       && !isSymphonicScoreEnding(phrase.endBar, scoreEndBar)
       && localMelody.length >= 3
       && phrase.start >= answerOpenUntil - 1e-6
