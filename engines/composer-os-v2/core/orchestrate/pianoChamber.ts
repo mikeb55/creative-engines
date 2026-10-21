@@ -54,10 +54,12 @@ import {
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
 import {
+  applyDialogueDynamicsVelocities,
+  buildOrchestralDialogue77241PartDynamics,
   planOrchestralDialogueDistribution,
   resolveOrchestralDialoguePlan,
 } from '../symphonic/orchestralDialoguePlan';
-import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt } from './symphonicDistribution';
+import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt, type Phase2EventPlan } from './symphonicDistribution';
 import { applySymphonicExpression, type Phase3ExpressionReceipt } from './symphonicExpression';
 import type {
   OrchestrateReceipt,
@@ -999,6 +1001,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const highestMidi = melodyRows.reduce((best, row) => Math.max(best, row.midi), 0);
   const phase2 = !!(symphonic && symphonicSettings && symphonicSettings.allocation === 'phase-2');
   let phase2Distribution: Phase2DistributionReceipt | null = null;
+  let dialoguePhase2Placements: Phase2EventPlan[] | null = null;
   let phase2Handovers: Record<string, boolean> = {};
   const derivedEvents: OrchestrateReceipt['derivedLines'] = [];
   const timpaniTuning: number[] = [];
@@ -1103,11 +1106,12 @@ export function realisePianoChamber(request: OrchestrateRequest):
           reason: item.reason,
           confidence: 'medium' as const,
         };
+      const placementRow = item.eventId.startsWith('4d-vc-b1:') ? { ...row, duration: q(1, 2) } : row;
       try {
         placeRow(
           placed,
           busy,
-          row,
+          placementRow,
           part,
           item.kind === 'source' && source ? item.shift : 0,
           metre.barLen,
@@ -1148,6 +1152,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
       if (current.disposition === 'omitted') current.reason = item.reason;
     }
     phrasePlans = planned.plan.plans;
+    if (dialoguePlan) dialoguePhase2Placements = planned.plan.placements;
     phase2Distribution = planned.plan.distribution;
     phase2Handovers = planned.plan.handovers;
     timpaniTuning.push(...planned.plan.timpaniTuning);
@@ -1653,23 +1658,36 @@ export function realisePianoChamber(request: OrchestrateRequest):
   } catch (error) {
     return fail(error instanceof Error ? error.message : String(error));
   }
-  const dynamics: Record<string, PartDynamicEvent[]> = {};
-  for (const phrase of phrases) {
-    const partId = foregroundByPhrase.get(phrase.id);
-    if (!partId) continue;
-    const mark = dynamicFor(phrase.kind, melodyRows.some((row) => row.midi === highestMidi && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar), isSymphonicScoreEnding(phrase.endBar, scoreEndBar));
-    const list = dynamics[partId] ?? [];
-    list.push({ bar: phrase.startBar, beat: 0, mark });
-    dynamics[partId] = list;
-  }
+  const dialoguePlanResolved = resolveOrchestralDialoguePlan(correction.symphonic);
+  const dynamics: Record<string, PartDynamicEvent[]> = dialoguePlanResolved && phase2Distribution && dialoguePhase2Placements
+    ? buildOrchestralDialogue77241PartDynamics(
+      built.score.parts.map((part) => part.id),
+      dialoguePhase2Placements,
+    )
+    : (() => {
+      const legacy: Record<string, PartDynamicEvent[]> = {};
+      for (const phrase of phrases) {
+        const partId = foregroundByPhrase.get(phrase.id);
+        if (!partId) continue;
+        const mark = dynamicFor(phrase.kind, melodyRows.some((row) => row.midi === highestMidi && row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar), isSymphonicScoreEnding(phrase.endBar, scoreEndBar));
+        const list = legacy[partId] ?? [];
+        list.push({ bar: phrase.startBar, beat: 0, mark });
+        legacy[partId] = list;
+      }
+      return legacy;
+    })();
   built.score.partDynamics = dynamics;
-  const velocity: Record<string, number> = { p: 54, mp: 68, mf: 80, f: 96 };
-  for (const part of built.score.parts) {
-    const marks = dynamics[part.id] ?? [];
-    for (const measure of part.measures) {
-      const mark = [...marks].reverse().find((item) => item.bar <= measure.index)?.mark ?? 'mf';
-      for (const event of measure.events) {
-        if (event.kind === 'note') event.velocity = velocity[mark] ?? 80;
+  if (dialoguePlanResolved && phase2Distribution) {
+    applyDialogueDynamicsVelocities(dynamics, built.score.parts);
+  } else {
+    const velocity: Record<string, number> = { p: 54, mp: 68, mf: 80, f: 96 };
+    for (const part of built.score.parts) {
+      const marks = dynamics[part.id] ?? [];
+      for (const measure of part.measures) {
+        const mark = [...marks].reverse().find((item) => item.bar <= measure.index)?.mark ?? 'mf';
+        for (const event of measure.events) {
+          if (event.kind === 'note') event.velocity = velocity[mark] ?? 80;
+        }
       }
     }
   }

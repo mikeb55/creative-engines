@@ -7,6 +7,7 @@ import { parseGeneralPianoChord } from '../piano/generalPianoWriter';
 import { soundingSpellingToWritten, spellMidi, type SpelledPitch } from '../instruments/writtenPitch';
 import type { Transposition } from '../instruments/instrumentTypes';
 import type { SymphonicOrchestrationSettings } from '../orchestrate/types';
+import type { DynamicMark, PartDynamicEvent } from '../score-model/scoreModelTypes';
 import type {
   Phase2DistributionReceipt,
   Phase2EventPlan,
@@ -165,11 +166,237 @@ function phraseForBar(phrases: readonly Phase2Phrase[], bar: number): Phase2Phra
   return phrases.find((p) => bar >= p.startBar && bar <= p.endBar) ?? phrases[phrases.length - 1]!;
 }
 
-function phraseDynamicForDialogue(phrase: Phase2Phrase): 'mp' | 'mf' | 'f' {
-  if (phrase.endBar >= 21) return 'f';
-  if (phrase.endBar === 8 || phrase.startBar === 9) return 'mp';
-  if (phrase.endBar === 16 || phrase.startBar === 17) return 'mp';
-  return 'mf';
+function phraseDynamicForDialogue(phrase: Phase2Phrase): 'p' | 'mp' | 'mf' | 'f' | 'ff' {
+  if (phrase.startBar >= 21) return phrase.endBar >= 23 ? 'ff' : 'f';
+  if (phrase.startBar >= 17) return 'mf';
+  if (phrase.startBar >= 9) return 'mp';
+  return 'p';
+}
+
+const DIALOGUE_ORCH_PARTS = [
+  'vn1', 'vn2', 'va', 'vc', 'db', 'fl1', 'ob1', 'cl1', 'cl2', 'bn1', 'bn2',
+  'hn1', 'hn2', 'hn3', 'hn4', 'tbn1', 'tbn2', 'hp',
+] as const;
+
+function isLeadOrBass(p: Phase2EventPlan): boolean {
+  return p.role === 'primary-melody' || p.role === 'melodic-reinforcement' || p.role === 'bass-foundation';
+}
+
+/** Phase 4F — breath joins: bars 8 and 16 last beat support rests; melody/bass only. */
+function applyPhase4fJoinBreaths(placements: Phase2EventPlan[]): void {
+  for (const bar of [8, 16]) {
+    const barStart = (bar - 1) * 4;
+    const joinBeat = barStart + 3;
+    for (let i = placements.length - 1; i >= 0; i -= 1) {
+      const p = placements[i]!;
+      if (p.onset < barStart || p.onset >= bar * 4) continue;
+      if (isLeadOrBass(p)) continue;
+      if (p.onset >= joinBeat - 1e-6) {
+        placements.splice(i, 1);
+        continue;
+      }
+      const end = p.onset + p.duration;
+      if (end > joinBeat + 1e-6) p.duration = Math.max(0, joinBeat - p.onset);
+    }
+  }
+}
+
+function isVcBeat1InBar24(p: Phase2EventPlan, barStart: number, barEnd: number): boolean {
+  return p.partId === 'vc' && p.onset >= barStart && p.onset < barEnd && p.onset <= barStart + 1e-3;
+}
+
+function activePartsInBar24(placements: readonly Phase2EventPlan[], barStart: number, barEnd: number): Set<string> {
+  return new Set(
+    placements
+      .filter((p) => p.onset < barEnd && p.onset + p.duration > barStart)
+      .map((p) => p.partId),
+  );
+}
+
+function applyPhase4fBar24Thin(placements: Phase2EventPlan[]): void {
+  const bar = 24;
+  const barStart = (bar - 1) * 4;
+  const barEnd = bar * 4;
+  const keepForDrop = new Set<string>();
+  for (const p of placements) {
+    if (p.onset < barStart || p.onset >= barEnd) continue;
+    if (p.role === 'primary-melody' || p.role === 'melodic-reinforcement') keepForDrop.add(p.partId);
+    if (p.partId === 'db') keepForDrop.add('db');
+    if (isVcBeat1InBar24(p, barStart, barEnd)) keepForDrop.add('vc');
+  }
+  for (let i = placements.length - 1; i >= 0; i -= 1) {
+    const p = placements[i]!;
+    if (p.onset < barStart || p.onset >= barEnd) continue;
+    if (isVcBeat1InBar24(p, barStart, barEnd)) {
+      p.duration = Math.max(p.duration, 3);
+      continue;
+    }
+    if (p.role === 'primary-melody' || p.role === 'melodic-reinforcement') continue;
+    if (p.role === 'bass-foundation') {
+      if (p.onset <= barStart + 1e-3) p.duration = Math.max(p.duration, 3);
+      continue;
+    }
+    if (p.onset > barStart + 1e-3) {
+      const lhDerived = p.role === 'sustained-colour'
+        && !p.eventId.startsWith('4d-harm')
+        && !p.eventId.startsWith('4d-harp');
+      if (lhDerived) continue;
+      placements.splice(i, 1);
+      continue;
+    }
+    p.duration = Math.max(p.duration, 3);
+  }
+  let active = activePartsInBar24(placements, barStart, barEnd);
+  if (active.size <= 8) return;
+  const dropOrder = ['hp', 'tbn2', 'tbn1', 'hn4', 'hn3', 'bn2', 'cl2', 'va', 'vn2', 'bn1', 'hn2', 'hn1', 'cl1', 'ob1', 'fl1'];
+  for (const partId of dropOrder) {
+    if (active.size <= 8) break;
+    if (keepForDrop.has(partId)) continue;
+    for (let i = placements.length - 1; i >= 0; i -= 1) {
+      const p = placements[i]!;
+      if (p.partId !== partId || p.onset < barStart || p.onset >= barEnd) continue;
+      if (isVcBeat1InBar24(p, barStart, barEnd)) continue;
+      if (p.partId === 'db' && p.onset <= barStart + 1e-3) continue;
+      if ((p.role === 'primary-melody' || p.role === 'melodic-reinforcement') && keepForDrop.has(p.partId)) continue;
+      placements.splice(i, 1);
+    }
+    active = activePartsInBar24(placements, barStart, barEnd);
+  }
+  if (active.size <= 8) return;
+  for (const partId of dropOrder) {
+    if (active.size <= 8) break;
+    if (partId === 'vc' || partId === 'db' || keepForDrop.has(partId)) continue;
+    for (let i = placements.length - 1; i >= 0; i -= 1) {
+      const p = placements[i]!;
+      if (p.partId !== partId || p.onset < barStart || p.onset >= barEnd) continue;
+      if (isVcBeat1InBar24(p, barStart, barEnd)) continue;
+      if (p.partId === 'db' && p.role === 'bass-foundation' && p.onset <= barStart + 1e-3) continue;
+      placements.splice(i, 1);
+    }
+    active = activePartsInBar24(placements, barStart, barEnd);
+  }
+  const hasVcBeat1 = placements.some((p) => isVcBeat1InBar24(p, barStart, barEnd) && p.duration > 0);
+  if (!hasVcBeat1) {
+    const ref = placements.find((p) => p.partId === 'db' && p.onset >= barStart && p.onset < barEnd)
+      ?? placements.find((p) => p.partId === 'vc' && p.onset >= barStart - 4 && p.onset < barEnd);
+    const phraseId = placements.find((p) => p.onset >= barStart && p.onset < barEnd)?.phraseId ?? 'a';
+    placements.push({
+      kind: 'source',
+      eventId: `4d-vc-b1:${bar}`,
+      partId: 'vc',
+      shift: 0,
+      phraseId,
+      role: 'bass-foundation',
+      transformation: 'preserved-source',
+      lineage: `vc-beat1:${bar}`,
+      reason: `Bar ${bar} cello beat-1 anchor (post-thin).`,
+      onset: barStart,
+      duration: 3,
+      midi: ref?.midi ?? 48,
+      voice: 1,
+      classifies: false,
+    });
+  }
+}
+
+function applyPhase4fHn2Bar23Octave(placements: Phase2EventPlan[]): void {
+  const barStart = 22 * 4;
+  for (const p of placements) {
+    if (p.partId !== 'hn2') continue;
+    if (p.onset < barStart || p.onset >= 23 * 4) continue;
+    if (p.midi === 23) p.midi = 35;
+  }
+}
+
+function firstSoundingBeatInBar(partId: string, bar: number, placements: readonly Phase2EventPlan[]): number {
+  const barStart = (bar - 1) * 4;
+  const hits = placements.filter(
+    (p) => p.partId === partId && p.onset >= barStart && p.onset < bar * 4,
+  );
+  if (!hits.length) return 0;
+  return Math.min(...hits.map((p) => p.onset - barStart));
+}
+
+function lastSoundingBeatInBar(partId: string, bar: number, placements: readonly Phase2EventPlan[]): number {
+  const barStart = (bar - 1) * 4;
+  const hits = placements.filter(
+    (p) => p.partId === partId && p.onset < bar * 4 && p.onset + p.duration > barStart,
+  );
+  if (!hits.length) return 0;
+  return Math.max(...hits.map((p) => Math.min(bar * 4, p.onset + p.duration) - barStart));
+}
+
+/** Bar 16 wedge stop: last attack onset before the last-beat breath (beat 3). */
+function wedgeStopBeatBar16BeforeBreath(partId: string, placements: readonly Phase2EventPlan[]): number {
+  const bar = 16;
+  const barStart = (bar - 1) * 4;
+  const breathBeat = 3;
+  const hits = placements.filter(
+    (p) => p.partId === partId && p.onset >= barStart && p.onset < bar * 4,
+  );
+  const beforeBreath = hits.filter((p) => p.onset - barStart < breathBeat - 1e-6);
+  if (!beforeBreath.length) return firstSoundingBeatInBar(partId, 15, placements);
+  return Math.max(...beforeBreath.map((p) => p.onset - barStart));
+}
+
+/** Phase 4F dramatic-arc dynamics for every orchestral part (exported MusicXML). */
+export function buildOrchestralDialogue77241PartDynamics(
+  partIds: readonly string[],
+  placements: readonly Phase2EventPlan[],
+): Record<string, PartDynamicEvent[]> {
+  const out: Record<string, PartDynamicEvent[]> = {};
+  const ids = partIds.filter((id) => (DIALOGUE_ORCH_PARTS as readonly string[]).includes(id));
+  for (const partId of ids) {
+    const list: PartDynamicEvent[] = [];
+    list.push({ bar: 1, beat: firstSoundingBeatInBar(partId, 1, placements), mark: 'p' });
+    if (partId === 'fl1') list.push({ bar: 5, beat: firstSoundingBeatInBar(partId, 5, placements), mark: 'mp' });
+    if (partId === 'ob1') list.push({ bar: 7, beat: firstSoundingBeatInBar(partId, 7, placements), mark: 'mp' });
+    list.push({ bar: 9, beat: firstSoundingBeatInBar(partId, 9, placements), mark: 'mp' });
+    const b15 = firstSoundingBeatInBar(partId, 15, placements);
+    const b16Stop = wedgeStopBeatBar16BeforeBreath(partId, placements);
+    if (placements.some((p) => p.partId === partId && p.onset >= 14 * 4 && p.onset < 16 * 4)) {
+      list.push({ bar: 15, beat: b15, wedge: 'crescendo' });
+      list.push({ bar: 16, beat: b16Stop, wedge: 'stop' });
+      list.push({ bar: 16, beat: b16Stop, mark: 'mf' });
+    }
+    list.push({ bar: 17, beat: firstSoundingBeatInBar(partId, 17, placements), mark: 'mf' });
+    list.push({ bar: 21, beat: firstSoundingBeatInBar(partId, 21, placements), mark: 'f' });
+    list.push({ bar: 23, beat: firstSoundingBeatInBar(partId, 23, placements), mark: 'ff' });
+    list.push({ bar: 24, beat: firstSoundingBeatInBar(partId, 24, placements), wedge: 'diminuendo' });
+    list.push({ bar: 24, beat: lastSoundingBeatInBar(partId, 24, placements), wedge: 'stop' });
+    list.push({ bar: 24, beat: firstSoundingBeatInBar(partId, 24, placements), mark: 'p' });
+    out[partId] = list;
+  }
+  return out;
+}
+
+export function applyPhase4fArcToPlacements(placements: Phase2EventPlan[]): void {
+  applyPhase4fJoinBreaths(placements);
+  applyPhase4fHn2Bar23Octave(placements);
+  applyPhase4fBar24Thin(placements);
+}
+
+export const DIALOGUE_VELOCITY_BY_MARK: Record<DynamicMark, number> = {
+  ppp: 36, pp: 40, p: 52, mp: 68, mf: 84, f: 100, ff: 116, fff: 120, sfz: 110, fp: 90,
+};
+
+export function applyDialogueDynamicsVelocities(
+  partDynamics: Record<string, PartDynamicEvent[]>,
+  parts: Array<{ id: string; measures: Array<{ index: number; events: Array<{ kind: string; startBeat?: number; velocity?: number }> }> }>,
+): void {
+  for (const part of parts) {
+    const markEvents = [...(partDynamics[part.id] ?? [])]
+      .filter((m) => m.mark)
+      .sort((a, b) => a.bar - b.bar || a.beat - b.beat);
+    for (const measure of part.measures) {
+      const active = [...markEvents].filter((m) => m.bar <= measure.index);
+      const mark = active.length ? active[active.length - 1]!.mark! : 'mf';
+      for (const event of measure.events) {
+        if (event.kind !== 'note') continue;
+        event.velocity = DIALOGUE_VELOCITY_BY_MARK[mark] ?? 84;
+      }
+    }
+  }
 }
 
 function primaryMelodyPart(bar: number, _melodyIndexInBar: number): string {
@@ -654,7 +881,12 @@ export function planOrchestralDialogueDistribution(input: {
       counterline: 'silence',
       answerIds: [],
       register,
-      dynamic: phraseDynamicForDialogue(phrase),
+      dynamic: ((): 'p' | 'mp' | 'mf' => {
+        const d = phraseDynamicForDialogue(phrase);
+        if (d === 'f' || d === 'ff') return 'mf';
+        if (d === 'p') return 'p';
+        return d;
+      })(),
       doubling: placements.some((p) => p.phraseId === phrase.id && p.role === 'melodic-reinforcement'),
       harp: placements.some((p) => p.phraseId === phrase.id && p.partId === 'hp'),
       timpani: false,
@@ -802,6 +1034,8 @@ export function planOrchestralDialogueDistribution(input: {
       classifies: note.locked || role === 'primary-melody' || role === 'bass-foundation',
     });
   }
+
+  applyPhase4fArcToPlacements(placements);
 
   const partById = new Map(parts.map((part) => [part.partId, part]));
   const events = placements.map((item) => {

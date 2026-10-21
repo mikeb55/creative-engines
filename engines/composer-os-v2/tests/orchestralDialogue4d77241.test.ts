@@ -18,7 +18,8 @@ import { runGeneralPianoBmefGate77241Tests } from './generalPianoBmefGate77241.t
 import { runGeneralPianoV1Tests } from './generalPianoV1.test';
 
 const ROOT = process.cwd();
-const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r3.musicxml');
+const EXPORT_R3 = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r3.musicxml');
+const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4f.musicxml');
 const PHASE4E_SOURCE = path.join(ROOT, '.tmp-piano-24bar-original-test/Original-24bar-Seed77241-phase4e.musicxml');
 /** SHA-256 of committed Phase 4E piano source fixture (read-only). */
 const PHASE4E_SHA256 = 'aa7aba78cc209981eb2fb020648fc61b5190f92020760805f9efa93b12bdc92a';
@@ -330,18 +331,192 @@ export function auditExportedXmlBars1724MelodyLock(pianoXml: string, orchXml: st
   return failures;
 }
 
+const SECTION_STARTS = [1, 9, 17, 21, 24] as const;
+const DYN_RANK: Record<string, number> = { p: 2, mp: 3, mf: 4, f: 5, ff: 6 };
+
+function partBlock(xml: string, partId: string): string {
+  return xml.match(new RegExp(`<part id="${partId}"[\\s\\S]*?</part>`))?.[0] ?? '';
+}
+
+function measureBlock(partXml: string, bar: number): string {
+  const measures = partXml.match(/<measure\b[\s\S]*?<\/measure>/g) ?? [];
+  return measures[bar - 1] ?? '';
+}
+
+function dynamicsTokens(measureXml: string): string[] {
+  const out: string[] = [];
+  const re = /<dynamics><([a-z]+)\/><\/dynamics>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(measureXml))) out.push(m[1]!.toLowerCase());
+  return out;
+}
+
+function wedgeEvents(measureXml: string): Array<{ type: string; offsetBeat: number }> {
+  const out: Array<{ type: string; offsetBeat: number }> = [];
+  const dirs = measureXml.match(/<direction[\s\S]*?<\/direction>/g) ?? [];
+  for (const dir of dirs) {
+    const wedge = dir.match(/<wedge type="([^"]+)"/)?.[1];
+    if (!wedge) continue;
+    const offset = Number(dir.match(/<offset>(-?\d+)<\/offset>/)?.[1] ?? '0');
+    const divisions = 480;
+    out.push({ type: wedge, offsetBeat: offset / divisions });
+  }
+  return out;
+}
+
+function noteVelocityAtBeat(measureXml: string, beat: number, divisions = 480): number | null {
+  const tokens = measureXml.match(/<note[\s\S]*?<\/note>/g) ?? [];
+  let cursor = 0;
+  for (const token of tokens) {
+    if (/<rest\s*\/>/.test(token)) {
+      cursor += Number(token.match(/<duration>(\d+)<\/duration>/)?.[1] ?? '0') / divisions;
+      continue;
+    }
+    const chord = /<chord\s*\/>/.test(token);
+    const onset = chord ? cursor : cursor;
+    if (!chord) cursor += Number(token.match(/<duration>(\d+)<\/duration>/)?.[1] ?? '0') / divisions;
+    if (Math.abs(onset - beat) > 0.02) continue;
+    const dyn = token.match(/dynamics="([\d.]+)"/)?.[1];
+    if (dyn) return Number(dyn);
+  }
+  return null;
+}
+
+function soundingAtGlobalBeat(xml: string, partId: string, globalBeat: number): boolean {
+  return soundingLine(xml, partId).some(
+    (n) => n.onset <= globalBeat + 1e-3 && n.onset + n.duration > globalBeat + 1e-3,
+  );
+}
+
+export function auditExportedXmlPhase4fDramaticArc(pianoXml: string, orchXml: string): string[] {
+  const failures: string[] = [];
+  const sectionMarks: Record<number, string[]> = {};
+  for (const partId of ORCH_PART_IDS) {
+    const pxml = partBlock(orchXml, partId);
+    if (!pxml) continue;
+    for (const bar of SECTION_STARTS) {
+      const marks = dynamicsTokens(measureBlock(pxml, bar));
+      if (!marks.length) failures.push(`${partId} bar ${bar} missing dynamic`);
+      else sectionMarks[bar] = [...(sectionMarks[bar] ?? []), marks[marks.length - 1]!];
+    }
+    for (const bar of [15, 16]) {
+      const mxml = measureBlock(pxml, bar);
+      for (const w of wedgeEvents(mxml)) {
+        const barStart = (bar - 1) * 4;
+        const beat = w.offsetBeat;
+        const global = barStart + beat;
+        if (!soundingAtGlobalBeat(orchXml, partId, global)) {
+          failures.push(`${partId} bar ${bar} wedge ${w.type} not on sounding note`);
+        }
+      }
+    }
+  }
+  const ranks = SECTION_STARTS.filter((b) => b <= 21).map((bar) => {
+    const marks = sectionMarks[bar] ?? [];
+    const max = marks.reduce((best, m) => Math.max(best, DYN_RANK[m] ?? 0), 0);
+    return { bar, max };
+  });
+  for (let i = 1; i < ranks.length; i += 1) {
+    if (ranks[i]!.max < ranks[i - 1]!.max) {
+      failures.push(`section dynamics decrease bar ${ranks[i - 1]!.bar}→${ranks[i]!.bar}`);
+    }
+  }
+  let peakRank = 0;
+  let maxParts = 0;
+  for (let bar = 21; bar <= 23; bar += 1) {
+    const marks = sectionMarks[bar] ?? dynamicsTokens(measureBlock(partBlock(orchXml, 'vn1'), bar));
+    peakRank = Math.max(peakRank, ...marks.map((m) => DYN_RANK[m] ?? 0));
+    maxParts = Math.max(maxParts, activeOrchPartsInBar(orchXml, bar).length);
+  }
+  if (peakRank < DYN_RANK.ff!) failures.push(`peak dynamic not ff in bars 21–23 (got rank ${peakRank})`);
+  let climaxParts = 0;
+  for (let bar = 1; bar <= 20; bar += 1) climaxParts = Math.max(climaxParts, activeOrchPartsInBar(orchXml, bar).length);
+  if (maxParts < climaxParts) failures.push(`bars 21–23 max parts ${maxParts} < pre-climax ${climaxParts}`);
+  const bar24Parts = activeOrchPartsInBar(orchXml, 24).length;
+  if (bar24Parts > 8) failures.push(`bar 24 parts ${bar24Parts} > 8`);
+  const joinLead: Record<number, string> = { 8: 'ob1', 16: 'hn1' };
+  for (const bar of [8, 16]) {
+    const joinBeat = (bar - 1) * 4 + 3;
+    const allowed = new Set<string>([joinLead[bar]!, 'vc', 'db']);
+    for (const partId of ORCH_PART_IDS) {
+      if (!soundingAtGlobalBeat(orchXml, partId, joinBeat)) continue;
+      if (!allowed.has(partId)) failures.push(`bar ${bar} beat 3 support sounding ${partId}`);
+    }
+  }
+  const bar24Start = 23 * 4;
+  const lhAtoms = parsePianoXmlAtoms(pianoXml).atoms.filter((a) => !a.rest && a.midi !== null && a.voice === 3);
+  const melodyAtoms24 = parsePianoXmlAtoms(pianoXml).atoms.filter(
+    (a) => !a.rest && a.midi !== null && a.voice === 1 && a.onset >= bar24Start && a.onset < 24 * 4,
+  );
+  for (const partId of ORCH_PART_IDS) {
+    for (const n of soundingLine(orchXml, partId)) {
+      if (Math.floor(n.onset / 4) + 1 !== 24) continue;
+      if (n.onset <= bar24Start + 1e-3) continue;
+      const lhOk = lhAtoms.some((a) => Math.abs(a.onset - n.onset) < 1e-3 && mod12(a.midi!) === mod12(n.midi));
+      const melOk = melodyAtoms24.some((a) => Math.abs(a.onset - n.onset) < 1e-3 && mod12(a.midi!) === mod12(n.midi));
+      if (BASS_PART_IDS.has(partId) || lhOk || melOk) continue;
+      failures.push(`bar 24 post-beat1 support attack ${partId}`);
+    }
+  }
+  const velSamples: Record<string, number[]> = { p: [], mp: [], mf: [], f: [], ff: [] };
+  for (const partId of ORCH_PART_IDS) {
+    const pxml = partBlock(orchXml, partId);
+    for (const bar of [1, 9, 17, 21, 23]) {
+      const mark = (sectionMarks[bar] ?? [])[0] ?? dynamicsTokens(measureBlock(pxml, bar)).pop();
+      if (!mark || !velSamples[mark]) continue;
+      const v = noteVelocityAtBeat(measureBlock(pxml, bar), 0);
+      if (v !== null) velSamples[mark].push(v);
+    }
+  }
+  const med = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+  const order = ['p', 'mp', 'mf', 'f', 'ff'] as const;
+  for (let i = 1; i < order.length; i += 1) {
+    const a = med(velSamples[order[i - 1]!] ?? []);
+    const b = med(velSamples[order[i]!] ?? []);
+    if (a !== null && b !== null && b <= a) failures.push(`velocity order ${order[i - 1]}>=${order[i]}`);
+  }
+  return failures;
+}
+
+export function auditExportedXmlR3PitchOnsetLock(refXml: string, orchXml: string): string[] {
+  const failures: string[] = [];
+  const key = (e: { partId: string; bar: number; onset: number; midi: number }) =>
+    `${e.partId}:${e.onset.toFixed(4)}:${mod12(e.midi)}`;
+  const ref = new Map<string, number>();
+  for (const partId of ORCH_PART_IDS) {
+    for (const n of soundingLine(refXml, partId)) {
+      if (partId === 'hn2' && Math.floor(n.onset / 4) + 1 === 23 && n.midi === 23) continue;
+      ref.set(`${partId}:${n.onset.toFixed(4)}`, n.midi);
+    }
+  }
+  for (const partId of ORCH_PART_IDS) {
+    for (const n of soundingLine(orchXml, partId)) {
+      if (partId === 'hn2' && Math.floor(n.onset / 4) + 1 === 23 && n.midi === 35) continue;
+      const k = `${partId}:${n.onset.toFixed(4)}`;
+      const expected = ref.get(k);
+      if (expected === undefined) continue;
+      if (mod12(expected) !== mod12(n.midi)) failures.push(`pitch drift ${k}`);
+    }
+  }
+  return failures.slice(0, 12);
+}
+
 export function runExportedXmlAudits(pianoXml: string, orchXml: string): { name: string; ok: boolean; detail?: string }[] {
   const tieFails = auditExportedXmlTiePairs(orchXml);
   const lhFails = auditExportedXmlLhCoverage(pianoXml, orchXml);
   const disFails = auditExportedXmlMelodyDissonance(pianoXml, orchXml);
   const lead58Fails = auditExportedXmlBars58Lead(pianoXml, orchXml);
   const lock1724Fails = auditExportedXmlBars1724MelodyLock(pianoXml, orchXml);
+  const arcFails = auditExportedXmlPhase4fDramaticArc(pianoXml, orchXml);
+  const r3LockFails = fs.existsSync(EXPORT_R3) ? auditExportedXmlR3PitchOnsetLock(fs.readFileSync(EXPORT_R3, 'utf8'), orchXml) : [];
   return [
     { name: 'export audit tie pairs', ok: tieFails.length === 0, detail: `${tieFails.length} ${tieFails.slice(0, 3).join('; ')}` },
     { name: 'export audit LH coverage', ok: lhFails.length === 0, detail: `${lhFails.length} ${lhFails.slice(0, 3).join('; ')}` },
     { name: 'export audit melody m2/M7', ok: disFails.length === 0, detail: `${disFails.length} ${disFails.slice(0, 3).join('; ')}` },
     { name: 'export audit bars 5–8 lead', ok: lead58Fails.length === 0, detail: `${lead58Fails.length} ${lead58Fails.slice(0, 3).join('; ')}` },
     { name: 'export audit bars 17–24 lock', ok: lock1724Fails.length === 0, detail: `${lock1724Fails.length} ${lock1724Fails.slice(0, 3).join('; ')}` },
+    { name: 'export audit phase4f dramatic arc', ok: arcFails.length === 0, detail: `${arcFails.length} ${arcFails.slice(0, 4).join('; ')}` },
+    { name: 'export audit R3 pitch/onset lock', ok: r3LockFails.length === 0, detail: `${r3LockFails.length} ${r3LockFails.slice(0, 3).join('; ')}` },
   ];
 }
 
@@ -600,6 +775,14 @@ export function runOrchestralDialogue4d77241Tests(): { name: string; ok: boolean
   }
 
   return rows;
+}
+
+if (process.argv[1]?.includes('orchestralDialogue4d77241.test') && process.argv.includes('--phase4f-r3-negative')) {
+  const r3 = fs.readFileSync(EXPORT_R3, 'utf8');
+  const fails = auditExportedXmlPhase4fDramaticArc('', r3);
+  console.log(`R3 phase4f audit failures: ${fails.length}`);
+  fails.slice(0, 20).forEach((f) => console.log(f));
+  process.exit(fails.length > 0 ? 0 : 1);
 }
 
 if (process.argv[1]?.includes('orchestralDialogue4d77241.test')) {
