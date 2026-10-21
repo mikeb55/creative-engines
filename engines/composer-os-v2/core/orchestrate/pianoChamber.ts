@@ -53,6 +53,10 @@ import {
   SYMPHONIC_EXTENDED_SCORE_END_BAR,
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
+import {
+  planOrchestralDialogueDistribution,
+  resolveOrchestralDialoguePlan,
+} from '../symphonic/orchestralDialoguePlan';
 import { auditPhase2Distribution, planSymphonicDistribution, type Phase2DistributionReceipt } from './symphonicDistribution';
 import { applySymphonicExpression, type Phase3ExpressionReceipt } from './symphonicExpression';
 import type {
@@ -1022,7 +1026,8 @@ export function realisePianoChamber(request: OrchestrateRequest):
     const barEnd = (bar: number): number => metre.uniform
       ? bar * num(metre.barLen)
       : num(qAdd(metre.spans[bar - 1]!.start, metre.spans[bar - 1]!.length));
-    const planned = planSymphonicDistribution({
+    const dialoguePlan = resolveOrchestralDialoguePlan(correction.symphonic);
+    const distributionInput = {
       notes: rows.filter((row) => !omitted.has(row.event.id)).map((row) => ({
         id: row.event.id,
         bar: row.event.bar,
@@ -1053,7 +1058,10 @@ export function realisePianoChamber(request: OrchestrateRequest):
       silentBars,
       barStart,
       barEnd,
-    });
+    };
+    const planned = dialoguePlan
+      ? planOrchestralDialogueDistribution({ ...distributionInput, plan: dialoguePlan })
+      : planSymphonicDistribution(distributionInput);
     if (!planned.ok) return fail(planned.error);
     const audit = auditPhase2Distribution({
       events: planned.plan.distribution.events,
