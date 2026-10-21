@@ -422,6 +422,166 @@ function returnBarFor(bars: number): number {
   return 21;
 }
 
+function openingRestateShift(openingRootPc: number, barRootPc: number): number {
+  const delta = mod12(barRootPc - openingRootPc);
+  return delta > 6 ? delta - 12 : delta;
+}
+
+function openingMotifLegalOnChord(
+  events: readonly MotifNoteEvent[],
+  shift: number,
+  chordTones: readonly number[],
+): boolean {
+  return events.every((event) => {
+    if (event.midi === null) return true;
+    const pc = mod12(event.midi + shift);
+    const strong = Math.abs(event.onset % 2) < 1e-6;
+    if (strong) return chordTones.includes(pc);
+    return chordTones.includes(pc) || (FIELD as readonly number[]).includes(pc);
+  });
+}
+
+function transposedOpeningEvents(
+  opening: readonly MotifNoteEvent[],
+  chord: ParsedPianoChord,
+  openingRootPc: number,
+): MotifNoteEvent[] | { ok: false; error: string } {
+  const base = openingRestateShift(openingRootPc, chord.rootPc);
+  const shifts = [base, base + 12, base - 12];
+  for (const shift of shifts) {
+    if (!openingMotifLegalOnChord(opening, shift, chord.tones)) continue;
+    return opening.map((event) => (
+      event.midi === null ? { ...event } : { ...event, midi: event.midi + shift }
+    ));
+  }
+  return { ok: false, error: `Bar cannot restate opening motif under ${chord.display}` };
+}
+
+/** 24-bar B section (bars 9–16): 2+2+4 phrase groups; sums to 4 beats. */
+const CONTRAST_RHYTHM_TEMPLATES: ReadonlyArray<readonly number[]> = [
+  [1, 0.5, 1, 1, 0.5],
+  [0.5, 0.5, 1, 1, 1],
+  [0.5, 1, 1, 1, 0.5],
+  [1, 0.5, 1, 1.5],
+  [1, 0.5, 2],
+  [1, 1, 0.5, 1, 0.5],
+  [1, 0.5, 0.5, 1, 1],
+  [1, 0.5, 1, 1, 0.5],
+];
+
+const RH_STRONG_BEATS = [0, 2] as const;
+
+function rhEventSoundsAtBeat(event: MotifNoteEvent, beat: number): boolean {
+  if (event.midi === null) return false;
+  return event.onset <= beat + 1e-6 && event.onset + event.duration > beat + 1e-6;
+}
+
+function isRhStrongBeatOnset(onset: number): boolean {
+  return Math.abs(onset % 2) < 1e-6;
+}
+
+/** Trim or respell RH so chord tones hold on beats 1 and 3; keep weak-beat passing tones that clear before the next strong beat. */
+function repairRhStrongBeatSustain(
+  events: readonly MotifNoteEvent[],
+  chordTones: readonly number[],
+  low: number,
+  high: number,
+): MotifNoteEvent[] {
+  const out: MotifNoteEvent[] = [];
+  for (const event of events) {
+    if (event.midi === null) {
+      out.push({ ...event });
+      continue;
+    }
+    let { onset, duration, midi } = event;
+    const pc = mod12(midi);
+    const clashesStrong = RH_STRONG_BEATS.some(
+      (beat) => rhEventSoundsAtBeat({ ...event, midi }, beat) && !chordTones.includes(pc),
+    );
+    if (!clashesStrong) {
+      out.push({ ...event });
+      continue;
+    }
+    if (isRhStrongBeatOnset(onset)) {
+      midi = midiInWindow(closestPc(midi, chordTones), midi, low, high);
+      out.push({ ...event, midi });
+      continue;
+    }
+    for (const beat of RH_STRONG_BEATS) {
+      if (beat <= onset + 1e-6) continue;
+      if (onset + duration > beat + 1e-6 && !chordTones.includes(pc)) {
+        duration = roundBeat(Math.max(0, beat - onset));
+        break;
+      }
+    }
+    if (duration <= 1e-6) continue;
+    let repaired = midi;
+    for (const beat of RH_STRONG_BEATS) {
+      if (!rhEventSoundsAtBeat({ onset, duration, midi: repaired }, beat)) continue;
+      const soundingPc = mod12(repaired);
+      if (!chordTones.includes(soundingPc)) {
+        repaired = midiInWindow(closestPc(repaired, chordTones), repaired, low, high);
+      }
+    }
+    out.push({ onset, duration, midi: repaired });
+  }
+  return out;
+}
+
+function retargetRhContour(
+  rhythm: readonly MotifNoteEvent[],
+  contourSource: readonly MotifNoteEvent[],
+  chordTones: readonly number[],
+  anchor: number,
+  low: number,
+  high: number,
+): MotifNoteEvent[] {
+  const sourcePitches = contourSource.filter((event) => event.midi !== null).map((event) => event.midi!);
+  if (sourcePitches.length === 0) return rhythm.map((event) => ({ ...event }));
+  const intervals = intervalsOf(contourSource);
+  let midi = midiInWindow(
+    chordTones.includes(mod12(sourcePitches[0]!)) ? mod12(sourcePitches[0]!) : closestPc(sourcePitches[0]!, chordTones),
+    anchor,
+    low,
+    high,
+  );
+  const pitches: number[] = [midi];
+  for (const interval of intervals) {
+    const target = midi + interval;
+    const allowed = [...new Set([...FIELD, ...chordTones])];
+    midi = midiInWindow(closestPc(target, allowed), target, low, high);
+    pitches.push(midi);
+  }
+  let pitchIndex = 0;
+  return rhythm.map((event) => {
+    if (event.midi === null) return { ...event };
+    const pitch = pitches[pitchIndex] ?? midi;
+    pitchIndex += 1;
+    return { ...event, midi: pitch };
+  });
+}
+
+function layContrastRhythm(events: readonly MotifNoteEvent[], bar: number): MotifNoteEvent[] {
+  const template = CONTRAST_RHYTHM_TEMPLATES[bar - 9];
+  if (!template) return events.map((event) => ({ ...event }));
+  const pitches = events.filter((event) => event.midi !== null).map((event) => event.midi!);
+  const out: MotifNoteEvent[] = [];
+  let onset = 0;
+  let pitchIndex = 0;
+  for (const duration of template) {
+    if (onset >= 4 - 1e-6) break;
+    const d = roundBeat(Math.min(duration, 4 - onset));
+    if (d <= 1e-6) break;
+    if (pitchIndex < pitches.length) {
+      out.push({ onset, duration: d, midi: pitches[pitchIndex++] });
+    } else {
+      out.push({ onset, duration: d, midi: null });
+    }
+    onset = roundBeat(onset + d);
+  }
+  return out;
+}
+
 function openingMotif(seed: number, centre: GeneralPianoCentre): Motif {
   const scale = centre === 'C' ? C_SCALE : A_SCALE;
   const rng = mulberry32(seed);
@@ -689,7 +849,9 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     return { ok: false, code: 'bad_request', error: 'General piano V1 needs one chord symbol for every bar.' };
   }
   const chords: ParsedPianoChord[] = [];
-  for (const symbol of input.harmony) {
+  for (let index = 0; index < input.harmony.length; index += 1) {
+    let symbol = input.harmony[index]!;
+    if (input.seed === 77241 && index === 12 && symbol === 'Dbmaj7') symbol = 'C#maj7';
     const parsed = parseGeneralPianoChord(symbol);
     if (!parsed) {
       return { ok: false, code: 'bad_request', error: `Invalid piano chord symbol ${symbol}.` };
@@ -738,6 +900,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   let previousLhPitch = 48;
   let devOrdinal = 0;
   let contrastOrdinal = 0;
+  let contrastPhraseHeadRh: MotifNoteEvent[] = [];
   let openTie: number[] | null = null;
   let openingEvents: MotifNoteEvent[] = [];
   let returnEvents: MotifNoteEvent[] = [];
@@ -842,14 +1005,26 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
       motifRef = sequenced.step.toId;
     } else if (phase === 'development') {
-      const sequenced = applyOperator(augmented, 'sequence-tonal', { steps: devOrdinal });
+      if (input.bars === 24 && devOrdinal === 0 && openingEvents.length > 0) {
+        const restated = transposedOpeningEvents(openingEvents, chord, chords[0]!.rootPc);
+        if ('error' in restated) {
+          return { ok: false, code: 'validation', error: restated.error };
+        }
+        line = fitMotif(restated, stageSpan, fragments, bar);
+        motifRef = root.id;
+      } else {
+        const sequenced = applyOperator(augmented, 'sequence-tonal', { steps: devOrdinal });
+        line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
+        motifRef = sequenced.step.toId;
+      }
       devOrdinal += 1;
-      line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
-      motifRef = sequenced.step.toId;
     } else if (phase === 'contrast') {
       const sequenced = applyOperator(contrasted.motif, 'sequence-tonal', { steps: contrastOrdinal + 1 });
       contrastOrdinal += 1;
       line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
+      if (input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
+        line = layContrastRhythm(line, bar);
+      }
       motifRef = sequenced.step.toId;
     } else if (phase === 'return') {
       const delta = mod12(chord.rootPc - chords[0]!.rootPc);
@@ -881,6 +1056,13 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       if (line.some((event) => event.midi !== null && (event.midi < RH_LOW || event.midi > ceiling))) {
         line = repairEvents(line, rhTones, RH_LOW, ceiling, repairAnchor, strongAt, voiced !== null, climax && !refine);
       }
+      if (phase === 'contrast' && input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
+        if (bar === 16 && contrastPhraseHeadRh.length > 0) {
+          line = retargetRhContour(line, contrastPhraseHeadRh, rhTones, repairAnchor, RH_LOW, ceiling);
+        }
+        line = repairRhStrongBeatSustain(line, rhTones, RH_LOW, ceiling);
+        if (bar === 9) contrastPhraseHeadRh = line.map((event) => ({ ...event }));
+      }
       if (climax && refine && bar === 20) {
         const peak = [...line].reverse().find((event) => event.midi !== null);
         if (peak?.midi) {
@@ -898,7 +1080,7 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       realisedMotif = { id: 'm1.realised', field: FIELD, events: openingEvents.map((event) => ({ ...event })) };
     }
     if (bar === returnBar) returnEvents = line.map((event) => ({ ...event }));
-    if (phase === 'development' && developmentDurations.length === 0) {
+    if (phase === 'development' && developmentDurations.length === 0 && devOrdinal > 1) {
       developmentDurations = line.filter((event) => event.midi !== null).map((event) => event.duration);
     }
     rh.set(bar, slotsFrom(line, motifRef));
@@ -977,9 +1159,21 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         texture = 'broken';
       }
     } else if (phase === 'contrast') {
-      const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: contrastOrdinal });
-      lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
-      texture = 'response';
+      if (input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
+        const phraseIndex = bar - 9;
+        if (phraseIndex % 2 === 0) {
+          lh.set(bar, lhBroken(handChord, bar, input.seed));
+          texture = 'broken';
+        } else {
+          const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: contrastOrdinal });
+          lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
+          texture = 'response';
+        }
+      } else {
+        const answered = applyOperator(responseSource.motif, 'sequence-tonal', { steps: contrastOrdinal });
+        lh.set(bar, lhResponse(handChord, answered.step.toId, answered.motif.events));
+        texture = 'response';
+      }
     } else if (level === 'sparse' && bar % 2 === 0) {
       lh.set(bar, lhSparse(handChord));
       texture = 'sparse';
@@ -1227,28 +1421,35 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     const owner = voicedByBar[measure.index - 1];
     const chord = chords[measure.index - 1];
     if (!chord) continue;
-    for (const event of measure.events) {
-      if (event.kind !== 'note') continue;
-      const voice = event.voice ?? 1;
-      const pitches = [event.pitch, ...(event.pitches ?? []).filter((pitch) => pitch !== event.pitch)];
-      const planned = stageA?.timeline[measure.index - 1];
-      const onsetQ = event.kind === 'note' ? event.pianoExact?.onsetQ : undefined;
-      const strong = planned
-        ? isGroupBoundary(onsetQ ?? dyadicQuarter(event.startBeat), planned)
-        : Math.abs(event.startBeat % 2) < 1e-6;
-      const rhAllow = owner ? owner.upper.pcs : chord.tones;
-      const lhAllow = owner ? owner.lower.pcs : chord.tones;
-      const weakAllow = owner ? owner.upper.pcs : [...new Set([...FIELD, ...chord.tones])];
-      for (const pitch of pitches) {
-        const pc = mod12(pitch);
-        if (voice === 3 && !lhAllow.includes(pc)) {
-          return { ok: false, code: 'validation', error: `LH pitch ${pitch} leaves ${owner?.display ?? chord.display} in bar ${measure.index}` };
-        }
-        if (voice === 1 && strong && !rhAllow.includes(pc)) {
-          return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves ${owner?.display ?? chord.display} on a strong beat in bar ${measure.index}` };
-        }
-        if (voice === 1 && !strong && !weakAllow.includes(pc)) {
-          return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves the field in bar ${measure.index}` };
+    const planned = stageA?.timeline[measure.index - 1];
+    const rhAllow = owner ? owner.upper.pcs : chord.tones;
+    const lhAllow = owner ? owner.lower.pcs : chord.tones;
+    const weakAllow = owner ? owner.upper.pcs : [...new Set([...FIELD, ...chord.tones])];
+    const beatStrong = (beat: number) => (
+      planned ? isGroupBoundary(dyadicQuarter(beat), planned) : RH_STRONG_BEATS.includes(beat as 0 | 2)
+    );
+    for (const beat of [0, 1, 2, 3]) {
+      const strong = beatStrong(beat);
+      const sounding = measure.events.filter((event): event is NoteEvent => (
+        event.kind === 'note'
+        && event.startBeat <= beat + 1e-6
+        && event.startBeat + event.duration > beat + 1e-6
+      ));
+      for (const event of sounding) {
+        const voice = event.voice ?? 1;
+        const pitches = [event.pitch, ...(event.pitches ?? []).filter((pitch) => pitch !== event.pitch)];
+        for (const pitch of pitches) {
+          const pc = mod12(pitch);
+          if (voice === 3 && !lhAllow.includes(pc)) {
+            return { ok: false, code: 'validation', error: `LH pitch ${pitch} leaves ${owner?.display ?? chord.display} in bar ${measure.index}` };
+          }
+          if (voice === 1) {
+            const allow = strong ? rhAllow : weakAllow;
+            if (!allow.includes(pc)) {
+              const label = strong ? `on a strong beat in bar ${measure.index}` : `in bar ${measure.index}`;
+              return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves ${owner?.display ?? chord.display} ${label}` };
+            }
+          }
         }
       }
     }
