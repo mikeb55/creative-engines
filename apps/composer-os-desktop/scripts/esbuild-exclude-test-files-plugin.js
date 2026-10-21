@@ -22,10 +22,13 @@ function shouldStubFromBundle(filePath) {
   return pathEndsWithTestTs(filePath) || pathIsFrozenWpsBaseline(filePath);
 }
 
+/** Match .test.ts and wps/baseline (or wps\baseline) on Windows and Mac. */
+const EXCLUDE_PATH_FILTER = /(?:\.test\.ts$|[\/\\]wps[\/\\]baseline[\/\\])/;
+
 const composerOsExcludeTestFilesPlugin = {
   name: 'composer-os-exclude-test-files',
   setup(build) {
-    build.onResolve({ filter: /(?:\.test\.ts$|\/wps\/baseline\/)/ }, (args) => {
+    build.onResolve({ filter: EXCLUDE_PATH_FILTER }, (args) => {
       if (!shouldStubFromBundle(args.path)) {
         return null;
       }
@@ -35,7 +38,7 @@ const composerOsExcludeTestFilesPlugin = {
       contents: 'module.exports = {};',
       loader: 'js',
     }));
-    build.onLoad({ filter: /(?:\.test\.ts$|\/wps\/baseline\/)/ }, (args) => {
+    build.onLoad({ filter: EXCLUDE_PATH_FILTER }, (args) => {
       if (!shouldStubFromBundle(args.path)) {
         return null;
       }
