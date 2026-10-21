@@ -172,20 +172,53 @@ function phraseDynamicForDialogue(phrase: Phase2Phrase): 'mp' | 'mf' | 'f' {
   return 'mf';
 }
 
-function primaryMelodyPart(bar: number, melodyIndexInBar: number): string {
+function primaryMelodyPart(bar: number, _melodyIndexInBar: number): string {
   if (bar <= 4) return 'vn1';
-  if (bar <= 8) return melodyIndexInBar % 2 === 0 ? 'fl1' : 'ob1';
+  if (bar <= 6) return 'fl1';
+  if (bar <= 8) return 'ob1';
   if (bar <= 10) return 'cl1';
   if (bar <= 12) return 'vn1';
   if (bar <= 14) return 'ob1';
   if (bar <= 16) return 'hn1';
+  if (bar <= 18) return 'vn1';
+  if (bar <= 20) return 'ob1';
+  if (bar <= 22) return 'hn1';
   return 'vn1';
 }
 
 function authorisedFluteShift(bar: number): number | null {
-  if (bar >= 17 && bar <= 20) return 12;
-  if (bar >= 21 && bar <= 24) return 0;
+  if (bar === 17 || bar === 18) return 12;
+  if (bar === 23 || bar === 24) return 0;
   return null;
+}
+
+function authorisedVn2MelodyDouble(bar: number): boolean {
+  return bar >= 19 && bar <= 20;
+}
+
+function pitchClassDistance(a: number, b: number): number {
+  const d = Math.abs(mod12(a) - mod12(b));
+  return Math.min(d, 12 - d);
+}
+
+function clashesMelodyAtBeats(midi: number, melodyMidis: readonly number[]): boolean {
+  return melodyMidis.some((m) => {
+    const ic = pitchClassDistance(midi, m);
+    return ic === 1 || ic === 11;
+  });
+}
+
+function melodyMidisAtStrongBeats(bar: number, placements: readonly Phase2EventPlan[]): number[] {
+  const barStart = (bar - 1) * 4;
+  const out: number[] = [];
+  for (const beat of [0, 2]) {
+    const t = barStart + beat;
+    for (const p of placements) {
+      if (p.role !== 'primary-melody' && p.role !== 'melodic-reinforcement') continue;
+      if (Math.abs(p.onset - t) < 1e-3) out.push(p.midi);
+    }
+  }
+  return out;
 }
 
 function supportPartsForBar(bar: number): string[] {
@@ -297,13 +330,17 @@ export function planOrchestralDialogueDistribution(input: {
       }
     }
     if (!candidates.length) return false;
-    candidates.sort((a, b) => Math.abs(a - prefer) - Math.abs(b - prefer));
+    const melodyExposure = melodyMidisAtStrongBeats(bar, placements);
+    const safe = candidates.filter((midi) => !clashesMelodyAtBeats(midi, melodyExposure));
+    if (!safe.length) return false;
+    const pool = safe;
+    pool.sort((a, b) => Math.abs(a - prefer) - Math.abs(b - prefer));
     const span = { start: onset, end: onset + duration };
-    const choice = pickPart(parts, [partId], [candidates[0]!], busy, [span], leadParts, false, settings);
+    const choice = pickPart(parts, [partId], [pool[0]!], busy, [span], leadParts, false, settings);
     if (!choice) return false;
     const eventId = `4d-harm:${bar}:${partId}:${lineageSuffix}`;
     if (placements.some((p) => p.eventId === eventId)) return false;
-    const sounding = candidates[0]! + choice.shift;
+    const sounding = pool[0]! + choice.shift;
     push({
       kind: 'source',
       eventId,
@@ -375,9 +412,12 @@ export function planOrchestralDialogueDistribution(input: {
           return { partId, shift };
         })()
         : null;
+      const melodyFallback = bar >= 21 && bar <= 22
+        ? ['hn1', 'hn2', 'hn3', 'hn4', 'ob1', 'cl1', 'fl1']
+        : ['vn1', 'fl1', 'ob1', 'cl1', 'hn1'];
       const choice = forcedLead
         ?? pickPart(parts, leadIds, [note.midi], busy, [span], new Set(), note.locked, settings)
-        ?? pickPart(parts, ['vn1', 'fl1', 'ob1', 'cl1', 'hn1'], [note.midi], busy, [span], new Set(), note.locked, settings);
+        ?? pickPart(parts, melodyFallback, [note.midi], busy, [span], new Set(), note.locked, settings);
       if (!choice) {
         if (note.locked) return { ok: false, error: `Locked melody ${note.id} has no instrument in bar ${bar}.` };
         omissions.push({ eventId: note.id, reason: `Bar ${bar} melody had no free lead instrument.` });
@@ -428,6 +468,30 @@ export function planOrchestralDialogueDistribution(input: {
         });
         occupy(busy, 'fl1', flSpan.start, flSpan.end);
       }
+      if (authorisedVn2MelodyDouble(bar) && choice.partId === 'ob1') {
+        const vnSpan = { start: note.onset, end: note.onset + note.duration };
+        const vnPart = parts.find((p) => p.partId === 'vn2');
+        const vnShift = vnPart?.range ? chooseShift([note.midi], vnPart.range, false) : null;
+        if (vnShift !== null && !overlaps(vnSpan.start, vnSpan.end, busy.get('vn2') ?? [])) {
+          push({
+            kind: 'source',
+            eventId: note.id,
+            partId: 'vn2',
+            shift: vnShift,
+            phraseId: phrase.id,
+            role: 'melodic-reinforcement',
+            transformation: vnShift === 0 ? 'unison-reinforcement' : 'octave-reinforcement',
+            lineage: `${note.id}:vn2-dbl`,
+            reason: `Authorised violin II doubling bar ${bar}.`,
+            onset: note.onset,
+            duration: note.duration,
+            midi: note.midi + vnShift,
+            voice: 1,
+            classifies: false,
+          });
+          occupy(busy, 'vn2', vnSpan.start, vnSpan.end);
+        }
+      }
     }
     foreground[phrase.id] = priorLead ?? 'vn1';
   }
@@ -440,7 +504,18 @@ export function planOrchestralDialogueDistribution(input: {
     if (firstInBar) bassFirstInBar.add(note.bar);
     const ids = held ? [held] : firstInBar ? ['db', 'vc'] : ['vc', 'db'];
     const span = { start: note.onset, end: note.onset + note.duration };
-    const choice = pickPart(parts, ids, [note.midi], busy, [span], new Set(), note.locked || held !== null, settings);
+    let choice = pickPart(parts, ids, [note.midi], busy, [span], new Set(), note.locked || held !== null, settings);
+    if (!choice) {
+      for (const partId of ids) {
+        const part = parts.find((p) => p.partId === partId);
+        if (!part?.range) continue;
+        const shift = chooseShift([note.midi], dialogueSoundingRange(partId, part.range), note.locked || held !== null);
+        if (shift !== null) {
+          choice = { partId, shift };
+          break;
+        }
+      }
+    }
     if (!choice) {
       if (note.locked) return { ok: false, error: `Locked bass ${note.id} has no instrument.` };
       omissions.push({ eventId: note.id, reason: 'Bass had no free cello or double bass.' });
@@ -462,39 +537,6 @@ export function planOrchestralDialogueDistribution(input: {
       voice: 1,
       classifies: true,
     });
-  }
-
-  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
-    if (silentBars.has(bar)) continue;
-    const phrase = phraseForBar(phrases, bar);
-    const barOnset = (bar - 1) * 4;
-    const bassHit = bass.filter((n) => n.bar === bar).sort((a, b) => a.onset - b.onset)[0];
-    if (!bassHit) continue;
-    const vcOnBeat1 = placements.some(
-      (p) => p.partId === 'vc' && p.role === 'bass-foundation' && Math.abs(p.onset - barOnset) < 1e-3,
-    );
-    if (!vcOnBeat1) {
-      const span = { start: barOnset, end: barOnset + Math.min(4, bassHit.duration) };
-      const choice = pickPart(parts, ['vc'], [bassHit.midi], busy, [span], new Set(), true, settings);
-      if (choice) {
-        push({
-          kind: 'source',
-          eventId: `4d-vc-b1:${bar}`,
-          partId: 'vc',
-          shift: choice.shift,
-          phraseId: phrase.id,
-          role: 'bass-foundation',
-          transformation: choice.shift === 0 ? 'preserved-source' : 'octave-transfer',
-          lineage: `vc-beat1:${bar}`,
-          reason: `Bar ${bar} cello reinforces bass on beat 1.`,
-          onset: barOnset,
-          duration: span.end - span.start,
-          midi: bassHit.midi + choice.shift,
-          voice: 1,
-          classifies: false,
-        });
-      }
-    }
   }
 
   let innerIndex = 0;
@@ -529,8 +571,22 @@ export function planOrchestralDialogueDistribution(input: {
       const partId = INNER_SUPPORT[innerIndex % INNER_SUPPORT.length]!;
       innerIndex += 1;
       const span = { start: note.onset, end: note.onset + note.duration };
-      const choice = pickPart(parts, [partId, ...INNER_SUPPORT], [note.midi], busy, [span], leadParts, note.locked, settings);
+      const fallbackIds = [...new Set([partId, ...INNER_SUPPORT, ...supportIds, 'cl2', 'bn2', 'hn3', 'hn4'])];
+      let choice = pickPart(parts, fallbackIds, [note.midi], busy, [span], leadParts, note.locked, settings);
+      if (!choice) {
+        for (const partId of fallbackIds) {
+          const part = parts.find((p) => p.partId === partId);
+          if (!part?.range) continue;
+          const shift = chooseShift([note.midi], dialogueSoundingRange(partId, part.range), note.locked);
+          if (shift !== null) {
+            choice = { partId, shift };
+            break;
+          }
+        }
+      }
       if (!choice) continue;
+      const exposure = melodyMidisAtStrongBeats(bar, placements);
+      if (clashesMelodyAtBeats(note.midi + choice.shift, exposure)) continue;
       push({
         kind: 'source',
         eventId: note.id,
@@ -617,6 +673,95 @@ export function planOrchestralDialogueDistribution(input: {
       texture: 'dialogue',
       reason: 'Phase 4D explicit orchestral dialogue plan.',
     });
+  }
+
+  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
+    if (silentBars.has(bar)) continue;
+    const phrase = phraseForBar(phrases, bar);
+    const barOnset = (bar - 1) * 4;
+    const bassAtBeat1 = bass.find((n) => n.bar === bar && Math.abs(n.onset - barOnset) < 1e-3);
+    const bassHit = bassAtBeat1 ?? bass.filter((n) => n.bar === bar).sort((a, b) => a.onset - b.onset)[0];
+    const rootPc = orderedSupportPcs(chordSymbolForBar(bar))[0] ?? 0;
+    const bassMidi = bassHit?.midi ?? rootPc + 48;
+    const vcOnBeat1 = placements.some(
+      (p) => p.partId === 'vc' && p.role === 'bass-foundation' && Math.abs(p.onset - barOnset) < 1e-3,
+    );
+    if (!vcOnBeat1) {
+      const part = parts.find((p) => p.partId === 'vc');
+      const shift = part?.range ? chooseShift([bassMidi], dialogueSoundingRange('vc', part.range), true) : null;
+      if (shift !== null) {
+        push({
+          kind: 'source',
+          eventId: `4d-vc-b1:${bar}`,
+          partId: 'vc',
+          shift,
+          phraseId: phrase.id,
+          role: 'bass-foundation',
+          transformation: shift === 0 ? 'preserved-source' : 'octave-transfer',
+          lineage: `vc-beat1:${bar}`,
+          reason: `Bar ${bar} cello beat-1 anchor.`,
+          onset: barOnset,
+          duration: 0.5,
+          midi: bassMidi + shift,
+          voice: 1,
+          classifies: false,
+        });
+      }
+    }
+  }
+
+  for (const note of lhPool) {
+    if (placements.some((p) => Math.abs(p.onset - note.onset) < 1e-3 && mod12(p.midi) === mod12(note.midi))) continue;
+    const phrase = phraseForBar(phrases, note.bar);
+    const span = { start: note.onset, end: note.onset + note.duration };
+    const ids = [
+      ...INNER_SUPPORT,
+      'vn2',
+      'va',
+      'cl2',
+      'bn1',
+      'bn2',
+      'hn1',
+      'hn2',
+      'hn3',
+      'hn4',
+      'tbn1',
+      'tbn2',
+      'hp',
+      'db',
+      'vc',
+    ];
+    let placedLh = false;
+    for (const partId of ids) {
+      if (activityOf(partId, settings) === 'off') continue;
+      const part = parts.find((p) => p.partId === partId);
+      if (!part?.range) continue;
+      const range = dialogueSoundingRange(partId, part.range);
+      const shift = chooseShift([note.midi], range, true) ?? chooseShift([note.midi], range, false);
+      if (shift === null) continue;
+      const sounding = note.midi + shift;
+      const exposure = melodyMidisAtStrongBeats(note.bar, placements);
+      if (clashesMelodyAtBeats(sounding, exposure) && partId !== 'db' && partId !== 'vc') continue;
+      push({
+        kind: 'source',
+        eventId: note.id,
+        partId,
+        shift,
+        phraseId: phrase.id,
+        role: note.midi < 50 ? 'bass-foundation' : 'sustained-colour',
+        transformation: shift === 0 ? 'preserved-source' : 'octave-transfer',
+        lineage: note.id,
+        reason: 'Fallback LH inner / bass placement.',
+        onset: note.onset,
+        duration: note.duration,
+        midi: sounding,
+        voice: 1,
+        classifies: false,
+      });
+      placedLh = true;
+      break;
+    }
+    if (!placedLh) omissions.push({ eventId: note.id, reason: `LH ${note.id} had no free placement.` });
   }
 
   const classifyingLineages = () => new Set(placements.filter((p) => p.classifies).map((p) => p.lineage));

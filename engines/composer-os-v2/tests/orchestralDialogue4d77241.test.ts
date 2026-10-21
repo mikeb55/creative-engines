@@ -18,7 +18,7 @@ import { runGeneralPianoBmefGate77241Tests } from './generalPianoBmefGate77241.t
 import { runGeneralPianoV1Tests } from './generalPianoV1.test';
 
 const ROOT = process.cwd();
-const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r2.musicxml');
+const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r3.musicxml');
 const PHASE4E_SOURCE = path.join(ROOT, '.tmp-piano-24bar-original-test/Original-24bar-Seed77241-phase4e.musicxml');
 /** SHA-256 of committed Phase 4E piano source fixture (read-only). */
 const PHASE4E_SHA256 = 'aa7aba78cc209981eb2fb020648fc61b5190f92020760805f9efa93b12bdc92a';
@@ -188,6 +188,163 @@ function orphanTiesInXml(xml: string): number {
   return orphans;
 }
 
+const BASS_PART_IDS = new Set(['vc', 'db']);
+
+function pitchClassDistance(a: number, b: number): number {
+  const d = Math.abs(mod12(a) - mod12(b));
+  return Math.min(d, 12 - d);
+}
+
+function isMelodyDissonanceInterval(melodyMidi: number, otherMidi: number): boolean {
+  const ic = pitchClassDistance(melodyMidi, otherMidi);
+  return ic === 1 || ic === 11;
+}
+
+function soundsAtBeat(notes: ReturnType<typeof soundingLine>, globalBeat: number): number[] {
+  const midis: number[] = [];
+  for (const n of notes) {
+    if (n.onset <= globalBeat + 1e-6 && n.onset + n.duration > globalBeat + 1e-6) midis.push(n.midi);
+  }
+  return midis;
+}
+
+/** Exported-file gate: tie start/stop paired per part + written pitch (not aggregate counts). */
+export function auditExportedXmlTiePairs(xml: string): string[] {
+  const { atoms } = parsePianoXmlAtoms(xml);
+  const failures: string[] = [];
+  for (const partId of ORCH_PART_IDS) {
+    const notes = atoms
+      .filter((a) => a.partId === partId && !a.rest && a.midi !== null)
+      .sort((a, b) => a.onset - b.onset || a.midi! - b.midi!);
+    const open = new Map<number, number>();
+    for (const a of notes) {
+      const midi = a.midi!;
+      if (a.tieStart && !a.tiedStart) {
+        if (open.has(midi)) failures.push(`${partId} orphan tie start pitch ${midi} bar ${Math.floor(a.onset / 4) + 1}`);
+        open.set(midi, a.onset);
+      }
+      if (a.tieStop && !a.tiedStop) {
+        if (!open.has(midi)) failures.push(`${partId} orphan tie stop pitch ${midi} bar ${Math.floor(a.onset / 4) + 1}`);
+        else open.delete(midi);
+      }
+    }
+    for (const [midi] of open) failures.push(`${partId} unclosed tie pitch ${midi}`);
+  }
+  return failures;
+}
+
+/** Every Phase 4E LH attack (voice 3) must sound in some orchestral part at same bar/onset pc. */
+export function auditExportedXmlLhCoverage(pianoXml: string, orchXml: string): string[] {
+  const lh = parsePianoXmlAtoms(pianoXml).atoms.filter((a) => !a.rest && a.midi !== null && a.voice === 3);
+  const orchSounding = ORCH_PART_IDS.flatMap((partId) =>
+    soundingLine(orchXml, partId).map((n) => ({ partId, ...n })),
+  );
+  const failures: string[] = [];
+  for (const a of lh) {
+    const bar = Math.floor(a.onset / 4) + 1;
+    const barOnset = a.onset - (bar - 1) * 4;
+    const pc = mod12(a.midi!);
+    const hit = orchSounding.some(
+      (o) => Math.floor(o.onset / 4) + 1 === bar && Math.abs(o.onset - a.onset) < 1e-3 && mod12(o.midi) === pc,
+    );
+    if (!hit) failures.push(`LH bar ${bar} beat ${barOnset} pc ${pc}`);
+  }
+  return failures;
+}
+
+/** Non-bass orchestral attacks at melody beat-1/beat-3 onsets must not form m2/M7 against melody. */
+export function auditExportedXmlMelodyDissonance(pianoXml: string, orchXml: string): string[] {
+  const failures: string[] = [];
+  for (let bar = 1; bar <= 24; bar += 1) {
+    const barStart = (bar - 1) * 4;
+    const melodyAtoms = pianoRhAtoms(pianoXml, bar);
+    const onsetBeats = melodyAtoms
+      .map((a) => a.onset - barStart)
+      .filter((beat) => Math.abs(beat - 0) < 1e-3 || Math.abs(beat - 2) < 1e-3);
+    for (const beat of onsetBeats) {
+      const t = barStart + beat;
+      const melodyMidis = melodyAtoms
+        .filter((a) => Math.abs(a.onset - barStart - beat) < 1e-3)
+        .map((a) => a.midi!);
+      for (const partId of ORCH_PART_IDS) {
+        if (BASS_PART_IDS.has(partId)) continue;
+        for (const midi of soundsAtBeat(soundingLine(orchXml, partId), t)) {
+          for (const mm of melodyMidis) {
+            if (isMelodyDissonanceInterval(mm, midi)) {
+              failures.push(`bar ${bar} beat ${beat} ${partId} ${midi} vs melody ${mm}`);
+            }
+          }
+        }
+      }
+    }
+  }
+  return failures;
+}
+
+function orchMelodyCarriersForBar(pianoXml: string, orchXml: string, bar: number): string[] {
+  const barStart = (bar - 1) * 4;
+  const carriers = new Set<string>();
+  for (const a of pianoRhAtoms(pianoXml, bar)) {
+    const parts = ORCH_PART_IDS.filter(
+      (partId) => !BASS_PART_IDS.has(partId)
+        && soundingLine(orchXml, partId).some(
+          (n) => Math.abs(n.onset - a.onset) < 1e-3
+            && Math.abs(n.duration - a.duration) < 1e-3
+            && mod12(n.midi) === mod12(a.midi!),
+        ),
+    );
+    parts.forEach((p) => carriers.add(p));
+  }
+  return [...carriers];
+}
+
+export function auditExportedXmlBars58Lead(pianoXml: string, orchXml: string): string[] {
+  const failures: string[] = [];
+  for (let bar = 5; bar <= 6; bar += 1) {
+    const bad = orchMelodyCarriersForBar(pianoXml, orchXml, bar).filter((p) => p !== 'fl1');
+    if (bad.length) failures.push(`bar ${bar} lead not Fl-only: ${bad.join('+')}`);
+  }
+  for (let bar = 7; bar <= 8; bar += 1) {
+    const bad = orchMelodyCarriersForBar(pianoXml, orchXml, bar).filter((p) => p !== 'ob1');
+    if (bad.length) failures.push(`bar ${bar} lead not Ob-only: ${bad.join('+')}`);
+  }
+  return failures;
+}
+
+export function auditExportedXmlBars1724MelodyLock(pianoXml: string, orchXml: string): string[] {
+  const failures: string[] = [];
+  let flVn1Bars = 0;
+  for (let bar = 17; bar <= 24; bar += 1) {
+    const carriers = orchMelodyCarriersForBar(pianoXml, orchXml, bar);
+    if (carriers.includes('fl1') && carriers.includes('vn1')) flVn1Bars += 1;
+    if (bar >= 19 && bar <= 20) {
+      if (!carriers.includes('ob1') || !carriers.includes('vn2')) {
+        failures.push(`bar ${bar} want Ob+VlnII got ${carriers.join('+')}`);
+      }
+    }
+    if (bar >= 21 && bar <= 22 && !carriers.includes('hn1')) {
+      failures.push(`bar ${bar} missing Hn1 lead got ${carriers.join('+')}`);
+    }
+  }
+  if (flVn1Bars > 4) failures.push(`Fl+VlnI melody together in ${flVn1Bars}/8 bars (max 4)`);
+  return failures;
+}
+
+export function runExportedXmlAudits(pianoXml: string, orchXml: string): { name: string; ok: boolean; detail?: string }[] {
+  const tieFails = auditExportedXmlTiePairs(orchXml);
+  const lhFails = auditExportedXmlLhCoverage(pianoXml, orchXml);
+  const disFails = auditExportedXmlMelodyDissonance(pianoXml, orchXml);
+  const lead58Fails = auditExportedXmlBars58Lead(pianoXml, orchXml);
+  const lock1724Fails = auditExportedXmlBars1724MelodyLock(pianoXml, orchXml);
+  return [
+    { name: 'export audit tie pairs', ok: tieFails.length === 0, detail: `${tieFails.length} ${tieFails.slice(0, 3).join('; ')}` },
+    { name: 'export audit LH coverage', ok: lhFails.length === 0, detail: `${lhFails.length} ${lhFails.slice(0, 3).join('; ')}` },
+    { name: 'export audit melody m2/M7', ok: disFails.length === 0, detail: `${disFails.length} ${disFails.slice(0, 3).join('; ')}` },
+    { name: 'export audit bars 5–8 lead', ok: lead58Fails.length === 0, detail: `${lead58Fails.length} ${lead58Fails.slice(0, 3).join('; ')}` },
+    { name: 'export audit bars 17–24 lock', ok: lock1724Fails.length === 0, detail: `${lock1724Fails.length} ${lock1724Fails.slice(0, 3).join('; ')}` },
+  ];
+}
+
 function runBmef(
   score: ScoreModel,
   placements: ReturnType<typeof barDialogueRows>,
@@ -355,6 +512,7 @@ export function runOrchestralDialogue4d77241Tests(): { name: string; ok: boolean
 
   rows.push({ name: 'strong-beat clashes', ok: strongBeatClashesOrchestra(orch.score, orchXml, barRows) === 0 });
   rows.push({ name: 'orphan ties xml', ok: orphanTiesInXml(orchXml) === 0 });
+  rows.push(...runExportedXmlAudits(composed.xml, orchXml));
 
   const vn1Block = orchXml.match(/<part id="vn1"[\s\S]*?<\/part>/)?.[0] ?? '';
   const measureCount = (vn1Block.match(/<measure\b/g) ?? []).length;

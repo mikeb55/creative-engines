@@ -511,7 +511,8 @@ function assignRoles(rows: NoteRow[]): string[] {
   }
   for (const group of byOnset.values()) {
     const upperNotes = group.filter((row) => (row.event.staff ?? '1') === upper);
-    const pool = upperNotes.length ? upperNotes : group;
+    if (!upperNotes.length) continue;
+    const pool = upperNotes;
     const top = [...pool].sort((a, b) => b.midi - a.midi)[0]!;
     top.role = 'melody';
     top.reason = upperNotes.length
@@ -1632,7 +1633,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const tieGroups = new Map<string, string[]>();
   for (const placement of placements) {
     const source = placement.sourceNotationEventIds[0];
-    if (!source) continue;
+    if (!source || source.startsWith('4d-')) continue;
     const list = tieGroups.get(`${placement.logicalVoiceId}:${source}`) ?? [];
     list.push(placement.id);
     tieGroups.set(`${placement.logicalVoiceId}:${source}`, list);
@@ -1697,15 +1698,20 @@ export function realisePianoChamber(request: OrchestrateRequest):
         const sourceId = placement?.sourceNotationEventIds[0];
         const row = rows.find((item) => item.event.id === sourceId);
         if (!placement || !row || (!row.event.tieStart && !row.event.tieStop)) continue;
+        if (sourceId.startsWith('4d-')) continue;
         const siblings = placements
           .filter((item) => item.sourceNotationEventIds[0] === sourceId && item.logicalVoiceId === placement.logicalVoiceId)
           .sort((a, b) => qCmp(a.attack.onset, b.attack.onset));
         const index = siblings.findIndex((item) => item.id === placement.id);
         const note = event as NoteEvent;
+        if (siblings.length < 2) {
+          if (note.notation?.tie) delete note.notation.tie;
+          continue;
+        }
         if (index === siblings.length - 1 && row.event.tieStart) {
-          note.notation = { ...note.notation, tie: siblings.length === 1 ? 'start' : 'continue' };
+          note.notation = { ...note.notation, tie: 'continue' };
         } else if (index === 0 && row.event.tieStop) {
-          note.notation = { ...note.notation, tie: siblings.length === 1 ? 'stop' : 'continue' };
+          note.notation = { ...note.notation, tie: 'continue' };
         }
       }
     }
