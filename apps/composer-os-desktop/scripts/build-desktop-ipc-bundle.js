@@ -10,6 +10,21 @@ const { composerOsExcludeTestFilesPlugin } = require('./esbuild-exclude-test-fil
 const { composerOsMdStubPlugin } = require('./esbuild-md-stub-plugin');
 const { composerOsMosaicSliceRequirePlugin } = require('./esbuild-mosaic-slice-require-plugin');
 
+const composerOsExcludeWpsBaselineWinPlugin = {
+  name: 'composer-os-exclude-wps-baseline-win',
+  setup(build) {
+    const isBaseline = (p) => (p || '').replace(/\\/g, '/').includes('/wps/baseline/');
+    build.onResolve({ filter: /.*/ }, (args) => {
+      if (isBaseline(args.path) || isBaseline(args.importer)) {
+        return { path: args.path, namespace: 'composer-os-wps-baseline-stub' };
+      }
+    });
+    build.onLoad({ filter: /.*/ }, (args) =>
+      isBaseline(args.path) ? { contents: 'module.exports = {};', loader: 'js' } : null
+    );
+  },
+};
+
 const repoRoot = path.resolve(__dirname, '../../..');
 const entry = path.join(repoRoot, 'apps', 'composer-os-desktop', 'electron', 'ipcEntry.ts');
 const outFile = path.join(__dirname, '..', 'resources', 'desktop-ipc.bundle.cjs');
@@ -26,6 +41,7 @@ esbuild
     format: 'cjs',
     external: ['electron', '@napi-rs/canvas'],
     plugins: [
+      composerOsExcludeWpsBaselineWinPlugin,
       composerOsExcludeTestFilesPlugin,
       composerOsMdStubPlugin,
       composerOsMosaicSliceRequirePlugin,
