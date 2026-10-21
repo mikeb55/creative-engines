@@ -25,6 +25,7 @@ import {
 } from '../orchestrate/symphonicWriting';
 
 export const ORCHESTRAL_DIALOGUE_77241 = '77241-phase4d';
+export const ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48 = '77241-varied-repeat-48';
 
 const HARMONY_77241 = [
   'Cmaj7/E', 'Fmaj7/A', 'Dm7', 'Gsus4', 'Cmaj7(#11)', 'Am7', 'Fmaj7/C', 'Ebmaj7/G',
@@ -35,7 +36,8 @@ const HARMONY_77241 = [
 const mod12 = (v: number) => ((v % 12) + 12) % 12;
 
 function chordSymbolForBar(bar: number): string {
-  return bar === 13 ? 'C#maj7' : HARMONY_77241[bar - 1]!;
+  const localBar = ((bar - 1) % 24) + 1;
+  return localBar === 13 ? 'C#maj7' : HARMONY_77241[localBar - 1]!;
 }
 
 function orderedSupportPcs(symbol: string): number[] {
@@ -175,7 +177,7 @@ function phraseDynamicForDialogue(phrase: Phase2Phrase): 'p' | 'mp' | 'mf' | 'f'
 
 const DIALOGUE_ORCH_PARTS = [
   'vn1', 'vn2', 'va', 'vc', 'db', 'fl1', 'ob1', 'cl1', 'cl2', 'bn1', 'bn2',
-  'hn1', 'hn2', 'hn3', 'hn4', 'tbn1', 'tbn2', 'hp',
+  'hn1', 'hn2', 'hn3', 'hn4', 'tp1', 'tbn1', 'tbn2', 'hp',
 ] as const;
 
 function isLeadOrBass(p: Phase2EventPlan): boolean {
@@ -299,13 +301,65 @@ function applyPhase4fBar24Thin(placements: Phase2EventPlan[]): void {
   }
 }
 
-function applyPhase4fHn2Bar23Octave(placements: Phase2EventPlan[]): void {
-  const barStart = 22 * 4;
-  for (const p of placements) {
-    if (p.partId !== 'hn2') continue;
-    if (p.onset < barStart || p.onset >= 23 * 4) continue;
-    if (p.midi === 23) p.midi = 35;
+function applyPhase4fHn2Bar23Octave(placements: Phase2EventPlan[], extraBars: readonly number[] = []): void {
+  for (const bar of [23, ...extraBars]) {
+    const barStart = (bar - 1) * 4;
+    for (const p of placements) {
+      if (p.partId !== 'hn2') continue;
+      if (p.onset < barStart || p.onset >= bar * 4) continue;
+      if (p.midi === 23) p.midi = 35;
+    }
   }
+}
+
+function applyPhase4fBar48Thin(placements: Phase2EventPlan[]): void {
+  const bar = 48;
+  const barStart = (bar - 1) * 4;
+  const barEnd = bar * 4;
+  const keepForDrop = new Set<string>();
+  for (const p of placements) {
+    if (p.onset < barStart || p.onset >= barEnd) continue;
+    if (p.role === 'primary-melody' || p.role === 'melodic-reinforcement') keepForDrop.add(p.partId);
+    if (p.partId === 'db') keepForDrop.add('db');
+    if (isVcBeat1InBar24(p, barStart, barEnd)) keepForDrop.add('vc');
+  }
+  for (let i = placements.length - 1; i >= 0; i -= 1) {
+    const p = placements[i]!;
+    if (p.onset < barStart || p.onset >= barEnd) continue;
+    if (isVcBeat1InBar24(p, barStart, barEnd)) {
+      p.duration = Math.max(p.duration, 3);
+      continue;
+    }
+    if (p.role === 'primary-melody' || p.role === 'melodic-reinforcement') continue;
+    if (p.role === 'bass-foundation') {
+      if (p.onset <= barStart + 1e-3) p.duration = Math.max(p.duration, 3);
+      continue;
+    }
+    if (p.onset > barStart + 1e-3) {
+      placements.splice(i, 1);
+      continue;
+    }
+    p.duration = Math.max(p.duration, 3);
+  }
+  let active = activePartsInBar24(placements, barStart, barEnd);
+  if (active.size <= 8) return;
+  const dropOrder = ['hp', 'tbn2', 'tbn1', 'tp1', 'hn4', 'hn3', 'bn2', 'cl2', 'va', 'vn2', 'bn1', 'hn2', 'hn1', 'cl1', 'ob1', 'fl1'];
+  for (const partId of dropOrder) {
+    if (active.size <= 8) break;
+    if (keepForDrop.has(partId)) continue;
+    for (let i = placements.length - 1; i >= 0; i -= 1) {
+      const p = placements[i]!;
+      if (p.partId !== partId || p.onset < barStart || p.onset >= barEnd) continue;
+      placements.splice(i, 1);
+    }
+    active = activePartsInBar24(placements, barStart, barEnd);
+  }
+}
+
+export function applyVariedRepeat48ArcToPlacements(placements: Phase2EventPlan[]): void {
+  applyPhase4fJoinBreaths(placements);
+  applyPhase4fHn2Bar23Octave(placements, [47]);
+  applyPhase4fBar48Thin(placements);
 }
 
 function firstSoundingBeatInBar(partId: string, bar: number, placements: readonly Phase2EventPlan[]): number {
@@ -376,6 +430,37 @@ export function applyPhase4fArcToPlacements(placements: Phase2EventPlan[]): void
   applyPhase4fBar24Thin(placements);
 }
 
+export function buildOrchestralDialogueVariedRepeat48PartDynamics(
+  partIds: readonly string[],
+  placements: readonly Phase2EventPlan[],
+): Record<string, PartDynamicEvent[]> {
+  const base = buildOrchestralDialogue77241PartDynamics(partIds, placements);
+  for (const partId of partIds) {
+    const list = base[partId];
+    if (!list) continue;
+    for (let i = list.length - 1; i >= 0; i -= 1) {
+      const ev = list[i]!;
+      if (ev.bar === 23 && ev.mark === 'ff') list[i] = { ...ev, mark: 'f' };
+      if (ev.bar === 24 && (ev.wedge === 'diminuendo' || ev.wedge === 'stop' || ev.mark === 'p')) {
+        list.splice(i, 1);
+      }
+      if (ev.bar === 24 && ev.mark === 'p') list.splice(i, 1);
+    }
+    const b24mf = list.findIndex((ev) => ev.bar === 24 && ev.mark);
+    if (b24mf >= 0) list[b24mf] = { bar: 24, beat: firstSoundingBeatInBar(partId, 24, placements), mark: 'mf' };
+    else list.push({ bar: 24, beat: firstSoundingBeatInBar(partId, 24, placements), mark: 'mf' });
+    list.push({ bar: 25, beat: firstSoundingBeatInBar(partId, 25, placements), mark: 'mp' });
+    list.push({ bar: 33, beat: firstSoundingBeatInBar(partId, 33, placements), mark: 'mf' });
+    list.push({ bar: 41, beat: firstSoundingBeatInBar(partId, 41, placements), mark: 'f' });
+    list.push({ bar: 45, beat: firstSoundingBeatInBar(partId, 45, placements), mark: 'ff' });
+    list.push({ bar: 47, beat: firstSoundingBeatInBar(partId, 47, placements), wedge: 'diminuendo' });
+    list.push({ bar: 48, beat: lastSoundingBeatInBar(partId, 48, placements), wedge: 'stop' });
+    list.push({ bar: 48, beat: firstSoundingBeatInBar(partId, 48, placements), mark: 'p' });
+    base[partId] = list.sort((a, b) => a.bar - b.bar || a.beat - b.beat);
+  }
+  return base;
+}
+
 export const DIALOGUE_VELOCITY_BY_MARK: Record<DynamicMark, number> = {
   ppp: 36, pp: 40, p: 52, mp: 68, mf: 84, f: 100, ff: 116, fff: 120, sfz: 110, fp: 90,
 };
@@ -399,7 +484,14 @@ export function applyDialogueDynamicsVelocities(
   }
 }
 
-function primaryMelodyPart(bar: number, _melodyIndexInBar: number): string {
+function primaryMelodyPart(bar: number, _melodyIndexInBar: number, variedRepeat48: boolean): string {
+  if (variedRepeat48 && bar >= 25) {
+    if (bar <= 28) return 'cl1';
+    if (bar <= 32) return 'hn1';
+    if (bar <= 36) return 'ob1';
+    if (bar <= 40) return 'vn2';
+    return 'vn1';
+  }
   if (bar <= 4) return 'vn1';
   if (bar <= 6) return 'fl1';
   if (bar <= 8) return 'ob1';
@@ -413,7 +505,8 @@ function primaryMelodyPart(bar: number, _melodyIndexInBar: number): string {
   return 'vn1';
 }
 
-function authorisedFluteShift(bar: number): number | null {
+function authorisedFluteShift(bar: number, variedRepeat48: boolean): number | null {
+  if (variedRepeat48 && bar >= 41 && bar <= 44) return 12;
   if (bar === 17 || bar === 18) return 12;
   if (bar === 23 || bar === 24) return 0;
   return null;
@@ -448,11 +541,21 @@ function melodyMidisAtStrongBeats(bar: number, placements: readonly Phase2EventP
   return out;
 }
 
-function supportPartsForBar(bar: number): string[] {
+function supportPartsForBar(bar: number, variedRepeat48: boolean): string[] {
+  if (variedRepeat48 && bar >= 45 && bar <= 47) {
+    return ['vn2', 'va', 'fl1', 'tp1', 'cl1', 'ob1', 'hn1', 'hn2', 'tbn1', 'tbn2', 'bn1', 'bn2'];
+  }
+  if (variedRepeat48 && bar >= 25) {
+    if (bar <= 28) return ['va', 'vn2', 'cl2', 'bn1'];
+    if (bar <= 32) return ['hn2', 'hn3', 'hn4', 'bn1'];
+    if (bar <= 36) return ['vc', 'cl2', 'bn1', 'hn1'];
+    if (bar <= 40) return ['cl1', 'cl2', 'va', 'bn1'];
+    return ['fl1', 'vn2', 'va', 'ob1', 'hn1', 'hn2'];
+  }
   if (bar <= 4) return ['vn2', 'va', 'bn1'];
   if (bar <= 8) return ['vn2', 'va', 'hn1', 'hn2'];
   if (bar <= 16) {
-    const lead = primaryMelodyPart(bar, 0);
+    const lead = primaryMelodyPart(bar, 0, false);
     const woodLead = lead === 'cl1' || lead === 'ob1' || lead === 'fl1' || lead === 'hn1';
     const base = ['cl2', 'bn1', 'bn2', 'hn1', 'hn2'];
     return woodLead ? [...base, 'vn2', 'va'] : base;
@@ -466,12 +569,18 @@ export function resolveOrchestralDialoguePlan(
 ): OrchestralDialoguePlan | null {
   const key = (raw as { orchestralDialogue?: string } | undefined)?.orchestralDialogue;
   if (key === ORCHESTRAL_DIALOGUE_77241) return { id: ORCHESTRAL_DIALOGUE_77241, scoreEndBar: 24 };
+  if (key === ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48) {
+    return { id: ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48, scoreEndBar: 48 };
+  }
   return null;
 }
 
-export function barDialogueRows(placements: readonly Phase2EventPlan[]): OrchestralDialogueBarRow[] {
+export function barDialogueRows(
+  placements: readonly Phase2EventPlan[],
+  scoreEndBar = 24,
+): OrchestralDialogueBarRow[] {
   const rows: OrchestralDialogueBarRow[] = [];
-  for (let bar = 1; bar <= 24; bar += 1) {
+  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
     const barStart = (bar - 1) * 4;
     const barEnd = bar * 4;
     const primaries = placements.filter(
@@ -503,6 +612,7 @@ export function planOrchestralDialogueDistribution(input: {
 }): { ok: true; plan: Phase2Plan } | { ok: false; error: string } {
   const { notes, phrases, parts, settings, silentBars, plan: dialoguePlan } = input;
   const scoreEndBar = Math.min(dialoguePlan.scoreEndBar, symphonicScoreEndBar(phrases));
+  const variedRepeat48 = dialoguePlan.id === ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48;
   const busy = new Map<string, BusySpan[]>();
   const placements: Phase2EventPlan[] = [];
   const omissions: Phase2Plan['omissions'] = [];
@@ -624,7 +734,7 @@ export function planOrchestralDialogueDistribution(input: {
     const local = melodyByBar.get(bar) ?? [];
     for (let index = 0; index < local.length; index += 1) {
       const note = local[index]!;
-      const partId = primaryMelodyPart(bar, index);
+      const partId = primaryMelodyPart(bar, index, variedRepeat48);
       const span = { start: note.onset, end: note.onset + note.duration };
       const leadIds = [partId];
       const preferDown = hornLeadPrefersDownOctave(bar, partId);
@@ -639,9 +749,13 @@ export function planOrchestralDialogueDistribution(input: {
           return { partId, shift };
         })()
         : null;
-      const melodyFallback = bar >= 21 && bar <= 22
-        ? ['hn1', 'hn2', 'hn3', 'hn4', 'ob1', 'cl1', 'fl1']
-        : ['vn1', 'fl1', 'ob1', 'cl1', 'hn1'];
+      const melodyFallback = variedRepeat48 && bar >= 45
+        ? ['vn1', 'fl1', 'tp1', 'ob1', 'cl1', 'hn1']
+        : variedRepeat48 && bar >= 25
+          ? ['cl1', 'va', 'hn1', 'hn2', 'ob1', 'vc', 'vn2', 'fl1', 'vn1']
+          : bar >= 21 && bar <= 22
+            ? ['hn1', 'hn2', 'hn3', 'hn4', 'ob1', 'cl1', 'fl1']
+            : ['vn1', 'fl1', 'ob1', 'cl1', 'hn1'];
       const choice = forcedLead
         ?? pickPart(parts, leadIds, [note.midi], busy, [span], new Set(), note.locked, settings)
         ?? pickPart(parts, melodyFallback, [note.midi], busy, [span], new Set(), note.locked, settings);
@@ -668,7 +782,7 @@ export function planOrchestralDialogueDistribution(input: {
         voice: 1,
         classifies: true,
       });
-      const flShift = authorisedFluteShift(bar);
+      const flShift = authorisedFluteShift(bar, variedRepeat48);
       if (flShift !== null && choice.partId === 'vn1') {
         const flSpan = { start: note.onset, end: note.onset + note.duration };
         const flPart = parts.find((p) => p.partId === 'fl1');
@@ -718,6 +832,37 @@ export function planOrchestralDialogueDistribution(input: {
           });
           occupy(busy, 'vn2', vnSpan.start, vnSpan.end);
         }
+      }
+      const reinforce = (targetId: string, lineageSuffix: string): void => {
+        const rSpan = { start: note.onset, end: note.onset + note.duration };
+        const rPart = parts.find((p) => p.partId === targetId);
+        const rShift = rPart?.range ? chooseShift([note.midi], dialogueSoundingRange(targetId, rPart.range), false) : null;
+        if (rShift === null || overlaps(rSpan.start, rSpan.end, busy.get(targetId) ?? [])) return;
+        push({
+          kind: 'source',
+          eventId: note.id,
+          partId: targetId,
+          shift: rShift,
+          phraseId: phrase.id,
+          role: 'melodic-reinforcement',
+          transformation: rShift === 0 ? 'unison-reinforcement' : 'octave-reinforcement',
+          lineage: `${note.id}:${lineageSuffix}`,
+          reason: `Varied-repeat doubling bar ${bar} on ${targetId}.`,
+          onset: note.onset,
+          duration: note.duration,
+          midi: note.midi + rShift,
+          voice: 1,
+          classifies: false,
+        });
+        occupy(busy, targetId, rSpan.start, rSpan.end);
+      };
+      if (variedRepeat48 && bar >= 25 && bar <= 28 && choice.partId === 'cl1') reinforce('va', 'va-dbl');
+      if (variedRepeat48 && bar >= 29 && bar <= 32 && choice.partId === 'hn1') reinforce('hn2', 'hn2-dbl');
+      if (variedRepeat48 && bar >= 33 && bar <= 36 && choice.partId === 'ob1') reinforce('vc', 'vc-dbl');
+      if (variedRepeat48 && bar >= 37 && bar <= 40 && choice.partId === 'vn2') reinforce('cl1', 'cl-dbl');
+      if (variedRepeat48 && bar >= 45 && bar <= 47 && choice.partId === 'vn1') {
+        reinforce('fl1', 'fl-dbl');
+        reinforce('tp1', 'tp-dbl');
       }
     }
     foreground[phrase.id] = priorLead ?? 'vn1';
@@ -783,7 +928,7 @@ export function planOrchestralDialogueDistribution(input: {
       placements.filter((p) => p.role === 'primary-melody' && p.onset >= barOnset && p.onset < bar * 4).map((p) => p.partId),
     );
     const pcs = orderedSupportPcs(chordSymbolForBar(bar));
-    const supportIds = supportPartsForBar(bar);
+    const supportIds = supportPartsForBar(bar, variedRepeat48);
     const sustain = bar <= 8 ? 2 : 4;
     for (let idx = 0; idx < supportIds.length; idx += 1) {
       const partId = supportIds[idx]!;
@@ -1010,7 +1155,7 @@ export function planOrchestralDialogueDistribution(input: {
     const ids = note.role === 'bass'
       ? ['db', 'vc']
       : note.role === 'melody'
-        ? [primaryMelodyPart(note.bar, 0), 'vn1', 'fl1', 'ob1', 'cl1', 'hn1']
+        ? [primaryMelodyPart(note.bar, 0, variedRepeat48), 'vn1', 'fl1', 'ob1', 'cl1', 'hn1']
         : [...INNER_SUPPORT];
     const choice = pickPart(parts, ids, [note.midi], busy, [span], new Set(), note.locked, settings);
     if (!choice) {
@@ -1035,7 +1180,8 @@ export function planOrchestralDialogueDistribution(input: {
     });
   }
 
-  applyPhase4fArcToPlacements(placements);
+  if (variedRepeat48) applyVariedRepeat48ArcToPlacements(placements);
+  else applyPhase4fArcToPlacements(placements);
 
   const partById = new Map(parts.map((part) => [part.partId, part]));
   const events = placements.map((item) => {

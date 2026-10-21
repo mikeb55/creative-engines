@@ -56,6 +56,8 @@ import {
 import {
   applyDialogueDynamicsVelocities,
   buildOrchestralDialogue77241PartDynamics,
+  buildOrchestralDialogueVariedRepeat48PartDynamics,
+  ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48,
   planOrchestralDialogueDistribution,
   resolveOrchestralDialoguePlan,
 } from '../symphonic/orchestralDialoguePlan';
@@ -1660,10 +1662,15 @@ export function realisePianoChamber(request: OrchestrateRequest):
   }
   const dialoguePlanResolved = resolveOrchestralDialoguePlan(correction.symphonic);
   const dynamics: Record<string, PartDynamicEvent[]> = dialoguePlanResolved && phase2Distribution && dialoguePhase2Placements
-    ? buildOrchestralDialogue77241PartDynamics(
-      built.score.parts.map((part) => part.id),
-      dialoguePhase2Placements,
-    )
+    ? (dialoguePlanResolved.id === ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48
+      ? buildOrchestralDialogueVariedRepeat48PartDynamics(
+        built.score.parts.map((part) => part.id),
+        dialoguePhase2Placements,
+      )
+      : buildOrchestralDialogue77241PartDynamics(
+        built.score.parts.map((part) => part.id),
+        dialoguePhase2Placements,
+      ))
     : (() => {
       const legacy: Record<string, PartDynamicEvent[]> = {};
       for (const phrase of phrases) {
