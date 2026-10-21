@@ -3,6 +3,7 @@
  * Replaces automatic phrase melody routing when `orchestralDialogue` is set on symphonic settings.
  */
 
+import { parseGeneralPianoChord } from '../piano/generalPianoWriter';
 import { soundingSpellingToWritten, spellMidi, type SpelledPitch } from '../instruments/writtenPitch';
 import type { Transposition } from '../instruments/instrumentTypes';
 import type { SymphonicOrchestrationSettings } from '../orchestrate/types';
@@ -23,6 +24,43 @@ import {
 } from '../orchestrate/symphonicWriting';
 
 export const ORCHESTRAL_DIALOGUE_77241 = '77241-phase4d';
+
+const HARMONY_77241 = [
+  'Cmaj7/E', 'Fmaj7/A', 'Dm7', 'Gsus4', 'Cmaj7(#11)', 'Am7', 'Fmaj7/C', 'Ebmaj7/G',
+  'Abmaj7', 'Emaj7', 'Bmaj7(#11)', 'F#m7', 'Dbmaj7', 'Amaj7', 'Fm7', 'Bb7sus4',
+  'Cmaj7/E', 'Am7', 'Dm7', 'G7', 'Fmaj7', 'Em7', 'Cmaj7', 'Cmaj7',
+] as const;
+
+const mod12 = (v: number) => ((v % 12) + 12) % 12;
+
+function chordSymbolForBar(bar: number): string {
+  return bar === 13 ? 'C#maj7' : HARMONY_77241[bar - 1]!;
+}
+
+function orderedSupportPcs(symbol: string): number[] {
+  const ch = parseGeneralPianoChord(symbol);
+  if (!ch) return [0];
+  const { rootPc, bassPc, tones } = ch;
+  const order: number[] = [];
+  const add = (pc: number) => {
+    if (!order.includes(pc)) order.push(pc);
+  };
+  for (const t of tones) {
+    const d = mod12(t - rootPc);
+    if (d === 3 || d === 4) add(t);
+  }
+  for (const t of tones) {
+    const d = mod12(t - rootPc);
+    if (d === 10 || d === 11) add(t);
+  }
+  for (const t of tones) {
+    if (mod12(t - rootPc) === 7) add(t);
+  }
+  for (const t of tones) add(t);
+  add(rootPc);
+  add(bassPc);
+  return order;
+}
 
 export interface OrchestralDialoguePlan {
   id: string;
@@ -121,6 +159,19 @@ function authorisedFluteShift(bar: number): number | null {
   return null;
 }
 
+function supportPartsForBar(bar: number): string[] {
+  if (bar <= 4) return ['vn2', 'va', 'bn1'];
+  if (bar <= 8) return ['vn2', 'va', 'hn1', 'hn2'];
+  if (bar <= 16) {
+    const lead = primaryMelodyPart(bar, 0);
+    const woodLead = lead === 'cl1' || lead === 'ob1' || lead === 'fl1' || lead === 'hn1';
+    const base = ['cl2', 'bn1', 'bn2', 'hn1', 'hn2'];
+    return woodLead ? [...base, 'vn2', 'va'] : base;
+  }
+  if (bar <= 20) return ['vn2', 'va', 'bn1', 'hn1', 'hn2', 'hn3', 'hn4'];
+  return ['vn2', 'va', 'bn1', 'bn2', 'hn1', 'hn2', 'tbn1', 'tbn2'];
+}
+
 export function resolveOrchestralDialoguePlan(
   raw: SymphonicOrchestrationSettings | undefined,
 ): OrchestralDialoguePlan | null {
@@ -179,6 +230,68 @@ export function planOrchestralDialogueDistribution(input: {
   const push = (item: Phase2EventPlan): void => {
     placements.push(item);
     occupy(busy, item.partId, item.onset, item.onset + item.duration);
+  };
+
+  const lastSupportMidi = new Map<string, number>();
+
+  const lowestMelodyMidi = (bar: number): number => {
+    const barStart = (bar - 1) * 4;
+    const notes = placements.filter(
+      (p) => p.role === 'primary-melody' && p.onset >= barStart - 1e-6 && p.onset < bar * 4,
+    );
+    return notes.length ? Math.min(...notes.map((n) => n.midi)) : 84;
+  };
+
+  const placeDerivedSupport = (
+    bar: number,
+    partId: string,
+    pc: number,
+    onset: number,
+    duration: number,
+    phrase: Phase2Phrase,
+    leadParts: ReadonlySet<string>,
+    lineageSuffix: string,
+  ): boolean => {
+    if (activityOf(partId, settings) === 'off') return false;
+    const part = parts.find((p) => p.partId === partId);
+    if (!part?.range) return false;
+    const maxMidi = lowestMelodyMidi(bar) - 1;
+    const prefer = lastSupportMidi.get(partId) ?? maxMidi - 8;
+    const candidates: number[] = [];
+    for (let midi = part.range[0]; midi <= Math.min(part.range[1], maxMidi); midi += 1) {
+      if (mod12(midi) === pc) candidates.push(midi);
+    }
+    if (!candidates.length) {
+      for (let midi = part.range[0]; midi <= part.range[1]; midi += 1) {
+        if (mod12(midi) === pc) candidates.push(midi);
+      }
+    }
+    if (!candidates.length) return false;
+    candidates.sort((a, b) => Math.abs(a - prefer) - Math.abs(b - prefer));
+    const span = { start: onset, end: onset + duration };
+    const choice = pickPart(parts, [partId], [candidates[0]!], busy, [span], leadParts, false, settings);
+    if (!choice) return false;
+    const eventId = `4d-harm:${bar}:${partId}:${lineageSuffix}`;
+    if (placements.some((p) => p.eventId === eventId)) return false;
+    const sounding = candidates[0]! + choice.shift;
+    push({
+      kind: 'source',
+      eventId,
+      partId: choice.partId,
+      shift: choice.shift,
+      phraseId: phrase.id,
+      role: 'sustained-colour',
+      transformation: choice.shift === 0 ? 'preserved-source' : 'octave-transfer',
+      lineage: eventId,
+      reason: `Bar ${bar} chord-tone support on ${choice.partId}.`,
+      onset,
+      duration,
+      midi: sounding,
+      voice: 1,
+      classifies: false,
+    });
+    lastSupportMidi.set(choice.partId, sounding);
+    return true;
   };
 
   const heldBassPart = (note: Phase2SourceNote): string | null => {
@@ -307,6 +420,39 @@ export function planOrchestralDialogueDistribution(input: {
     });
   }
 
+  for (let bar = 1; bar <= scoreEndBar; bar += 1) {
+    if (silentBars.has(bar)) continue;
+    const phrase = phraseForBar(phrases, bar);
+    const barOnset = (bar - 1) * 4;
+    const bassHit = bass.filter((n) => n.bar === bar).sort((a, b) => a.onset - b.onset)[0];
+    if (!bassHit) continue;
+    const vcOnBeat1 = placements.some(
+      (p) => p.partId === 'vc' && p.role === 'bass-foundation' && Math.abs(p.onset - barOnset) < 1e-3,
+    );
+    if (!vcOnBeat1) {
+      const span = { start: barOnset, end: barOnset + Math.min(4, bassHit.duration) };
+      const choice = pickPart(parts, ['vc'], [bassHit.midi], busy, [span], new Set(), true, settings);
+      if (choice) {
+        push({
+          kind: 'source',
+          eventId: `4d-vc-b1:${bar}`,
+          partId: 'vc',
+          shift: choice.shift,
+          phraseId: phrase.id,
+          role: 'bass-foundation',
+          transformation: choice.shift === 0 ? 'preserved-source' : 'octave-transfer',
+          lineage: `vc-beat1:${bar}`,
+          reason: `Bar ${bar} cello reinforces bass on beat 1.`,
+          onset: barOnset,
+          duration: span.end - span.start,
+          midi: bassHit.midi + choice.shift,
+          voice: 1,
+          classifies: false,
+        });
+      }
+    }
+  }
+
   let innerIndex = 0;
   const innerByBar = new Map<number, Phase2SourceNote[]>();
   for (const note of inner) {
@@ -319,9 +465,20 @@ export function planOrchestralDialogueDistribution(input: {
     if (silentBars.has(bar)) continue;
     const phrase = phraseForBar(phrases, bar);
     const locals = (innerByBar.get(bar) ?? []).sort((a, b) => a.onset - b.onset || a.midi - b.midi);
+    const barOnset = (bar - 1) * 4;
     const leadParts = new Set(
-      placements.filter((p) => p.role === 'primary-melody' && p.onset >= (bar - 1) * 4 && p.onset < bar * 4).map((p) => p.partId),
+      placements.filter((p) => p.role === 'primary-melody' && p.onset >= barOnset && p.onset < bar * 4).map((p) => p.partId),
     );
+    const pcs = orderedSupportPcs(chordSymbolForBar(bar));
+    const supportIds = supportPartsForBar(bar);
+    const sustain = bar <= 8 ? 2 : 4;
+    for (let idx = 0; idx < supportIds.length; idx += 1) {
+      const partId = supportIds[idx]!;
+      const pc = pcs[idx % pcs.length]!;
+      const onset = bar <= 8 && idx % 2 === 1 ? barOnset + 2 : barOnset;
+      const duration = bar <= 8 && idx % 2 === 1 ? 2 : sustain;
+      placeDerivedSupport(bar, partId, pc, onset, duration, phrase, leadParts, `s${idx}`);
+    }
     for (const note of locals) {
       if (note.role === 'melody' || note.role === 'bass') continue;
       if (placements.some((p) => p.classifies && p.lineage === note.id)) continue;
@@ -329,10 +486,7 @@ export function planOrchestralDialogueDistribution(input: {
       innerIndex += 1;
       const span = { start: note.onset, end: note.onset + note.duration };
       const choice = pickPart(parts, [partId, ...INNER_SUPPORT], [note.midi], busy, [span], leadParts, note.locked, settings);
-      if (!choice) {
-        omissions.push({ eventId: note.id, reason: `Bar ${bar} inner colour had no free support slot.` });
-        continue;
-      }
+      if (!choice) continue;
       push({
         kind: 'source',
         eventId: note.id,
@@ -350,83 +504,37 @@ export function planOrchestralDialogueDistribution(input: {
         classifies: false,
       });
     }
-    if (bar >= 17 && bar <= 20) {
-      const tones = locals.slice(0, 2);
-      for (const [idx, note] of tones.entries()) {
-        const brassId = idx === 0 ? 'hn1' : 'tp1';
-        const span = { start: note.onset, end: note.onset + note.duration };
-        const choice = pickPart(parts, [brassId], [note.midi], busy, [span], leadParts, false, settings);
-        if (choice) {
-          push({
-            kind: 'source',
-            eventId: note.id,
-            partId: choice.partId,
-            shift: choice.shift,
-            phraseId: phrase.id,
-            role: 'sustained-colour',
-            transformation: 'preserved-source',
-            lineage: `${note.id}:brass-${brassId}`,
-            reason: `Bar ${bar} brass sustain on existing LH tone.`,
-            onset: note.onset,
-            duration: note.duration,
-            midi: note.midi + choice.shift,
-            voice: 1,
-            classifies: false,
-          });
-        }
-      }
-    }
     if (bar >= 17 && bar <= 24 && settings.families.harp !== 'off') {
       let harpSlot = 0;
-      for (const note of locals) {
-        if (note.midi < HARP_RANGE[0] || note.midi > HARP_RANGE[1]) continue;
-        const onset = note.onset + harpSlot * 0.125;
+      const harpPcs = bar >= 21 ? pcs : pcs.slice(0, 3);
+      for (const pc of harpPcs) {
+        const candidates: number[] = [];
+        for (let midi = HARP_RANGE[0]; midi <= HARP_RANGE[1]; midi += 1) {
+          if (mod12(midi) === pc) candidates.push(midi);
+        }
+        if (!candidates.length) continue;
+        const midi = candidates[Math.min(2, candidates.length - 1)]!;
+        const onset = barOnset + harpSlot * (bar >= 21 ? 0.125 : 0.25);
         harpSlot += 1;
-        const span = { start: onset, end: onset + Math.min(note.duration, 1) };
-        const choice = pickPart(parts, ['hp'], [note.midi], busy, [span], new Set(), false, settings);
+        const span = { start: onset, end: onset + (bar >= 21 ? 0.5 : 0.375) };
+        const choice = pickPart(parts, ['hp'], [midi], busy, [span], new Set(), false, settings);
         if (!choice) continue;
         push({
           kind: 'source',
-          eventId: note.id,
+          eventId: `4d-harp:${bar}:${harpSlot}`,
           partId: 'hp',
-          shift: 0,
+          shift: choice.shift,
           phraseId: phrase.id,
           role: 'sustained-colour',
           transformation: 'preserved-source',
-          lineage: `${note.id}:harp`,
-          reason: `Bar ${bar} harp arpeggio on existing LH pitch.`,
+          lineage: `harp-ar:${bar}:${harpSlot}`,
+          reason: `Bar ${bar} harp chord arpeggio.`,
           onset,
-          duration: span.end - span.start,
-          midi: note.midi,
-          voice: note.midi >= 60 ? 1 : 3,
+          duration: bar >= 21 ? 0.5 : 0.375,
+          midi: midi + choice.shift,
+          voice: midi >= 60 ? 1 : 3,
           classifies: false,
         });
-      }
-    }
-    if (bar >= 21 && bar <= 24) {
-      const extra = ['vn2', 'va', 'cl1', 'hn1'].filter((id) => activityOf(id, settings) !== 'off');
-      for (const note of locals.slice(0, Math.min(3, locals.length))) {
-        const partId = extra[(bar + note.midi) % extra.length]!;
-        const span = { start: note.onset, end: note.onset + note.duration };
-        const choice = pickPart(parts, [partId], [note.midi], busy, [span], leadParts, false, settings);
-        if (choice) {
-          push({
-            kind: 'source',
-            eventId: note.id,
-            partId: choice.partId,
-            shift: choice.shift,
-            phraseId: phrase.id,
-            role: 'sustained-colour',
-            transformation: 'preserved-source',
-            lineage: `${note.id}:tutti-${choice.partId}`,
-            reason: `Bar ${bar} closing tutti support.`,
-            onset: note.onset,
-            duration: note.duration,
-            midi: note.midi + choice.shift,
-            voice: 1,
-            classifies: false,
-          });
-        }
       }
     }
   }
