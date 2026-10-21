@@ -10,13 +10,19 @@ import { apiComposePianoV1 } from '../app-api/pianoCompositionApp';
 import { parseGeneralPianoChord } from '../core/piano/generalPianoWriter';
 import { parsePianoXmlAtoms } from '../core/piano/pianoXmlOracle';
 import { orchestrate, soundingLine } from '../core/orchestrate/orchestrate';
+import { SYMPHONIC_SLOTS } from '../core/orchestrate/symphonicWriting';
+import { getInstrument } from '../core/instruments/instrumentCatalogue';
 import { ORCHESTRAL_DIALOGUE_77241, barDialogueRows } from '../core/symphonic/orchestralDialoguePlan';
 import type { NoteEvent, ScoreModel } from '../core/score-model/scoreModelTypes';
 import { runGeneralPianoBmefGate77241Tests } from './generalPianoBmefGate77241.test';
 import { runGeneralPianoV1Tests } from './generalPianoV1.test';
 
 const ROOT = process.cwd();
-const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r1.musicxml');
+const EXPORT = path.join(ROOT, '.tmp-piano-24bar-original-test/Seed77241-phase4d-r2.musicxml');
+const PHASE4E_SOURCE = path.join(ROOT, '.tmp-piano-24bar-original-test/Original-24bar-Seed77241-phase4e.musicxml');
+/** SHA-256 of committed Phase 4E piano source fixture (read-only). */
+const PHASE4E_SHA256 = 'aa7aba78cc209981eb2fb020648fc61b5190f92020760805f9efa93b12bdc92a';
+const FLUTE_MIN_SOUNDING = 60;
 
 const ORCH_PART_IDS = [
   'vn1', 'vn2', 'va', 'vc', 'db', 'fl1', 'ob1', 'cl1', 'cl2', 'bn1', 'bn2',
@@ -131,6 +137,43 @@ function activeOrchPartsInBar(xml: string, bar: number): string[] {
 function supportVoicesInBar(xml: string, bar: number, leadIds: string[]): string[] {
   const leads = new Set(leadIds);
   return activeOrchPartsInBar(xml, bar).filter((id) => !leads.has(id) && id !== 'db');
+}
+
+function soundingRangeViolationsFromXml(xml: string): string[] {
+  const failures: string[] = [];
+  const slotByPart = new Map(SYMPHONIC_SLOTS.map((slot) => [slot.partId, slot]));
+  for (const partId of ORCH_PART_IDS) {
+    const slot = slotByPart.get(partId);
+    if (!slot) continue;
+    const spec = getInstrument(slot.instrumentId);
+    const hard = spec.soundingHardRange;
+    if (!hard) continue;
+    const min = partId === 'fl1' ? FLUTE_MIN_SOUNDING : hard[0];
+    const max = hard[1];
+    for (const note of soundingLine(xml, partId)) {
+      if (note.midi < min || note.midi > max) {
+        failures.push(`${partId} bar ${Math.floor(note.onset / 4) + 1} sounding ${note.midi}`);
+      }
+    }
+  }
+  return failures;
+}
+
+function pianoMelodyAtomsMatchXml(pianoXml: string, orchXml: string): boolean {
+  for (let bar = 1; bar <= 24; bar += 1) {
+    const pianoAtoms = pianoRhAtoms(pianoXml, bar);
+    const barStart = (bar - 1) * 4;
+    for (const a of pianoAtoms) {
+      const onset = a.onset - barStart;
+      const primaries = ORCH_PART_IDS.flatMap((partId) =>
+        soundingLine(orchXml, partId)
+          .filter((n) => Math.abs(n.onset - a.onset) < 1e-3 && Math.abs(n.duration - a.duration) < 1e-3)
+          .map((n) => ({ partId, midi: n.midi })),
+      ).filter((n) => mod12(n.midi) === mod12(a.midi!));
+      if (primaries.length < 1) return false;
+    }
+  }
+  return true;
 }
 
 function orphanTiesInXml(xml: string): number {
@@ -270,6 +313,25 @@ export function runOrchestralDialogue4d77241Tests(): { name: string; ok: boolean
   rows.push({ name: 'bass fidelity', ok: bassOk, detail: `${bassEvents.length} bass placements` });
 
   rows.push({ name: 'notation range', ok: dist.every((ev) => ev.sounding >= 28 && ev.sounding <= 108) });
+
+  const rangeViolations = soundingRangeViolationsFromXml(orchXml);
+  rows.push({
+    name: 'xml sounding range',
+    ok: rangeViolations.length === 0,
+    detail: rangeViolations.slice(0, 4).join('; '),
+  });
+  rows.push({
+    name: 'melody pc/onset/duration xml',
+    ok: pianoMelodyAtomsMatchXml(composed.xml, orchXml),
+  });
+  if (fs.existsSync(PHASE4E_SOURCE)) {
+    const p4eHash = createHash('sha256').update(fs.readFileSync(PHASE4E_SOURCE)).digest('hex');
+    rows.push({
+      name: 'phase4e source unchanged',
+      ok: p4eHash === PHASE4E_SHA256,
+      detail: p4eHash.slice(0, 12),
+    });
+  }
 
   const barRows = barDialogueRows(
     dist.map((ev, i) => ({

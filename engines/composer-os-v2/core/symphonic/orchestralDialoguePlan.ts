@@ -102,12 +102,33 @@ function occupy(busy: Map<string, BusySpan[]>, partId: string, start: number, en
   busy.set(partId, list);
 }
 
+/** Orchestral flute stipulation: sounding C4 minimum (catalogue hard range allows B3). */
+const FLUTE_MIN_SOUNDING = 60;
+
+function dialogueSoundingRange(partId: string, range: readonly [number, number]): readonly [number, number] {
+  if (partId === 'fl1') return [Math.max(FLUTE_MIN_SOUNDING, range[0]), range[1]];
+  return range;
+}
+
+function hornLeadPrefersDownOctave(bar: number, partId: string): boolean {
+  return partId === 'hn1' && bar >= 15 && bar <= 16;
+}
+
 function fits(midis: number[], range: readonly [number, number], shift: number): boolean {
   return midis.every((midi) => midi + shift >= range[0] && midi + shift <= range[1]);
 }
 
-function chooseShift(midis: number[], range: readonly [number, number], locked: boolean): number | null {
-  const shifts = locked ? [0] : [0, -12, 12, -24, 24];
+function chooseShift(
+  midis: number[],
+  range: readonly [number, number],
+  locked: boolean,
+  preferDownOctave = false,
+): number | null {
+  const shifts = locked
+    ? [0]
+    : preferDownOctave
+      ? [-12, 0, 12, -24, 24]
+      : [0, -12, 12, -24, 24];
   return shifts.find((shift) => fits(midis, range, shift)) ?? null;
 }
 
@@ -126,7 +147,8 @@ function pickPart(
     if (activityOf(id, settings) === 'off') continue;
     const part = parts.find((item) => item.partId === id);
     if (!part?.range) continue;
-    const shift = chooseShift(midis, part.range, locked);
+    const range = dialogueSoundingRange(id, part.range);
+    const shift = chooseShift(midis, range, locked);
     if (shift === null) continue;
     if (spans.some((span) => overlaps(span.start, span.end, busy.get(id) ?? []))) continue;
     return { partId: id, shift };
@@ -141,6 +163,13 @@ function spellWritten(part: Phase2Part, sounding: number): { step: string; alter
 
 function phraseForBar(phrases: readonly Phase2Phrase[], bar: number): Phase2Phrase {
   return phrases.find((p) => bar >= p.startBar && bar <= p.endBar) ?? phrases[phrases.length - 1]!;
+}
+
+function phraseDynamicForDialogue(phrase: Phase2Phrase): 'mp' | 'mf' | 'f' {
+  if (phrase.endBar >= 21) return 'f';
+  if (phrase.endBar === 8 || phrase.startBar === 9) return 'mp';
+  if (phrase.endBar === 16 || phrase.startBar === 17) return 'mp';
+  return 'mf';
 }
 
 function primaryMelodyPart(bar: number, melodyIndexInBar: number): string {
@@ -255,14 +284,15 @@ export function planOrchestralDialogueDistribution(input: {
     if (activityOf(partId, settings) === 'off') return false;
     const part = parts.find((p) => p.partId === partId);
     if (!part?.range) return false;
+    const soundingRange = dialogueSoundingRange(partId, part.range);
     const maxMidi = lowestMelodyMidi(bar) - 1;
     const prefer = lastSupportMidi.get(partId) ?? maxMidi - 8;
     const candidates: number[] = [];
-    for (let midi = part.range[0]; midi <= Math.min(part.range[1], maxMidi); midi += 1) {
+    for (let midi = soundingRange[0]; midi <= Math.min(soundingRange[1], maxMidi); midi += 1) {
       if (mod12(midi) === pc) candidates.push(midi);
     }
     if (!candidates.length) {
-      for (let midi = part.range[0]; midi <= part.range[1]; midi += 1) {
+      for (let midi = soundingRange[0]; midi <= soundingRange[1]; midi += 1) {
         if (mod12(midi) === pc) candidates.push(midi);
       }
     }
@@ -332,7 +362,21 @@ export function planOrchestralDialogueDistribution(input: {
       const note = local[index]!;
       const partId = primaryMelodyPart(bar, index);
       const span = { start: note.onset, end: note.onset + note.duration };
-      const choice = pickPart(parts, [partId], [note.midi], busy, [span], new Set(), note.locked, settings)
+      const leadIds = [partId];
+      const preferDown = hornLeadPrefersDownOctave(bar, partId);
+      const forcedLead = preferDown
+        ? (() => {
+          const part = parts.find((p) => p.partId === partId);
+          if (!part?.range) return null;
+          const range = dialogueSoundingRange(partId, part.range);
+          const shift = chooseShift([note.midi], range, note.locked, true);
+          if (shift === null) return null;
+          if (overlaps(span.start, span.end, busy.get(partId) ?? [])) return null;
+          return { partId, shift };
+        })()
+        : null;
+      const choice = forcedLead
+        ?? pickPart(parts, leadIds, [note.midi], busy, [span], new Set(), note.locked, settings)
         ?? pickPart(parts, ['vn1', 'fl1', 'ob1', 'cl1', 'hn1'], [note.midi], busy, [span], new Set(), note.locked, settings);
       if (!choice) {
         if (note.locked) return { ok: false, error: `Locked melody ${note.id} has no instrument in bar ${bar}.` };
@@ -554,7 +598,7 @@ export function planOrchestralDialogueDistribution(input: {
       counterline: 'silence',
       answerIds: [],
       register,
-      dynamic: phrase.endBar >= 21 ? 'f' : 'mf',
+      dynamic: phraseDynamicForDialogue(phrase),
       doubling: placements.some((p) => p.phraseId === phrase.id && p.role === 'melodic-reinforcement'),
       harp: placements.some((p) => p.phraseId === phrase.id && p.partId === 'hp'),
       timpani: false,
