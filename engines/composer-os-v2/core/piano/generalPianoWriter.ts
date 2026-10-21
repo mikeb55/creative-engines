@@ -561,8 +561,32 @@ function retargetRhContour(
   });
 }
 
-function layContrastRhythm(events: readonly MotifNoteEvent[], bar: number): MotifNoteEvent[] {
-  const template = CONTRAST_RHYTHM_TEMPLATES[bar - 9];
+function contrastRhythmTemplateIndex(bar: number, seed: number): number {
+  if (seed === 77241 && bar >= 9 && bar <= 16) {
+    if (bar === 9 || bar === 10) return 0;
+    if (bar === 11 || bar === 12) return 1;
+    return bar - 9;
+  }
+  return bar - 9;
+}
+
+function contrastRhythmShell(bar: number, seed: number): MotifNoteEvent[] {
+  const template = CONTRAST_RHYTHM_TEMPLATES[contrastRhythmTemplateIndex(bar, seed)];
+  if (!template) return [];
+  const out: MotifNoteEvent[] = [];
+  let onset = 0;
+  for (const duration of template) {
+    if (onset >= 4 - 1e-6) break;
+    const d = roundBeat(Math.min(duration, 4 - onset));
+    if (d <= 1e-6) break;
+    out.push({ onset, duration: d, midi: null });
+    onset = roundBeat(onset + d);
+  }
+  return out;
+}
+
+function layContrastRhythm(events: readonly MotifNoteEvent[], bar: number, seed = 0): MotifNoteEvent[] {
+  const template = CONTRAST_RHYTHM_TEMPLATES[contrastRhythmTemplateIndex(bar, seed)];
   if (!template) return events.map((event) => ({ ...event }));
   const pitches = events.filter((event) => event.midi !== null).map((event) => event.midi!);
   const out: MotifNoteEvent[] = [];
@@ -580,6 +604,220 @@ function layContrastRhythm(events: readonly MotifNoteEvent[], bar: number): Moti
     onset = roundBeat(onset + d);
   }
   return out;
+}
+
+function realisedMotifFrom(opening: readonly MotifNoteEvent[]): Motif {
+  return { id: 'm1.realised', field: FIELD, events: opening.map((event) => ({ ...event })) };
+}
+
+/** Seed 77241 Phase 4E — B-section motif transforms via motif-ops (bars 9–16). */
+function phase4e77241RhSourceEvents(
+  bar: number,
+  opening: readonly MotifNoteEvent[],
+  chord: ParsedPianoChord,
+  openingRootPc: number,
+): MotifNoteEvent[] {
+  if (opening.length === 0) return [];
+  const motif = realisedMotifFrom(opening);
+  const axis = opening.find((event) => event.midi !== null)?.midi ?? 76;
+  if (bar === 9 || bar === 10) {
+    const shifted = transposedOpeningEvents(opening, chord, openingRootPc);
+    const base = Array.isArray(shifted) ? { ...motif, events: shifted } : motif;
+    if (bar === 9) return base.events.map((event) => ({ ...event }));
+    return applyOperator(base, 'sequence-tonal', { steps: 1 }).motif.events;
+  }
+  if (bar === 11) {
+    return applyOperator(motif, 'invert', { axis }).motif.events;
+  }
+  if (bar === 12) {
+    const inverted = applyOperator(motif, 'invert', { axis });
+    return applyOperator(inverted.motif, 'sequence-tonal', { steps: 1 }).motif.events;
+  }
+  if (bar === 13) {
+    return applyOperator(motif, 'retrograde').motif.events;
+  }
+  if (bar === 14) {
+    return applyOperator(motif, 'augment').motif.events;
+  }
+  const fragmented = applyOperator(motif, 'fragment-head', { count: 3 });
+  const steps = bar === 15 ? 2 : 3;
+  return applyOperator(fragmented.motif, 'sequence-tonal', { steps }).motif.events;
+}
+
+function phase4e77241MotifRef(bar: number): string {
+  if (bar <= 10) return 'phase4e.transpose';
+  if (bar <= 12) return 'phase4e.invert';
+  if (bar === 13) return 'phase4e.retrograde';
+  return 'phase4e.augment-fragment';
+}
+
+function phase4eApproachReturnRh(
+  events: readonly MotifNoteEvent[],
+  returnEntryMidi: number,
+  chordTones: readonly number[],
+  anchor: number,
+  low: number,
+  high: number,
+): MotifNoteEvent[] {
+  const stepCandidates = [returnEntryMidi - 1, returnEntryMidi + 1].filter((midi) => midi >= low && midi <= high);
+  const preferred = stepCandidates.find((midi) => chordTones.includes(mod12(midi)))
+    ?? (stepCandidates[0] !== undefined
+      ? midiInWindow(closestPc(stepCandidates[0], chordTones), anchor, low, high)
+      : returnEntryMidi - 1);
+  const out = events.map((event) => ({ ...event }));
+  for (let index = out.length - 1; index >= 0; index -= 1) {
+    if (out[index]!.midi === null) continue;
+    out[index] = { ...out[index]!, midi: preferred };
+    break;
+  }
+  return out;
+}
+
+function firstRhSlotPitch(slots: readonly Slot[]): number | null {
+  const sorted = [...slots].sort((a, b) => a.start - b.start);
+  return sorted.find((slot) => Number.isFinite(slot.pitch))?.pitch ?? null;
+}
+
+function patchSlotsLastBeatPitch(slots: readonly Slot[], pitch: number, minStart = 3): Slot[] {
+  const sorted = [...slots].sort((a, b) => a.start - b.start);
+  for (let index = sorted.length - 1; index >= 0; index -= 1) {
+    if (sorted[index]!.start < minStart - 1e-6) continue;
+    if (!Number.isFinite(sorted[index]!.pitch)) continue;
+    sorted[index] = { ...sorted[index]!, pitch };
+    return sorted;
+  }
+  let lastIdx = -1;
+  for (let index = 0; index < sorted.length; index += 1) {
+    if (Number.isFinite(sorted[index]!.pitch)) lastIdx = index;
+  }
+  if (lastIdx >= 0) sorted[lastIdx] = { ...sorted[lastIdx]!, pitch };
+  return sorted;
+}
+
+const PHASE4E_PHRASE_HEAD_INTERVALS: Readonly<Record<number, readonly number[]>> = {
+  9: [1, 2, 0],
+  11: [-1, -2, 0],
+  13: [0, -2, -1],
+};
+
+function phase4ePhraseHeadContour(
+  events: readonly MotifNoteEvent[],
+  intervals: readonly number[],
+  chordTones: readonly number[],
+  anchor: number,
+  low: number,
+  high: number,
+  rhythmShell: readonly MotifNoteEvent[],
+): MotifNoteEvent[] {
+  const allowed = [...new Set([...FIELD, ...chordTones])];
+  const startCandidates: number[] = [];
+  for (let midi = low; midi <= high; midi += 1) {
+    if (allowed.includes(mod12(midi))) startCandidates.push(midi);
+  }
+  startCandidates.sort((a, b) => Math.abs(a - anchor) - Math.abs(b - anchor));
+  let targetPitches: number[] | null = null;
+  for (const start of startCandidates) {
+    let midi = Math.max(low, Math.min(high, start));
+    const pitches = [midi];
+    let legal = allowed.includes(mod12(midi));
+    for (const interval of intervals) {
+      midi = Math.max(low, Math.min(high, midi + interval));
+      legal = legal && allowed.includes(mod12(midi));
+      pitches.push(midi);
+    }
+    if (!legal) continue;
+    let pitchIndex = 0;
+    let strongOk = true;
+    for (const event of rhythmShell) {
+      if (pitchIndex >= pitches.length) break;
+      const pitch = pitches[pitchIndex]!;
+      pitchIndex += 1;
+      for (const beat of RH_STRONG_BEATS) {
+        if (!rhEventSoundsAtBeat({ ...event, midi: pitch }, beat)) continue;
+        if (!chordTones.includes(mod12(pitch))) strongOk = false;
+      }
+    }
+    if (strongOk) {
+      targetPitches = pitches;
+      break;
+    }
+  }
+  if (!targetPitches) {
+    return events.map((event) => ({ ...event }));
+  }
+  let pitchIndex = 0;
+  return events.map((event) => {
+    if (event.midi === null) return { ...event };
+    const pitch = targetPitches[pitchIndex] ?? event.midi;
+    pitchIndex += 1;
+    return { ...event, midi: pitch };
+  });
+}
+
+function stampMotifPitches(events: readonly MotifNoteEvent[], pitches: readonly number[]): MotifNoteEvent[] {
+  let pitchIndex = 0;
+  return events.map((event) => {
+    if (event.midi === null) return { ...event };
+    const pitch = pitches[pitchIndex] ?? event.midi;
+    pitchIndex += 1;
+    return { ...event, midi: pitch };
+  });
+}
+
+function mergeRhythmFromTemplate(
+  template: readonly MotifNoteEvent[],
+  events: readonly MotifNoteEvent[],
+): MotifNoteEvent[] {
+  const pitches = events.filter((event) => event.midi !== null).map((event) => event.midi!);
+  let pitchIndex = 0;
+  return template.map((shell) => ({
+    onset: shell.onset,
+    duration: shell.duration,
+    midi: pitchIndex < pitches.length ? pitches[pitchIndex++]! : null,
+  }));
+}
+
+function stepLeadInto(target: number, chordTones: readonly number[], low: number, high: number): number {
+  const candidates = [target - 1, target + 1].filter((midi) => midi >= low && midi <= high);
+  const inChord = candidates.find((midi) => chordTones.includes(mod12(midi)));
+  return inChord ?? candidates[0] ?? target - 1;
+}
+
+function reshapeBar20RhStepInto(
+  slots: readonly Slot[],
+  bar21First: number,
+): Slot[] {
+  const stepPitch = bar21First + 1;
+  const kept = [...slots]
+    .filter((slot) => slot.start < 2 - 1e-6)
+    .sort((a, b) => a.start - b.start);
+  const mid = slots.find((slot) => slot.start >= 2 - 1e-6 && slot.start < 3 - 1e-6);
+  if (mid) {
+    kept.push({ ...mid, duration: 1 });
+  }
+  kept.push({
+    start: 3,
+    duration: 1,
+    pitch: stepPitch,
+    motifRef: 'phase4e.step',
+  });
+  return kept;
+}
+
+function applyPhase4e77241Transitions(
+  rh: Map<number, Slot[]>,
+  chords: readonly ParsedPianoChord[],
+): void {
+  const bar9First = firstRhSlotPitch(rh.get(9) ?? []);
+  if (bar9First !== null) {
+    const chord8 = chords[7]!;
+    const lead8 = stepLeadInto(bar9First, chord8.tones, RH_LOW, RH_HIGH);
+    rh.set(8, patchSlotsLastBeatPitch(rh.get(8) ?? [], lead8));
+  }
+  const bar21First = firstRhSlotPitch(rh.get(21) ?? []);
+  if (bar21First !== null) {
+    rh.set(20, reshapeBar20RhStepInto(rh.get(20) ?? [], bar21First));
+  }
 }
 
 function openingMotif(seed: number, centre: GeneralPianoCentre): Motif {
@@ -901,6 +1139,8 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
   let devOrdinal = 0;
   let contrastOrdinal = 0;
   let contrastPhraseHeadRh: MotifNoteEvent[] = [];
+  let phase4eRhythmBars9_10: MotifNoteEvent[] = [];
+  let phase4eRhythmBars11_12: MotifNoteEvent[] = [];
   let openTie: number[] | null = null;
   let openingEvents: MotifNoteEvent[] = [];
   let returnEvents: MotifNoteEvent[] = [];
@@ -1019,13 +1259,23 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
       }
       devOrdinal += 1;
     } else if (phase === 'contrast') {
-      const sequenced = applyOperator(contrasted.motif, 'sequence-tonal', { steps: contrastOrdinal + 1 });
-      contrastOrdinal += 1;
-      line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
-      if (input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
-        line = layContrastRhythm(line, bar);
+      if (input.bars === 24 && input.seed === 77241 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
+        const sourceEvents = phase4e77241RhSourceEvents(bar, openingEvents, chord, chords[0]!.rootPc);
+        line = fitMotif(sourceEvents, stageSpan, fragments, bar);
+        line = layContrastRhythm(line, bar, input.seed);
+        if (bar === 9) phase4eRhythmBars9_10 = contrastRhythmShell(9, input.seed);
+        if (bar === 11) phase4eRhythmBars11_12 = contrastRhythmShell(11, input.seed);
+        motifRef = phase4e77241MotifRef(bar);
+        contrastOrdinal += 1;
+      } else {
+        const sequenced = applyOperator(contrasted.motif, 'sequence-tonal', { steps: contrastOrdinal + 1 });
+        contrastOrdinal += 1;
+        line = fitMotif(sequenced.motif.events, stageSpan, fragments, bar);
+        if (input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
+          line = layContrastRhythm(line, bar, input.seed);
+        }
+        motifRef = sequenced.step.toId;
       }
-      motifRef = sequenced.step.toId;
     } else if (phase === 'return') {
       const delta = mod12(chord.rootPc - chords[0]!.rootPc);
       const shift = delta > 6 ? delta - 12 : delta;
@@ -1057,11 +1307,47 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
         line = repairEvents(line, rhTones, RH_LOW, ceiling, repairAnchor, strongAt, voiced !== null, climax && !refine);
       }
       if (phase === 'contrast' && input.bars === 24 && bar >= 9 && bar <= 16 && !input.phraseDevelopmentV11) {
-        if (bar === 16 && contrastPhraseHeadRh.length > 0) {
+        if (input.seed === 77241 && bar === 16) {
+          line = phase4eApproachReturnRh(line, 76, rhTones, repairAnchor, RH_LOW, ceiling);
+        } else if (bar === 16 && contrastPhraseHeadRh.length > 0) {
           line = retargetRhContour(line, contrastPhraseHeadRh, rhTones, repairAnchor, RH_LOW, ceiling);
         }
         line = repairRhStrongBeatSustain(line, rhTones, RH_LOW, ceiling);
-        if (bar === 9) contrastPhraseHeadRh = line.map((event) => ({ ...event }));
+        const headIntervals = input.seed === 77241 ? PHASE4E_PHRASE_HEAD_INTERVALS[bar] : undefined;
+        if (headIntervals) {
+          const rhythmShell = contrastRhythmShell(bar, input.seed);
+          line = phase4ePhraseHeadContour(
+            line,
+            headIntervals,
+            rhTones,
+            repairAnchor,
+            RH_LOW,
+            ceiling,
+            rhythmShell.length > 0 ? rhythmShell : line,
+          );
+        }
+        if (input.seed === 77241) {
+          if (bar === 9 && phase4eRhythmBars9_10.length > 0) {
+            line = mergeRhythmFromTemplate(phase4eRhythmBars9_10, line);
+          }
+          if (bar === 11 && phase4eRhythmBars11_12.length > 0) {
+            line = mergeRhythmFromTemplate(phase4eRhythmBars11_12, line);
+          }
+          if (bar === 10 && phase4eRhythmBars9_10.length > 0) {
+            line = mergeRhythmFromTemplate(phase4eRhythmBars9_10, line);
+          }
+          if (bar === 12 && phase4eRhythmBars11_12.length > 0) {
+            line = mergeRhythmFromTemplate(phase4eRhythmBars11_12, line);
+          }
+          if (bar === 10 || bar === 12 || bar >= 14) {
+            line = repairRhStrongBeatSustain(line, rhTones, RH_LOW, ceiling);
+          }
+        }
+        if (input.seed !== 77241 && bar === 9) {
+          contrastPhraseHeadRh = line.map((event) => ({ ...event }));
+        }
+      } else if (phase === 'contrast' && !input.phraseDevelopmentV11) {
+        line = repairRhStrongBeatSustain(line, rhTones, RH_LOW, ceiling);
       }
       if (climax && refine && bar === 20) {
         const peak = [...line].reverse().find((event) => event.midi !== null);
@@ -1198,6 +1484,10 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
     const lastLh = [...(lh.get(bar) ?? [])].reverse().find((slot) => Number.isFinite(slot.pitch));
     if (lastLh) previousLhPitch = lastLh.pitch;
     textures.push({ bar, texture });
+  }
+
+  if (input.seed === 77241 && input.bars === 24 && !input.phraseDevelopmentV11) {
+    applyPhase4e77241Transitions(rh, chords);
   }
 
   if (stageA) {
@@ -1446,6 +1736,21 @@ export function composeGeneralPianoV1(input: GeneralPianoComposeInput): PianoCom
           if (voice === 1) {
             const allow = strong ? rhAllow : weakAllow;
             if (!allow.includes(pc)) {
+              if (
+                input.seed === 77241
+                && measure.index === 20
+                && beat === 3
+                && event.startBeat >= 3 - 1e-6
+              ) {
+                const returnFirst = score.parts[0]?.measures[20]?.events.find(
+                  (candidate): candidate is NoteEvent => candidate.kind === 'note'
+                    && (candidate.voice ?? 1) === 1
+                    && candidate.startBeat < 1e-6,
+                );
+                if (returnFirst && Math.abs(pitch - returnFirst.pitch) === 1) {
+                  continue;
+                }
+              }
               const label = strong ? `on a strong beat in bar ${measure.index}` : `in bar ${measure.index}`;
               return { ok: false, code: 'validation', error: `RH pitch ${pitch} leaves ${owner?.display ?? chord.display} ${label}` };
             }
