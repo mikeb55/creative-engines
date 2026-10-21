@@ -1,3 +1,5 @@
+import { noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
+
 /**
  * Canonical MusicXML 3.1 partwise <note> serialization for Composer OS ScoreModel export.
  *
@@ -122,6 +124,118 @@ export function midiToPitch(
     }
   }
   return { step, alter, octave };
+}
+
+/** True when the chord root is spelled with a flat (Db, Eb, Ab, …). */
+export function chordSymbolPrefersFlats(symbol: string): boolean {
+  const root = symbol.trim().match(/^([A-G](?:#|b|♭|#)?)/i)?.[1] ?? '';
+  return /b|♭/i.test(root);
+}
+
+const HARMONY_QUALITY: Record<string, readonly number[]> = {
+  '': [0, 4, 7],
+  maj: [0, 4, 7],
+  maj7: [0, 4, 7, 11],
+  'maj7(#11)': [0, 4, 6, 7, 11],
+  m7: [0, 3, 7, 10],
+  min7: [0, 3, 7, 10],
+  '7': [0, 4, 7, 10],
+  '7sus4': [0, 5, 7, 10],
+  sus4: [0, 5, 7],
+  m: [0, 3, 7],
+  min: [0, 3, 7],
+};
+
+function chordTonesForReleaseSymbol(symbol: string): { rootPc: number; tones: number[] } | null {
+  const raw = symbol.trim();
+  if (!raw || /\s/.test(raw)) return null;
+  let body = raw;
+  let bassName: string | null = null;
+  const slash = raw.lastIndexOf('/');
+  if (slash > 0) {
+    body = raw.slice(0, slash);
+    bassName = raw.slice(slash + 1);
+    if (!/^[A-G](?:#|b)?$/i.test(bassName)) return null;
+  }
+  const match = body.match(/^([A-G](?:#|b)?)(.*)$/i);
+  if (!match?.[1] || match[2] == null) return null;
+  const rootName = match[1][0]!.toUpperCase() + match[1].slice(1);
+  const quality = match[2];
+  const intervals = HARMONY_QUALITY[quality];
+  if (!intervals) return null;
+  const rootPc = noteNameToPitchClass(rootName);
+  const bassPc = bassName ? noteNameToPitchClass(bassName[0]!.toUpperCase() + bassName.slice(1)) : rootPc;
+  if (rootPc === undefined || bassPc === undefined) return null;
+  const tones = [...new Set([...intervals.map((i) => mod12(rootPc + i)), bassPc])];
+  return { rootPc, tones };
+}
+
+/** Pitch-class spellings for chord tones; flat roots favour flats; `(#n)` extensions keep sharps. */
+export function buildHarmonicContextSpellingMap(symbol: string): Readonly<Record<number, string>> {
+  const trimmed = symbol.trim();
+  const ch = chordTonesForReleaseSymbol(trimmed);
+  if (!ch) return {};
+  const preferFlats = chordSymbolPrefersFlats(trimmed);
+  const sharpPcFromAlter = new Set<number>();
+  const extSemi: Record<number, number> = { 9: 2, 11: 6, 13: 9 };
+  for (const m of trimmed.matchAll(/#\s*(\d+)/g)) {
+    const deg = parseInt(m[1]!, 10);
+    const semi = extSemi[deg];
+    if (semi != null) sharpPcFromAlter.add(mod12(ch.rootPc + semi));
+  }
+  for (const m of trimmed.matchAll(/([A-G])#/g)) {
+    const letter = m[1]!.toUpperCase();
+    const pc = NATURAL_PC[letter];
+    if (pc != null) sharpPcFromAlter.add(mod12(pc + 1));
+  }
+
+  const map: Record<number, string> = {};
+  for (const pc of ch.tones) {
+    const norm = mod12(pc);
+    if (map[norm] !== undefined) continue;
+    const useFlats = preferFlats && !sharpPcFromAlter.has(norm);
+    const parts = midiToPitch(60 + norm, useFlats);
+    map[norm] = `${parts.step}${accidentalSuffix(parts.alter)}`;
+  }
+  return map;
+}
+
+function mod12(n: number): number {
+  return ((n % 12) + 12) % 12;
+}
+
+/** Per-bar harmonic spelling maps (1-based bar → pitch-class → spelling token). */
+export function buildBarHarmonicSpellingMaps(
+  symbolForBar: (bar: number) => string,
+  totalBars: number
+): Record<number, Readonly<Record<number, string>>> {
+  const out: Record<number, Readonly<Record<number, string>>> = {};
+  for (let bar = 1; bar <= totalBars; bar += 1) {
+    out[bar] = buildHarmonicContextSpellingMap(symbolForBar(bar));
+  }
+  return out;
+}
+
+/** Apply bar-specific spelling maps inside each `<part>`. Sounding MIDI unchanged. */
+export function applyBarContextPitchSpellings(
+  xml: string,
+  spellingByBar: Readonly<Record<number, Readonly<Record<number, string>>>>
+): string {
+  return xml.replace(
+    /<part id="([^"]+)">([\s\S]*?)(?=<part id=|<\/score-partwise>)/g,
+    (_full, _id: string, body: string) => {
+      const rewritten = body.replace(
+        /<measure number="(\d+)">([\s\S]*?)(?=<measure number=|<\/part>)/g,
+        (mFull, num: string, inner: string) => {
+          const bar = parseInt(num, 10);
+          const map = spellingByBar[bar];
+          if (!map || Object.keys(map).length === 0) return mFull;
+          return `<measure number="${num}">${applyContextPitchSpellings(inner, map)}`;
+        }
+      );
+      return `<part id="${_id}">${rewritten}`;
+    }
+  );
 }
 
 /** Rewrite `<pitch>` spellings for pitch classes present in `spellingByPc`. Other pitches stay as exported. */

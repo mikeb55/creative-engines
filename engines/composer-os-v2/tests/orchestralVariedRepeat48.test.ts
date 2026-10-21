@@ -178,7 +178,7 @@ function orchestrate48(pianoXml: string) {
         symphonic: {
           allocation: 'phase-2',
           families: { harp: 'open' },
-          orchestralDialogue: ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48,
+          ...({ orchestralDialogue: ORCHESTRAL_DIALOGUE_VARIED_REPEAT_48 } as Record<string, string>),
         },
       },
     },
