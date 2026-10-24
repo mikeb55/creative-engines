@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   countBars,
+  expectedBarTicks,
   motifIntact,
   parseMusicXml,
   runDualPartTransform,
@@ -17,16 +18,23 @@ import {
   validateDualPartXml,
 } from '../core/duo/wwhDualPartTransform';
 
-const FIXTURE = path.resolve(
-  __dirname,
-  '../resources/test-fixtures/wwh-dual-part/duo-8bar-fixture.musicxml',
-);
+const FIXTURE_DIR = path.resolve(__dirname, '../resources/test-fixtures/wwh-dual-part');
+const FIXTURE = path.join(FIXTURE_DIR, 'duo-8bar-fixture.musicxml');
+const FIXTURE_78 = path.join(FIXTURE_DIR, 'duo-7-8-only-fixture.musicxml');
+const FIXTURE_MIXED = path.join(FIXTURE_DIR, 'duo-mixed-metre-fixture.musicxml');
+
+const SOFT_RANGES = {
+  guitarMidi: { min: 40, max: 76 },
+  bassMidi: { min: 28, max: 55 },
+};
 
 describe('wwhDualPartTransform', () => {
   let outDir: string;
 
   beforeAll(() => {
     expect(fs.existsSync(FIXTURE)).toBe(true);
+    expect(fs.existsSync(FIXTURE_78)).toBe(true);
+    expect(fs.existsSync(FIXTURE_MIXED)).toBe(true);
   });
 
   beforeEach(() => {
@@ -101,5 +109,59 @@ describe('wwhDualPartTransform', () => {
     expect(result.motifOk).toBe(true);
     expect(result.validation).toEqual([]);
     expect(sha256File(FIXTURE)).toBe(before);
+  });
+
+  test('expectedBarTicks preserves 4/4 and supports 7/8', () => {
+    expect(expectedBarTicks(4, 4, 4)).toBe(16);
+    expect(expectedBarTicks(4, 7, 8)).toBe(14);
+    expect(expectedBarTicks(8, 7, 8)).toBe(28);
+  });
+
+  test('validateDualPartXml accepts 4/4 fixture durations', () => {
+    const xml = fs.readFileSync(FIXTURE, 'utf8');
+    expect(
+      validateDualPartXml('4/4', xml, {
+        expectedBars: 8,
+        ...SOFT_RANGES,
+        minHarmonyCount: 4,
+      }),
+    ).toEqual([]);
+  });
+
+  test('validateDualPartXml accepts pure 7/8 durations', () => {
+    const xml = fs.readFileSync(FIXTURE_78, 'utf8');
+    expect(countBars(xml)).toBe(2);
+    expect(
+      validateDualPartXml('7/8', xml, {
+        expectedBars: 2,
+        ...SOFT_RANGES,
+        minHarmonyCount: 2,
+      }),
+    ).toEqual([]);
+  });
+
+  test('validateDualPartXml accepts 4/4 → 7/8 → 4/4 metre changes', () => {
+    const xml = fs.readFileSync(FIXTURE_MIXED, 'utf8');
+    expect(countBars(xml)).toBe(3);
+    expect(
+      validateDualPartXml('mixed', xml, {
+        expectedBars: 3,
+        ...SOFT_RANGES,
+        minHarmonyCount: 3,
+      }),
+    ).toEqual([]);
+  });
+
+  test('validateDualPartXml flags underfilled 7/8 bar', () => {
+    const xml = fs.readFileSync(FIXTURE_78, 'utf8').replace(
+      /(<measure number="2">[\s\S]*?<duration>)2(<\/duration>[\s\S]*?<\/note><\/measure>)/,
+      '$11$2',
+    );
+    const issues = validateDualPartXml('bad-7/8', xml, {
+      expectedBars: 2,
+      ...SOFT_RANGES,
+      minHarmonyCount: 1,
+    });
+    expect(issues.some((i) => /bar 2 ticks .* != 14 \(7\/8\)/.test(i))).toBe(true);
   });
 });

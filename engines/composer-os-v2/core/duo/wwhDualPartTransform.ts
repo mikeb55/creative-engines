@@ -509,6 +509,28 @@ export function transformHarmonic(
   };
 }
 
+/**
+ * MusicXML divisions are per quarter note. Full-bar ticks for the time
+ * signature in force: divisions × beats × 4 / beat-type.
+ * Preserves prior 4/4 behaviour (expected = 4 × divisions).
+ */
+export function expectedBarTicks(divisions: number, beats: number, beatType: number): number {
+  if (divisions <= 0 || beats <= 0 || beatType <= 0) return NaN;
+  const raw = (divisions * beats * 4) / beatType;
+  return Number.isInteger(raw) ? raw : NaN;
+}
+
+function statedTimeFromMeasure(measure: Element): { beats: number; beatType: number } | null {
+  for (const attributes of elementChildren(measure, 'attributes')) {
+    const time = elementChildren(attributes, 'time')[0];
+    if (!time) continue;
+    const beats = Number(textOf(time, 'beats'));
+    const beatType = Number(textOf(time, 'beat-type'));
+    if (beats > 0 && beatType > 0) return { beats, beatType };
+  }
+  return null;
+}
+
 export function validateDualPartXml(
   label: string,
   xml: string,
@@ -530,10 +552,17 @@ export function validateDualPartXml(
   }
   let harm = 0;
   let divisions = 4;
+  let beats = 4;
+  let beatType = 4;
   for (const m of gtr) {
     const bar = barNumber(m);
     const attrDiv = textOf(elementChildren(m, 'attributes')[0], 'divisions');
     if (attrDiv) divisions = Number(attrDiv);
+    const stated = statedTimeFromMeasure(m);
+    if (stated) {
+      beats = stated.beats;
+      beatType = stated.beatType;
+    }
     let ticks = 0;
     for (const n of elementChildren(m, 'note')) {
       if (elementChildren(n, 'chord').length) continue;
@@ -544,8 +573,16 @@ export function validateDualPartXml(
       }
     }
     if (!m.getElementsByTagName('backup').length && divisions > 0) {
-      const expected = 4 * divisions;
-      if (ticks !== expected) issues.push(`${label}: guitar bar ${bar} ticks ${ticks} != ${expected}`);
+      const expected = expectedBarTicks(divisions, beats, beatType);
+      if (!Number.isFinite(expected)) {
+        issues.push(
+          `${label}: guitar bar ${bar} cannot derive ticks for ${beats}/${beatType} at divisions ${divisions}`,
+        );
+      } else if (ticks !== expected) {
+        issues.push(
+          `${label}: guitar bar ${bar} ticks ${ticks} != ${expected} (${beats}/${beatType})`,
+        );
+      }
     }
     if (elementChildren(m, 'harmony').length) harm += 1;
   }
