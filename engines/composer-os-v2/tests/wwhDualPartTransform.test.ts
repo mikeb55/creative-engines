@@ -10,12 +10,15 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   countBars,
+  deliberatelyMutateGuitarPitch,
+  deliberatelyMutateHarmonyRoot,
   expectedBarTicks,
   motifIntact,
   parseMusicXml,
   runDualPartTransform,
   sha256File,
   validateDualPartXml,
+  verifyBassOnlyLocks,
 } from '../core/duo/wwhDualPartTransform';
 
 const FIXTURE_DIR = path.resolve(__dirname, '../resources/test-fixtures/wwh-dual-part');
@@ -163,5 +166,74 @@ describe('wwhDualPartTransform', () => {
       minHarmonyCount: 1,
     });
     expect(issues.some((i) => /bar 2 ticks .* != 14 \(7\/8\)/.test(i))).toBe(true);
+  });
+
+  test('bassOnly preserves guitar + harmony and rejects deliberate mutations', () => {
+    const sourceXml = fs.readFileSync(FIXTURE, 'utf8');
+    const before = sha256File(FIXTURE);
+    const result = runDualPartTransform({
+      sourcePath: FIXTURE,
+      outDir,
+      mode: 'bassOnly',
+      lockGuitar: true,
+      preserveHarmony: true,
+      bassOnlyProfiles: ['lyrical', 'contrapuntal', 'rhythmic'],
+      title: 'Fixture Duo',
+      stem: 'fixture-8bar',
+      seed: 11011,
+      minHarmonyCount: 4,
+    });
+
+    expect(result.barCount).toBe(8);
+    expect(result.outputs).toHaveLength(3);
+    expect(result.motifOk).toBe(true);
+    expect(result.validation).toEqual([]);
+    expect(sha256File(FIXTURE)).toBe(before);
+
+    for (const o of result.outputs) {
+      expect(
+        verifyBassOnlyLocks(sourceXml, o.xml, {
+          lockGuitar: true,
+          preserveHarmony: true,
+        }),
+      ).toEqual([]);
+      expect(
+        validateDualPartXml(o.id, o.xml, {
+          expectedBars: 8,
+          ...SOFT_RANGES,
+          minHarmonyCount: 4,
+        }),
+      ).toEqual([]);
+    }
+
+    const bodies = result.outputs.map((o) => o.xml.replace(/\s+/g, ' '));
+    expect(bodies[0]).not.toEqual(bodies[1]);
+    expect(bodies[1]).not.toEqual(bodies[2]);
+
+    const mutatedGuitar = deliberatelyMutateGuitarPitch(result.outputs[0]!.xml, 3, 2);
+    const guitarIssues = verifyBassOnlyLocks(sourceXml, mutatedGuitar, {
+      lockGuitar: true,
+      preserveHarmony: true,
+    });
+    expect(guitarIssues.some((i) => /lockGuitar/.test(i))).toBe(true);
+
+    const mutatedHarmony = deliberatelyMutateHarmonyRoot(result.outputs[0]!.xml, 1);
+    const harmonyIssues = verifyBassOnlyLocks(sourceXml, mutatedHarmony, {
+      lockGuitar: true,
+      preserveHarmony: true,
+    });
+    expect(harmonyIssues.some((i) => /preserveHarmony/.test(i))).toBe(true);
+  });
+
+  test('bassOnly refuses to run without locks', () => {
+    expect(() =>
+      runDualPartTransform({
+        sourcePath: FIXTURE,
+        outDir,
+        mode: 'bassOnly',
+        lockGuitar: false,
+        preserveHarmony: true,
+      }),
+    ).toThrow(/lockGuitar/);
   });
 });

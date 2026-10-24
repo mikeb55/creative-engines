@@ -1,6 +1,7 @@
 /**
  * WWH dual-part MusicXML transform — guitar + upright bass.
  * Motif-preserving profiles: harmonic | contrapuntal | rhythmic.
+ * DTE V1.1 bass-only mode: lyrical | contrapuntal | rhythmic with lockGuitar + preserveHarmony.
  * No hard-coded score paths. Callers pass source/out/options.
  */
 
@@ -10,16 +11,32 @@ import path from 'node:path';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { composeBhlGuitar } from '../bhl/bhlCompose';
 import type { BhlWorldId } from '../bhl/bhlWorlds';
+import {
+  transformBassOnly,
+  verifyBassOnlyLocks,
+  type BassOnlyProfile,
+} from './wwhBassOnlyTransform';
 
 export type DualPartProfile = 'harmonic' | 'contrapuntal' | 'rhythmic';
+export type DualPartMode = 'dual' | 'bassOnly';
+export type { BassOnlyProfile };
 
 export type BarRange = { from: number; to: number };
 
 export type DualPartTransformOptions = {
   sourcePath: string;
   outDir: string;
+  /** Default dual-part profiles. Ignored when mode is bassOnly. */
   profiles?: DualPartProfile[];
-  /** Guitar bars left pitch-identical. Default: [1, 2]. */
+  /** bassOnly profiles (default: lyrical, contrapuntal, rhythmic). */
+  bassOnlyProfiles?: BassOnlyProfile[];
+  /** dual (default) rewrites guitar+bass; bassOnly rewrites bass only. */
+  mode?: DualPartMode;
+  /** Required true when mode=bassOnly. */
+  lockGuitar?: boolean;
+  /** Required true when mode=bassOnly. */
+  preserveHarmony?: boolean;
+  /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
   /** Optional SHA-256 gate on source. */
   expectedSha256?: string;
@@ -42,7 +59,7 @@ export type DualPartTransformOptions = {
 
 export type DualPartOutput = {
   id: string;
-  profile: DualPartProfile;
+  profile: DualPartProfile | BassOnlyProfile;
   file: string;
   path: string;
   xml: string;
@@ -635,7 +652,7 @@ export function parseMotifBars(raw: string | undefined, fallback: number[]): num
 }
 
 /**
- * Run one or more dual-part profiles and write MusicXML to outDir.
+ * Run one or more dual-part (or bass-only) profiles and write MusicXML to outDir.
  * Does not modify the source file.
  */
 export function runDualPartTransform(options: DualPartTransformOptions): DualPartTransformResult {
@@ -652,9 +669,7 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   const barCount = countBars(sourceXml);
   const form = defaultFormWindows(barCount);
   const motifBars = new Set(options.motifBars?.length ? options.motifBars : [1, 2]);
-  const profiles = options.profiles?.length
-    ? options.profiles
-    : (['harmonic', 'contrapuntal', 'rhythmic'] as DualPartProfile[]);
+  const mode: DualPartMode = options.mode ?? 'dual';
   const title = options.title ?? 'WWH Duo';
   const stem = options.stem ?? path.basename(sourcePath, path.extname(sourcePath));
   const guitarMidi = options.guitarMidi ?? DEFAULT_GUITAR;
@@ -669,11 +684,104 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   const seed = options.seed ?? 24024;
   const bhlWorld = options.bhlWorld ?? 'F';
 
+  if (mode === 'bassOnly') {
+    if (options.lockGuitar !== true || options.preserveHarmony !== true) {
+      throw new Error('bassOnly mode requires lockGuitar=true and preserveHarmony=true');
+    }
+  }
+
   const outDir = path.resolve(options.outDir);
   fs.mkdirSync(outDir, { recursive: true });
 
   const outputs: DualPartOutput[] = [];
   const validation: string[] = [];
+
+  if (mode === 'bassOnly') {
+    const bassProfiles: BassOnlyProfile[] = options.bassOnlyProfiles?.length
+      ? options.bassOnlyProfiles
+      : ['lyrical', 'contrapuntal', 'rhythmic'];
+    const meta: Record<
+      BassOnlyProfile,
+      { id: string; filePrefix: string; label: string; note: string }
+    > = {
+      lyrical: {
+        id: 'A-Lyrical',
+        filePrefix: 'A-Lyrical',
+        label: 'Lyrical Counterpoint',
+        note: 'Bass-only lyrical counterpoint; guitar + harmony locked.',
+      },
+      contrapuntal: {
+        id: 'B-Contrapuntal',
+        filePrefix: 'B-Contrapuntal',
+        label: 'Contrapuntal Dialogue',
+        note: 'Bass-only contrapuntal dialogue; guitar + harmony locked.',
+      },
+      rhythmic: {
+        id: 'C-Rhythmic',
+        filePrefix: 'C-Rhythmic',
+        label: 'Rhythmic Freedom',
+        note: 'Bass-only rhythmic freedom; guitar + harmony locked.',
+      },
+    };
+
+    for (const profile of bassProfiles) {
+      const m = meta[profile];
+      const xml = transformBassOnly(sourceXml, {
+        profile,
+        title,
+        movement: `${title} — ${m.label}`,
+        bassMidi,
+        seed: seed + (profile === 'lyrical' ? 0 : profile === 'contrapuntal' ? 17 : 41),
+        lockGuitar: true,
+        preserveHarmony: true,
+      });
+      const lockIssues = verifyBassOnlyLocks(sourceXml, xml, {
+        lockGuitar: true,
+        preserveHarmony: true,
+      });
+      for (const issue of lockIssues) validation.push(`${m.id}: ${issue}`);
+      const issues = validateDualPartXml(m.id, xml, {
+        expectedBars: barCount,
+        guitarMidi,
+        bassMidi,
+        minHarmonyCount,
+      });
+      validation.push(...issues);
+
+      const file = `${m.filePrefix}-${stem}.musicxml`;
+      const outPath = path.join(outDir, file);
+      fs.writeFileSync(outPath, xml, 'utf8');
+      outputs.push({
+        id: m.id,
+        profile,
+        file,
+        path: outPath,
+        xml,
+        note: m.note,
+        sha256: sha256Text(xml),
+      });
+    }
+
+    return {
+      sourcePath,
+      sourceSha256,
+      barCount,
+      outDir,
+      outputs,
+      validation,
+      motifOk: outputs.every(
+        (o) =>
+          verifyBassOnlyLocks(sourceXml, o.xml, {
+            lockGuitar: true,
+            preserveHarmony: true,
+          }).length === 0,
+      ),
+    };
+  }
+
+  const profiles = options.profiles?.length
+    ? options.profiles
+    : (['harmonic', 'contrapuntal', 'rhythmic'] as DualPartProfile[]);
 
   for (const profile of profiles) {
     let xml: string;
@@ -764,6 +872,10 @@ export function parseCliArgs(argv: string[]): {
   source?: string;
   out?: string;
   profiles?: DualPartProfile[];
+  bassOnlyProfiles?: BassOnlyProfile[];
+  mode?: DualPartMode;
+  lockGuitar?: boolean;
+  preserveHarmony?: boolean;
   motifBars?: number[];
   expectedSha?: string;
   title?: string;
@@ -787,11 +899,26 @@ export function parseCliArgs(argv: string[]): {
   const profiles = profilesRaw
     ? (profilesRaw.split(',').map((s) => s.trim()) as DualPartProfile[])
     : undefined;
+  const bassProfilesRaw = arg('bass-profiles');
+  const bassOnlyProfiles = bassProfilesRaw
+    ? (bassProfilesRaw.split(',').map((s) => s.trim()) as BassOnlyProfile[])
+    : undefined;
+  const modeRaw = arg('mode');
+  const mode =
+    modeRaw === 'bassOnly' || modeRaw === 'dual' ? (modeRaw as DualPartMode) : undefined;
 
   return {
     source: arg('source'),
     out: arg('out'),
     profiles,
+    bassOnlyProfiles,
+    mode,
+    lockGuitar: has('lock-guitar') ? true : has('no-lock-guitar') ? false : undefined,
+    preserveHarmony: has('preserve-harmony')
+      ? true
+      : has('no-preserve-harmony')
+        ? false
+        : undefined,
     motifBars: parseMotifBars(arg('motif-bars'), []),
     expectedSha: arg('expected-sha'),
     title: arg('title'),
@@ -804,3 +931,10 @@ export function parseCliArgs(argv: string[]): {
     phraseAccentBars: parseRange(arg('phrase-accent-bars')),
   };
 }
+
+export {
+  deliberatelyMutateGuitarPitch,
+  deliberatelyMutateHarmonyRoot,
+  transformBassOnly,
+  verifyBassOnlyLocks,
+} from './wwhBassOnlyTransform';

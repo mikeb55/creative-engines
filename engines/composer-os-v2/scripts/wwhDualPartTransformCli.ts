@@ -8,6 +8,10 @@
  *     [--motif-bars 1,2] [--expected-sha <hex>] [--title "Piece"] \
  *     [--seed 24024] [--bhl-world F]
  *
+ * Bass-only (DTE V1.1):
+ *   ... --mode bassOnly --lock-guitar --preserve-harmony \
+ *       [--bass-profiles lyrical,contrapuntal,rhythmic]
+ *
  * Does not modify the source. No GUI.
  */
 
@@ -19,12 +23,16 @@ const USAGE = `Usage:
     --source <duo.musicxml> --out <outdir> [options]
 
 Options:
-  --profiles harmonic,contrapuntal,rhythmic   (default: all three)
+  --mode dual|bassOnly                        (default: dual)
+  --profiles harmonic,contrapuntal,rhythmic   dual mode (default: all three)
+  --bass-profiles lyrical,contrapuntal,rhythmic  bassOnly mode
+  --lock-guitar                               required for bassOnly
+  --preserve-harmony                          required for bassOnly
   --motif-bars 1,2[,33,34]                    guitar bars left identical (default: 1,2)
   --expected-sha <hex>                        optional source integrity gate
   --title <name>                              work title on candidates
   --stem <name>                               output filename stem
-  --seed <n>                                  BHL seed for harmonic profile
+  --seed <n>                                  BHL / bass-only seed
   --bhl-world F                               BHL world for harmonic profile
   --exchange-bars FROM-TO                     contrapuntal exchange window
   --displace-bars FROM-TO                     rhythmic displace window
@@ -42,7 +50,11 @@ function main(): void {
   const result = runDualPartTransform({
     sourcePath: args.source,
     outDir: args.out,
+    mode: args.mode,
     profiles: args.profiles,
+    bassOnlyProfiles: args.bassOnlyProfiles,
+    lockGuitar: args.lockGuitar,
+    preserveHarmony: args.preserveHarmony,
     motifBars: args.motifBars?.length ? args.motifBars : undefined,
     expectedSha256: args.expectedSha,
     title: args.title,
