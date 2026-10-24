@@ -26,6 +26,8 @@ export interface E2PartSpec {
   catalogueInstrumentSound?: string;
   /** Two-staff harp. Does not mark the part as piano. */
   harpGrandStaff?: boolean;
+  /** Two-staff piano. Identity stays piano. */
+  pianoGrandStaff?: boolean;
 }
 
 export interface E2Assignment {
@@ -172,7 +174,7 @@ export function buildE2Score(input: {
 
   const parts: PartModel[] = input.parts.map((part) => {
     const requiredVoices = [...(voicesByPart.get(part.partId) ?? new Set<number>([1]))];
-    if (part.harpGrandStaff) {
+    if (part.harpGrandStaff || part.pianoGrandStaff) {
       if (!requiredVoices.includes(1)) requiredVoices.push(1);
       if (!requiredVoices.includes(3)) requiredVoices.push(3);
     }
@@ -201,6 +203,7 @@ export function buildE2Score(input: {
       scoreInstrumentName: part.name,
       ...(part.catalogueInstrumentSound ? { catalogueInstrumentSound: part.catalogueInstrumentSound } : {}),
       ...(part.harpGrandStaff ? { harpGrandStaff: { kind: 'grand-staff-v1' as const, innerVoiceEnabled: false } } : {}),
+      ...(part.pianoGrandStaff ? { pianoGrandStaff: { kind: 'grand-staff-v1' as const, innerVoiceEnabled: true } } : {}),
     };
   });
 

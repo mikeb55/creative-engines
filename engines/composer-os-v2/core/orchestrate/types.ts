@@ -58,8 +58,9 @@ export interface PianoChamberCorrection {
   /**
    * Absent means chamber. Do not send this field on an existing chamber request.
    * `symphonic` chooses the 31-part roster on the same branch.
+   * `coffee_run_octet` keeps the source piano and writes seven companion parts.
    */
-  ensemble?: 'chamber' | 'symphonic';
+  ensemble?: 'chamber' | 'symphonic' | 'coffee_run_octet';
   /** Read only when `ensemble` is `symphonic`. Omitted settings use the documented limits below. */
   symphonic?: SymphonicOrchestrationSettings;
   phrases?: Array<{ id: string; startBar: number; endBar: number }>;

@@ -117,7 +117,9 @@ function catalogueForName(name: string): InstrumentSpec | null {
   if (/piccolo/i.test(text)) return byId('piccolo');
   if (/flute/i.test(text)) return byId('flute');
   if (/oboe/i.test(text)) return byId('oboe');
+  if (/bass\s*clarinet/i.test(text)) return byId('bass_clarinet_bb');
   if (/clarinet/i.test(text)) return byId('clarinet_bb');
+  if (/contra\s*bassoon|contrabassoon/i.test(text)) return byId('contrabassoon');
   if (/bassoon/i.test(text)) return byId('bassoon');
   if (/trumpet|cornet/i.test(text)) return byId('trumpet_bb');
   if (/trombone/i.test(text)) return byId('trombone');

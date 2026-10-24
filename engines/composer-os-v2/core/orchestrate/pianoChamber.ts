@@ -54,6 +54,24 @@ import {
   type SymphonicPhrasePlan,
 } from './symphonicWriting';
 import {
+  COFFEE_RUN_OCTET_BN1_MAX_NOTES,
+  COFFEE_RUN_OCTET_DB_MAX_NOTES,
+  COFFEE_RUN_OCTET_DIALOGUE_IDS,
+  COFFEE_RUN_OCTET_MARKER_BARS,
+  COFFEE_RUN_OCTET_ORCH_IDS,
+  COFFEE_RUN_OCTET_PART_BAND,
+  buildCoffeeRunOctetDialoguePhrase,
+  coffeeRunOctetCarrierOrder,
+  coffeeRunOctetIsMarkerBar,
+  coffeeRunOctetMarkerDialogueOrder,
+  coffeeRunOctetPhrasePalette,
+  coffeeRunOctetRestGate,
+  resolveCoffeeRunOctetRoster,
+  shapeCoffeeRunOctetCompanion,
+  type CoffeeRunOctetLane,
+  type OctetPianoAnchor,
+} from './coffeeRunOctet';
+import {
   applyDialogueDynamicsVelocities,
   buildOrchestralDialogue77241PartDynamics,
   buildOrchestralDialogueVariedRepeat48PartDynamics,
@@ -742,20 +760,23 @@ function placeRow(
   writtenPitch?: SpelledRegister,
   variableSpans?: ReadonlyArray<{ bar: number; start: ExactQuarter; length: ExactQuarter }>,
   voice = 1,
+  /** Polyphonic source seats (piano) may stack attacks; monophonic parts stay exclusive. */
+  allowPolyphony = false,
 ): void {
   const midi = writtenPitch?.midi ?? row.midi + shift;
   const pitch = writtenPitch ?? spellShift(row.event, midi, shift);
   const pieces = sliceNote(row.onset, row.duration, barLen, variableSpans);
+  const busyKey = allowPolyphony ? `${part.partId}:v${voice}:m${midi}` : part.partId;
   pieces.forEach((piece, pieceIndex) => {
     const written = decompose(piece.duration);
     let cursor = piece.onset;
     written.forEach((duration, durationIndex) => {
       const start = num(cursor);
       const end = start + num(duration);
-      if (busyOverlap(busy, part.partId, start, end)) {
+      if (busyOverlap(busy, busyKey, start, end)) {
         throw new Error(`${part.partId} overlap at ${start}`);
       }
-      occupy(busy, part.partId, start, end);
+      occupy(busy, busyKey, start, end);
       placed.push({
         partId: part.partId,
         onset: cursor,
@@ -772,6 +793,14 @@ function placeRow(
       cursor = qAdd(cursor, duration);
     });
   });
+}
+
+/** Map MusicXML piano staff/voice onto grand-staff export voices (1 RH, 3 LH). */
+function pianoRetainVoice(row: NoteRow): number {
+  if ((row.event.staff ?? '1') === '2') return 3;
+  const voice = Number(row.event.voice);
+  if (Number.isFinite(voice) && voice >= 1) return voice;
+  return 1;
 }
 
 function tryCarrier(parts: readonly ResolvedPart[], ids: readonly string[], midis: number[], busy: Map<string, Array<{ start: number; end: number }>>, spans: Array<{ start: number; end: number }>, avoid: string | null): { part: ResolvedPart; shift: number } | null {
@@ -868,10 +897,16 @@ export function realisePianoChamber(request: OrchestrateRequest):
   const command = request.pianoChamber;
   if (!command) return fail('Piano chamber was not requested.');
   const correction = command.correction ?? {};
-  if (correction.ensemble && correction.ensemble !== 'chamber' && correction.ensemble !== 'symphonic') {
-    return fail('Ensemble must be chamber or symphonic.');
+  if (
+    correction.ensemble
+    && correction.ensemble !== 'chamber'
+    && correction.ensemble !== 'symphonic'
+    && correction.ensemble !== 'coffee_run_octet'
+  ) {
+    return fail('Ensemble must be chamber, symphonic, or coffee_run_octet.');
   }
   const symphonic = correction.ensemble === 'symphonic';
+  const octet = correction.ensemble === 'coffee_run_octet';
   const symphonicSettings = symphonic ? resolveSymphonicSettings(correction.symphonic) : null;
   if (symphonicSettings && 'error' in symphonicSettings) return fail(symphonicSettings.error);
   if (correction.reviewConfirmed !== true) {
@@ -946,12 +981,19 @@ export function realisePianoChamber(request: OrchestrateRequest):
   for (const id of omitted) {
     if (locked.has(id)) return fail(`Locked source event ${id} cannot be omitted. Unlock it first. Locked material was not changed silently.`);
   }
-  const resolved = symphonic ? resolveSymphonicRoster() : resolveTemplate('chamber_orchestra');
-  if (!symphonic && resolved.parts.length !== 10) return fail('The chamber roster did not resolve to ten catalogue instruments.');
+  const resolved = octet
+    ? resolveCoffeeRunOctetRoster()
+    : symphonic
+      ? resolveSymphonicRoster()
+      : resolveTemplate('chamber_orchestra');
+  if (octet && (resolved.omissions.length > 0 || resolved.parts.length !== 8)) {
+    return fail(`The Coffee Run octet roster is incomplete. ${resolved.omissions.map((item) => item.detail).join(' ') || `${resolved.parts.length} parts resolved.`}`);
+  }
+  if (!symphonic && !octet && resolved.parts.length !== 10) return fail('The chamber roster did not resolve to ten catalogue instruments.');
   if (symphonic && (resolved.omissions.length > 0 || resolved.parts.length !== 31)) {
     return fail(`The symphonic roster is incomplete. ${resolved.omissions.map((item) => item.detail).join(' ') || `${resolved.parts.length} parts resolved.`}`);
   }
-  const partBand = symphonic ? SYMPHONIC_PART_BAND : PART_BAND;
+  const partBand = octet ? COFFEE_RUN_OCTET_PART_BAND : symphonic ? SYMPHONIC_PART_BAND : PART_BAND;
   const family = getEnsembleFamilyProfile('chamber_orchestra');
   const sections = phrases.map((phrase, index) => ({
     index,
@@ -1163,6 +1205,264 @@ export function realisePianoChamber(request: OrchestrateRequest):
 
   const bassRows = rows.filter((row) => row.role === 'bass' && !omitted.has(row.event.id));
   if (!phase2) {
+  if (octet) {
+    const piano = resolved.parts.find((part) => part.partId === 'pn');
+    if (!piano) return fail('Coffee Run octet needs a piano seat.');
+    for (const row of rows) {
+      if (omitted.has(row.event.id)) continue;
+      const voice = pianoRetainVoice(row);
+      try {
+        placeRow(placed, busy, row, piano, 0, metre.barLen, phraseOf(phrases, row.event.bar).id, 'source', 'retained', undefined, undefined, variableSpans, voice, true);
+      } catch (error) {
+        return fail(error instanceof Error ? error.message : `Source piano event ${row.event.id} could not be retained.`);
+      }
+      classification.set(row.event.id, {
+        eventId: row.event.id,
+        disposition: 'retained',
+        partId: 'pn',
+        octaveShift: 0,
+        reason: 'Source piano retained unchanged on the octet piano seat.',
+      });
+    }
+    for (const phrase of phrases) foregroundByPhrase.set(phrase.id, 'pn');
+    previousCarrier = 'pn';
+    openingCarrierRef.id = 'pn';
+
+    // Companion dialogue: short melodic phrases + overlapping exchanges.
+    // Piano stays source-complete; companions remain non-doubling / conflict-checked.
+    const coverage = new Map<string, number>(COFFEE_RUN_OCTET_ORCH_IDS.map((id) => [id, 0]));
+    const pianoAnchors: OctetPianoAnchor[] = rows
+      .filter((row) => !omitted.has(row.event.id))
+      .map((row) => ({
+        midi: row.midi,
+        onset: num(row.onset),
+        end: num(row.onset) + num(row.duration),
+      }));
+
+    const canSeat = (partId: string): boolean => {
+      if (partId === 'bn1' && (coverage.get('bn1') ?? 0) >= COFFEE_RUN_OCTET_BN1_MAX_NOTES) return false;
+      if (partId === 'db' && (coverage.get('db') ?? 0) >= COFFEE_RUN_OCTET_DB_MAX_NOTES) return false;
+      return true;
+    };
+
+    const commitShaped = (
+      shaped: { midi: number; onset: number; duration: number },
+      part: ResolvedPart,
+      row: NoteRow,
+      phrase: { id: string },
+      lane: string,
+      tag: string,
+    ): boolean => {
+      if (busyOverlap(busy, part.partId, shaped.onset, shaped.onset + shaped.duration)) return false;
+      const fake: NoteRow = {
+        record: row.record,
+        event: { ...row.event, id: `${phrase.id}-octet-${lane}-${part.partId}-${tag}-${row.event.id}`, written: null },
+        onset: q(Math.round(shaped.onset * 480), 480),
+        duration: q(Math.round(shaped.duration * 480), 480),
+        midi: shaped.midi,
+        role: 'countermelody',
+        reason: 'octet-response',
+        confidence: 'medium',
+      };
+      try {
+        placeRow(
+          placed,
+          busy,
+          fake,
+          part,
+          0,
+          metre.barLen,
+          phrase.id,
+          'derived',
+          'transformed',
+          `octet-${lane}`,
+          undefined,
+          variableSpans,
+          part.partId === 'hp' && shaped.midi < 60 ? 3 : 1,
+        );
+      } catch {
+        return false;
+      }
+      coverage.set(part.partId, (coverage.get(part.partId) ?? 0) + 1);
+      derivedEvents.push({
+        partId: part.partId,
+        lineageId: `${phrase.id}.octet-${lane}.${tag}.${row.event.id}`,
+        ops: [`octet-${lane}`, tag],
+        events: [{ sounding: shaped.midi, duration: shaped.duration, onset: shaped.onset }],
+      });
+      return true;
+    };
+
+    const placeCompanionResponse = (
+      row: NoteRow,
+      ids: readonly string[],
+      phrase: { id: string; startBar: number; endBar: number; kind: 'statement' | 'development' | 'return' },
+      phraseIndex: number,
+      lane: CoffeeRunOctetLane,
+    ): boolean => {
+      const bounds = phraseBounds(phrase);
+      const sonorityPcs = [...new Set(
+        rows
+          .filter((item) => item.event.bar >= phrase.startBar && item.event.bar <= phrase.endBar)
+          .map((item) => pcOf(item.midi)),
+      )];
+      for (const partId of ids) {
+        if (!canSeat(partId)) continue;
+        if (coffeeRunOctetRestGate(row.event.bar, partId, request.seed)) continue;
+        const part = resolved.parts.find((item) => item.partId === partId);
+        const range = part?.spec.soundingHardRange;
+        if (!part || !range) continue;
+        const shaped = shapeCoffeeRunOctetCompanion({
+          donorMidi: row.midi,
+          donorOnset: num(row.onset),
+          donorDuration: num(row.duration),
+          phraseStart: bounds.start,
+          phraseEnd: bounds.end,
+          partId,
+          range,
+          piano: pianoAnchors,
+          sonorityPcs,
+          seed: request.seed,
+          phraseIndex,
+          lane,
+        });
+        if (!shaped) continue;
+        if (commitShaped(shaped, part, row, phrase, lane, 'cell')) return true;
+      }
+      return false;
+    };
+
+    const placeDialogueExchange = (
+      motifRows: readonly NoteRow[],
+      phrase: { id: string; startBar: number; endBar: number; kind: 'statement' | 'development' | 'return' },
+      phraseIndex: number,
+      primaryIds: readonly string[],
+      replyIds: readonly string[],
+    ): number => {
+      if (motifRows.length < 2) return 0;
+      const bounds = phraseBounds(phrase);
+      const sonorityPcs = [...new Set(
+        rows
+          .filter((item) => item.event.bar >= phrase.startBar && item.event.bar <= phrase.endBar)
+          .map((item) => pcOf(item.midi)),
+      )];
+      const motif = motifRows.slice(0, 4).map((row) => ({
+        midi: row.midi,
+        onset: num(row.onset),
+        duration: num(row.duration),
+      }));
+      const donor = motifRows[0]!;
+      let placedCount = 0;
+
+      const tryVoice = (ids: readonly string[], exchange: boolean): string | null => {
+        for (const partId of ids) {
+          if (!canSeat(partId)) continue;
+          if (coffeeRunOctetRestGate(phrase.startBar, partId, request.seed) && !coffeeRunOctetIsMarkerBar(phrase.startBar)) {
+            continue;
+          }
+          const part = resolved.parts.find((item) => item.partId === partId);
+          const range = part?.spec.soundingHardRange;
+          if (!part || !range) continue;
+          const cells = buildCoffeeRunOctetDialoguePhrase({
+            motif,
+            phraseStart: bounds.start,
+            phraseEnd: bounds.end,
+            range,
+            piano: pianoAnchors,
+            sonorityPcs,
+            seed: request.seed,
+            phraseIndex,
+            exchange,
+          });
+          if (cells.length < 2) continue;
+          let local = 0;
+          for (const [cellIndex, cell] of cells.entries()) {
+            if (!canSeat(partId)) break;
+            if (commitShaped(cell, part, donor, phrase, exchange ? 'exchange' : 'phrase', `n${cellIndex}`)) {
+              local += 1;
+            }
+          }
+          if (local >= 2) {
+            placedCount += local;
+            return partId;
+          }
+        }
+        return null;
+      };
+
+      const primary = tryVoice(primaryIds, false);
+      const replyPool = replyIds.filter((id) => id !== primary);
+      tryVoice(replyPool, true);
+      return placedCount;
+    };
+
+    for (const [phraseIndex, phrase] of phrases.entries()) {
+      const palette = coffeeRunOctetPhrasePalette(phraseIndex, phrase.kind);
+      const inPhrase = (row: NoteRow) => row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar;
+
+      // Chamber dialogue: coherent phrase + overlapping transformed reply.
+      const line = melodyRows.filter(inPhrase);
+      if (line.length >= 2) {
+        const dialogueOrder = coffeeRunOctetCarrierOrder('answer', phraseIndex, palette)
+          .filter((id) => (COFFEE_RUN_OCTET_DIALOGUE_IDS as readonly string[]).includes(id));
+        const replyOrder = coffeeRunOctetCarrierOrder('counter', phraseIndex + 1, palette)
+          .filter((id) => (COFFEE_RUN_OCTET_DIALOGUE_IDS as readonly string[]).includes(id));
+        placeDialogueExchange(line, phrase, phraseIndex, dialogueOrder, replyOrder);
+      }
+
+      // Supportive bass — present, not a continuous shadow.
+      const bassLane = bassRows.filter(inPhrase);
+      const bassOrder = coffeeRunOctetCarrierOrder('bass', phraseIndex, palette);
+      bassLane.forEach((row, index) => {
+        if (index % 2 === 1) return;
+        placeCompanionResponse(row, bassOrder, phrase, phraseIndex, 'bass');
+      });
+
+      const supports = rows.filter(
+        (row) => inPhrase(row) && !omitted.has(row.event.id) && row.role === 'harmonic_support',
+      );
+      const colourOrder = coffeeRunOctetCarrierOrder('colour', phraseIndex, palette);
+      const seenBars = new Set<number>();
+      for (const row of supports) {
+        if (seenBars.has(row.event.bar)) continue;
+        if (phrase.kind === 'return' && row.event.bar === phrase.endBar) continue;
+        if (!placeCompanionResponse(row, colourOrder, phrase, phraseIndex, 'colour')) continue;
+        seenBars.add(row.event.bar);
+      }
+    }
+
+    // Marker windows: Cemetery / Toward black / Credits — expressive dialogue coverage.
+    for (const bar of COFFEE_RUN_OCTET_MARKER_BARS) {
+      const inBar = melodyRows.filter((row) => row.event.bar === bar);
+      const donors = inBar.length >= 2
+        ? inBar
+        : rows.filter((row) => row.event.bar === bar && !omitted.has(row.event.id)).slice(0, 4);
+      if (donors.length < 2) continue;
+      const phrase = phraseOf(phrases, bar);
+      const order = coffeeRunOctetMarkerDialogueOrder(bar, request.seed);
+      placeDialogueExchange(donors, phrase, phrases.indexOf(phrase) + bar, order, [...order].reverse());
+    }
+
+    // Floor coverage so every companion speaks, without db flooding.
+    for (const [seatIndex, partId] of COFFEE_RUN_OCTET_ORCH_IDS.entries()) {
+      if (!canSeat(partId)) continue;
+      const floor = partId === 'db' ? 6 : 3;
+      const donors = partId === 'db'
+        ? bassRows
+        : partId === 'picc' || partId === 'tp1'
+          ? melodyRows
+          : rows.filter((row) => row.role === 'harmonic_support' || row.role === 'countermelody' || row.role === 'melody');
+      let guard = 0;
+      while ((coverage.get(partId) ?? 0) < floor && donors.length && guard < 20) {
+        const donor = donors[(seatIndex * 3 + guard * 2) % donors.length]!;
+        const phrase = phraseOf(phrases, donor.event.bar);
+        const lane: CoffeeRunOctetLane = partId === 'db' ? 'bass' : partId === 'hp' || partId === 'bcl' ? 'colour' : 'answer';
+        placeCompanionResponse(donor, [partId], phrase, phrases.indexOf(phrase), lane);
+        guard += 1;
+      }
+    }
+  }
+  if (!octet) {
   for (const phrase of phrases) {
     const line = melodyRows.filter((row) => row.event.bar >= phrase.startBar && row.event.bar <= phrase.endBar);
     if (!line.length) {
@@ -1294,8 +1594,11 @@ export function realisePianoChamber(request: OrchestrateRequest):
       }
     }
   }
+  } // !octet: chamber/symphonic redistribute source lanes
 
   for (const [phraseIndex, phrase] of phrases.entries()) {
+    // Octet companions already carry shaped responses; skip the classic melody-answer doubler.
+    if (octet) continue;
     const answerPlan = planFor(phrase.id);
     if (answerPlan && answerPlan.counterline === 'silence') continue;
     if (mode !== 'developing' || phrase.kind === 'statement' || phrase.kind === 'return' || isSymphonicScoreEnding(phrase.endBar, scoreEndBar)) continue;
@@ -1345,7 +1648,17 @@ export function realisePianoChamber(request: OrchestrateRequest):
       const events = soundingEvents
         .map((event) => ({ ...event, onset: midpoint + offset + event.onset }))
         .filter((event) => event.onset >= phraseStart && event.onset + event.duration <= phraseEnd + 1e-6);
-      const ids = answerPlan ? answerPlan.answerIds : foreground && ['fl', 'ob', 'cl', 'vn1'].includes(foreground) ? ['vn2', 'va', 'vc', 'bn', 'hn'] : ['fl', 'ob', 'cl', 'vn1', 'hn'];
+      const ids = answerPlan
+        ? answerPlan.answerIds
+        : octet
+          ? coffeeRunOctetCarrierOrder(
+            'answer',
+            phraseIndex,
+            coffeeRunOctetPhrasePalette(phraseIndex, phrase.kind),
+          )
+          : foreground && ['fl', 'ob', 'cl', 'vn1'].includes(foreground)
+            ? ['vn2', 'va', 'vc', 'bn', 'hn']
+            : ['fl', 'ob', 'cl', 'vn1', 'hn'];
       const spans = events.map((event) => ({ start: event.onset, end: event.onset + event.duration }));
       const carrier = tryCarrier(resolved.parts, ids, events.map((event) => event.midi), busy, spans, foreground);
       if (!carrier) continue;
@@ -1598,9 +1911,10 @@ export function realisePianoChamber(request: OrchestrateRequest):
     clef: part.spec.clefs[0] === 'bass' ? 'bass' : 'treble',
     transposition: part.spec.transposition,
     hardRange: part.spec.soundingHardRange,
-    maxSimultaneous: part.partId === 'hp' ? 4 : 1,
+    maxSimultaneous: part.partId === 'hp' ? 4 : part.partId === 'pn' ? (part.spec.maxSimultaneous ?? 10) : 1,
     catalogueInstrumentSound: part.spec.instrumentSound,
     ...(part.partId === 'hp' ? { harpGrandStaff: true } : {}),
+    ...(part.partId === 'pn' ? { pianoGrandStaff: true } : {}),
   }));
   const placements: E2RealisedPlacement[] = [];
   const assignments: E2Assignment[] = [];
@@ -1648,7 +1962,7 @@ export function realisePianoChamber(request: OrchestrateRequest):
   let built;
   try {
     built = buildE2Score({
-      title: symphonic ? 'Piano to symphony' : 'Piano to chamber',
+      title: octet ? 'Piano to Coffee Run octet' : symphonic ? 'Piano to symphony' : 'Piano to chamber',
       tempo,
       bars: scoreEndBar,
       metres: metre.metres,
