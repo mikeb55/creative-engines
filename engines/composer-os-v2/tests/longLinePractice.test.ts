@@ -884,6 +884,325 @@ check('BMEF1 — harmony locks preserved under new contour', () => {
   assert.ok(experimentalNotes >= intervallicNotes * 0.8);
 });
 
+// ——— BMEF Correction 2 (motif continuity + phrase shape) ———
+
+function barMidiContour(events: readonly { midi: number }[]): number[] {
+  const midis = events.map((e) => e.midi);
+  const contour: number[] = [];
+  for (let i = 1; i < midis.length; i += 1) {
+    const d = midis[i]! - midis[i - 1]!;
+    contour.push(d === 0 ? 0 : d > 0 ? 1 : -1);
+  }
+  return contour;
+}
+
+/** Share of aligned contour signs between two bars (0–1). */
+function contourSignOverlap(a: readonly number[], b: readonly number[]): number {
+  const n = Math.min(a.length, b.length);
+  if (n === 0) return 0;
+  let hit = 0;
+  for (let i = 0; i < n; i += 1) {
+    if (a[i] === b[i] || a[i] === -b[i]!) hit += 1; // same or inverted counts as related
+  }
+  return hit / n;
+}
+
+function phraseEndingScore(
+  events: readonly { bar: number; startBeat: number; duration: number }[],
+  bars: number,
+  beatsPerBar: number,
+): number {
+  // Count bars whose last note is long (≥1.5) or leaves ≥0.75 beat of trailing space.
+  let endings = 0;
+  for (let bar = 0; bar < bars; bar += 1) {
+    const notes = events.filter((e) => e.bar === bar);
+    if (notes.length === 0) continue;
+    const last = notes[notes.length - 1]!;
+    const trail = beatsPerBar - (last.startBeat + last.duration);
+    if (last.duration >= 1.5 || trail >= 0.75) endings += 1;
+  }
+  return endings / Math.max(1, bars);
+}
+
+check('BMEF2 — lyrical golden + sparse still hold', () => {
+  assert.equal(generateLongLine(baseRequest('lyrical')).signature, LYRICAL_2A_SIGNATURE);
+  const long = generateLongLine(baseRequest('lyrical', { bars: 16, seed: 77241 }));
+  assert.ok(long.events.length < 50, `lyrical too dense: ${long.events.length}`);
+});
+
+check('BMEF2 — motif continuity across bars (context-free lyrical)', () => {
+  const result = generateLongLine(baseRequest('lyrical', { bars: 16, seed: 77241 }));
+  const contours: number[][] = [];
+  for (let bar = 0; bar < 16; bar += 1) {
+    contours.push(barMidiContour(result.events.filter((e) => e.bar === bar)));
+  }
+  let related = 0;
+  let pairs = 0;
+  for (let bar = 1; bar < 16; bar += 1) {
+    const overlap = contourSignOverlap(contours[bar - 1]!, contours[bar]!);
+    pairs += 1;
+    if (overlap >= 0.5) related += 1;
+  }
+  assert.ok(
+    related / pairs >= 0.4,
+    `motif continuity too weak: ${related}/${pairs} related pairs`,
+  );
+});
+
+check('BMEF2 — phrase endings present (context-free lyrical)', () => {
+  const result = generateLongLine(baseRequest('lyrical', { bars: 16, seed: 91001 }));
+  const rate = phraseEndingScore(result.events, 16, 4);
+  assert.ok(rate >= 0.35, `phrase ending rate ${rate}`);
+});
+
+check('BMEF2 — harmony lyrical motif continuity + field/bass locks', () => {
+  const bars: LongLineHarmonyBar[] = Array.from({ length: 12 }, (_, i) => ({
+    pitchClasses: i % 2 === 0 ? MINOR_PENT : MAJOR_PENT,
+    bassMidis: [36 + (i % 4)],
+    bassEvents: [{ startBeat: 0, duration: 4, midi: 36 + (i % 4) }],
+  }));
+  const result = generateLongLinesOverHarmony({
+    bars,
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  const lyrical = result.candidates.find((c) => c.profile === 'lyrical')!;
+  const intervallic = result.candidates.find((c) => c.profile === 'intervallic')!;
+  const experimental = result.candidates.find((c) => c.profile === 'experimental')!;
+
+  assert.ok(eventsRespectHarmonyFields(lyrical.line.events, result.fields));
+  assert.deepEqual(
+    lyrical.bassByBar.map((row) => [...row]),
+    bars.map((b) => [...(b.bassMidis ?? [])]),
+  );
+  assert.deepEqual(
+    lyrical.bassEventsByBar.map((row) => row.map((e) => ({ ...e }))),
+    bars.map((b) => (b.bassEvents ?? []).map((e) => ({ ...e }))),
+  );
+
+  const contours: number[][] = [];
+  for (let bar = 0; bar < 12; bar += 1) {
+    contours.push(barMidiContour(lyrical.line.events.filter((e) => e.bar === bar)));
+  }
+  let related = 0;
+  for (let bar = 1; bar < 12; bar += 1) {
+    if (contourSignOverlap(contours[bar - 1]!, contours[bar]!) >= 0.5) related += 1;
+  }
+  assert.ok(related >= 4, `harmony lyrical continuity pairs ${related}`);
+  assert.ok(phraseEndingScore(lyrical.line.events, 12, 4) >= 0.3);
+
+  // Profiles stay distinct.
+  assert.notEqual(lyrical.line.signature, intervallic.line.signature);
+  assert.notEqual(lyrical.line.signature, experimental.line.signature);
+  assert.notEqual(intervallic.line.signature, experimental.line.signature);
+  assert.ok(lyrical.line.events.length < intervallic.line.events.length);
+});
+
+check('BMEF2 — intervallic/experimental unchanged vs free per-bar identity', () => {
+  // Intervallic / experimental must not pick up lyrical motif carry (still distinct + deterministic).
+  const req = {
+    bars: harmonyBars(),
+    register: { low: 60, high: 76 },
+    seed: 3340,
+  };
+  const a = generateLongLinesOverHarmony(req);
+  const b = generateLongLinesOverHarmony(req);
+  for (const profile of ['intervallic', 'experimental'] as const) {
+    const ca = a.candidates.find((c) => c.profile === profile)!;
+    const cb = b.candidates.find((c) => c.profile === profile)!;
+    assert.equal(ca.line.signature, cb.line.signature, `${profile} nondeterministic`);
+  }
+  assert.ok(maxAbsLeap(a.candidates.find((c) => c.profile === 'intervallic')!.line.events.map((e) => e.midi)) >= 5);
+  assert.ok(maxAbsLeap(a.candidates.find((c) => c.profile === 'experimental')!.line.events.map((e) => e.midi)) >= 5);
+});
+
+// ——— BMEF Correction 3 (guitar↔bass dialogue, lyrical) ———
+
+function dialogueBars(): LongLineHarmonyBar[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const bassMidi = 36 + (i % 5);
+    const nextBass = bassMidi + (i % 2 === 0 ? 7 : -5);
+    return {
+      pitchClasses: i % 2 === 0 ? MINOR_PENT : MAJOR_PENT,
+      bassMidis: [bassMidi, nextBass],
+      bassEvents: [
+        { startBeat: 0, duration: 2, midi: bassMidi },
+        { startBeat: 2, duration: 2, midi: nextBass },
+      ],
+    };
+  });
+}
+
+/** Share of guitar attacks within eps of a bass arrival (0–1). */
+function bassCollisionRate(
+  guitar: readonly { bar: number; startBeat: number }[],
+  bassByBar: readonly (readonly { startBeat: number }[])[],
+  eps = 0.22,
+): number {
+  let attacks = 0;
+  let hits = 0;
+  for (const g of guitar) {
+    attacks += 1;
+    const bass = bassByBar[g.bar] ?? [];
+    if (bass.some((b) => Math.abs(b.startBeat - g.startBeat) < eps)) hits += 1;
+  }
+  return attacks === 0 ? 0 : hits / attacks;
+}
+
+/** Share of guitar steps that are contrary or oblique to the local bass move. */
+function contraryOrObliqueRate(
+  guitar: readonly { bar: number; startBeat: number; midi: number }[],
+  bassByBar: readonly (readonly { startBeat: number; midi: number }[])[],
+): number {
+  let judged = 0;
+  let good = 0;
+  for (let i = 1; i < guitar.length; i += 1) {
+    const prev = guitar[i - 1]!;
+    const cur = guitar[i]!;
+    if (cur.bar !== prev.bar) continue;
+    const bass = bassByBar[cur.bar] ?? [];
+    if (bass.length < 2) continue;
+    // Bass interval whose arrival is at or before this guitar attack.
+    let bassDir = 0;
+    const sorted = [...bass].sort((a, b) => a.startBeat - b.startBeat);
+    for (let b = 1; b < sorted.length; b += 1) {
+      if (sorted[b]!.startBeat <= cur.startBeat + 1e-9) {
+        bassDir = Math.sign(sorted[b]!.midi - sorted[b - 1]!.midi);
+      }
+    }
+    if (bassDir === 0) continue;
+    const gDir = Math.sign(cur.midi - prev.midi);
+    judged += 1;
+    if (gDir === 0 || gDir === -bassDir) good += 1;
+  }
+  return judged === 0 ? 0 : good / judged;
+}
+
+/** Share of guitar onsets within 0.35 of a bass-relative grid slot. */
+function bassGridCouplingRate(
+  guitar: readonly { bar: number; startBeat: number }[],
+  bassByBar: readonly (readonly { startBeat: number }[])[],
+  beatsPerBar = 4,
+): number {
+  let attacks = 0;
+  let coupled = 0;
+  for (const g of guitar) {
+    attacks += 1;
+    const bass = bassByBar[g.bar] ?? [];
+    const grid: number[] = [];
+    for (const b of bass) {
+      for (const off of [0, 0.5, 1, 1.5]) {
+        const t = b.startBeat + off;
+        if (t >= 0 && t < beatsPerBar - 0.25) grid.push(t);
+      }
+    }
+    if (grid.some((t) => Math.abs(t - g.startBeat) < 0.35)) coupled += 1;
+  }
+  return attacks === 0 ? 0 : coupled / attacks;
+}
+
+check('BMEF3 — lyrical golden + context-free path untouched', () => {
+  assert.equal(generateLongLine(baseRequest('lyrical')).signature, LYRICAL_2A_SIGNATURE);
+});
+
+check('BMEF3 — bass notes/timing preserved under lyrical dialogue', () => {
+  const bars = dialogueBars();
+  const result = generateLongLinesOverHarmony({
+    bars,
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  const lyrical = result.candidates.find((c) => c.profile === 'lyrical')!;
+  assert.deepEqual(
+    lyrical.bassByBar.map((row) => [...row]),
+    bars.map((b) => [...(b.bassMidis ?? [])]),
+  );
+  assert.deepEqual(
+    lyrical.bassEventsByBar.map((row) => row.map((e) => ({ ...e }))),
+    bars.map((b) => (b.bassEvents ?? []).map((e) => ({ ...e }))),
+  );
+  assert.ok(eventsRespectHarmonyFields(lyrical.line.events, result.fields));
+});
+
+check('BMEF3 — lyrical leaves complementary space at bass arrivals', () => {
+  const bars = dialogueBars();
+  const result = generateLongLinesOverHarmony({
+    bars,
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  const lyrical = result.candidates.find((c) => c.profile === 'lyrical')!;
+  const intervallic = result.candidates.find((c) => c.profile === 'intervallic')!;
+  const lyrRate = bassCollisionRate(lyrical.line.events, lyrical.bassEventsByBar);
+  const intRate = bassCollisionRate(intervallic.line.events, intervallic.bassEventsByBar);
+  assert.ok(lyrRate <= 0.35, `lyrical collision rate ${lyrRate}`);
+  assert.ok(
+    lyrRate < intRate || lyrRate <= 0.25,
+    `lyrical should collide less than intervallic (${lyrRate} vs ${intRate})`,
+  );
+});
+
+check('BMEF3 — lyrical favours contrary/oblique vs bass motion', () => {
+  const bars = dialogueBars();
+  const result = generateLongLinesOverHarmony({
+    bars,
+    register: { low: 52, high: 76 },
+    seed: 91001,
+  });
+  const lyrical = result.candidates.find((c) => c.profile === 'lyrical')!;
+  const rate = contraryOrObliqueRate(lyrical.line.events, lyrical.bassEventsByBar);
+  assert.ok(rate >= 0.45, `contrary/oblique rate ${rate}`);
+});
+
+check('BMEF3 — lyrical rhythm couples to bass grid', () => {
+  const bars = dialogueBars();
+  const result = generateLongLinesOverHarmony({
+    bars,
+    register: { low: 52, high: 76 },
+    seed: 3340,
+  });
+  const lyrical = result.candidates.find((c) => c.profile === 'lyrical')!;
+  const rate = bassGridCouplingRate(lyrical.line.events, lyrical.bassEventsByBar);
+  assert.ok(rate >= 0.55, `bass-grid coupling ${rate}`);
+});
+
+check('BMEF3 — intervallic/experimental ignore dialogue; profiles stay distinct', () => {
+  const withBass = generateLongLinesOverHarmony({
+    bars: dialogueBars(),
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  const midisOnly = generateLongLinesOverHarmony({
+    bars: dialogueBars().map((b) => ({
+      pitchClasses: b.pitchClasses,
+      bassMidis: b.bassMidis,
+    })),
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  for (const profile of ['intervallic', 'experimental'] as const) {
+    const a = withBass.candidates.find((c) => c.profile === profile)!;
+    const b = midisOnly.candidates.find((c) => c.profile === profile)!;
+    assert.equal(a.line.signature, b.line.signature, `${profile} changed under timed bass`);
+  }
+  const lyrical = withBass.candidates.find((c) => c.profile === 'lyrical')!;
+  const intervallic = withBass.candidates.find((c) => c.profile === 'intervallic')!;
+  const experimental = withBass.candidates.find((c) => c.profile === 'experimental')!;
+  assert.notEqual(lyrical.line.signature, intervallic.line.signature);
+  assert.notEqual(lyrical.line.signature, experimental.line.signature);
+  assert.ok(lyrical.line.events.length < intervallic.line.events.length);
+  // Dialogue path stays deterministic.
+  const again = generateLongLinesOverHarmony({
+    bars: dialogueBars(),
+    register: { low: 52, high: 76 },
+    seed: 77241,
+  });
+  assert.equal(
+    again.candidates.find((c) => c.profile === 'lyrical')!.line.signature,
+    lyrical.line.signature,
+  );
+});
+
 if (failed > 0) {
   console.error(`\nlongLinePractice: ${failed} FAIL`);
   process.exit(1);

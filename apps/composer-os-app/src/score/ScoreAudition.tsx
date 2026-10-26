@@ -8,6 +8,11 @@ export type ScoreAuditionProps = {
   loop?: boolean;
   repeat?: number;
   metronome?: boolean;
+  /**
+   * Audition tempo in BPM. When set, overrides the MusicXML printed tempo.
+   * Does not rewrite the score string passed for notation or download.
+   */
+  tempoBpm?: number;
   /** Increment to start the current score on the shared Tone.js transport. */
   playRequest?: number;
   onSound?: (midi: number, barIndex: number, startBeat: number) => void;
@@ -46,7 +51,16 @@ function unlockAudio(): Promise<void> {
  * One MusicXML audition on the shared Tone.js transport.
  * A second play, a new score, or unmount stops the previous run.
  */
-export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metronome = false, playRequest = 0, onSound }: ScoreAuditionProps) {
+export function ScoreAudition({
+  musicXml,
+  label,
+  loop = false,
+  repeat = 1,
+  metronome = false,
+  tempoBpm,
+  playRequest = 0,
+  onSound,
+}: ScoreAuditionProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [detail, setDetail] = useState<string | null>(null);
   const generation = useRef(0);
@@ -61,7 +75,7 @@ export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metro
       generation.current += 1;
       haltEngine();
     };
-  }, [musicXml]);
+  }, [musicXml, tempoBpm]);
 
   const start = useCallback(async () => {
     const token = generation.current + 1;
@@ -71,7 +85,7 @@ export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metro
       await unlockAudio();
       if (token !== generation.current) return;
       haltEngine();
-      const loaded = playbackSequenceFromMusicXml(musicXml);
+      const loaded = playbackSequenceFromMusicXml(musicXml, { tempoBpm });
       if (token !== generation.current) return;
       if (!loaded.ok || !loaded.sequence) {
         setPhase('failed');
@@ -98,7 +112,7 @@ export function ScoreAudition({ musicXml, label, loop = false, repeat = 1, metro
       setPhase('failed');
       setDetail(error instanceof Error ? error.message : String(error));
     }
-  }, [musicXml, loop, repeat, metronome, onSound]);
+  }, [musicXml, tempoBpm, loop, repeat, metronome, onSound]);
 
   startRef.current = start;
 

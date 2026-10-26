@@ -210,7 +210,7 @@ function orderedPhraseMelodyParts(
     if (family === 'brass') {
       if (settings.families.brass === 'off') continue;
     } else if (settings.families[family] === 'off') continue;
-    ids.push(...pools(family, register));
+    ids.push(...pools(family, register, settings));
   }
   return [...new Set(ids)];
 }
@@ -238,7 +238,16 @@ function orderedPhraseSupportParts(
     const index = list.indexOf(priorSupportPart);
     return [...list.slice(index + 1), ...list.slice(0, index + 1)];
   };
-  if (eRow.thematicRole === 'intro') return rotate(['ob1', 'cl1', 'fl2'].filter((id) => activityOf(id, settings) !== 'off'));
+  if (eRow.thematicRole === 'intro') {
+    const wood = ['ob1', 'cl1', 'fl2'].filter((id) => activityOf(id, settings) !== 'off');
+    const brass =
+      settings.families.brass !== 'off' && (settings.families.strings === 'off' || settings.foreground === 'brass')
+        ? pools('brass', register).filter(
+          (id) => activityOf(id, settings) !== 'off' && !['tp1', 'tp2', 'tp3', 'tba'].includes(id),
+        )
+        : [];
+    return rotate([...wood, ...brass]);
+  }
   if (eRow.thematicRole === 'transformed_return') {
     return ['ob1', 'ca', 'cl1', 'cl2', ...rotate(stringIds)];
   }
@@ -253,7 +262,7 @@ function orderedPhraseBassParts(
   settings: ResolvedSymphonicSettings,
   priorBassPart: string | null,
 ): string[] {
-  const base =
+  let base: string[] =
     eRow.thematicRole === 'intro'
       ? ['bn1', 'db', 'vc']
       : eRow.thematicRole === 'coda'
@@ -261,6 +270,9 @@ function orderedPhraseBassParts(
         : eRow.thematicRole === 'transformed_return'
           ? ['vc', 'db', 'bn1', 'va']
           : ['db', 'vc', 'bn1', 'va'];
+  if (settings.families.brass !== 'off' && (settings.families.strings === 'off' || settings.foreground === 'brass')) {
+    base = [...base, 'tbn1', 'tba'];
+  }
   const legal = base.filter((id) => activityOf(id, settings) !== 'off');
   if (!priorBassPart || !legal.includes(priorBassPart)) return legal;
   const index = legal.indexOf(priorBassPart);
@@ -268,6 +280,12 @@ function orderedPhraseBassParts(
 }
 
 function introMelodyPartIds(settings: ResolvedSymphonicSettings, register: 'high' | 'middle' | 'low'): string[] {
+  if (settings.foreground === 'brass' && settings.families.brass !== 'off') {
+    return pools('brass', register, settings).filter((id) => activityOf(id, settings) !== 'off');
+  }
+  if (settings.foreground === 'strings' && settings.families.strings !== 'off') {
+    return pools('strings', register).filter((id) => activityOf(id, settings) !== 'off' && id !== 'db');
+  }
   return pools('woodwind', register).filter((id) => activityOf(id, settings) !== 'off' && !['picc', 'bcl', 'cbn'].includes(id));
 }
 
@@ -317,13 +335,21 @@ function registerOf(centre: number): 'high' | 'middle' | 'low' {
   return 'low';
 }
 
-function pools(family: 'woodwind' | 'strings' | 'brass', register: 'high' | 'middle' | 'low'): string[] {
+function pools(
+  family: 'woodwind' | 'strings' | 'brass',
+  register: 'high' | 'middle' | 'low',
+  settings?: ResolvedSymphonicSettings,
+): string[] {
   const table = {
     woodwind: { high: ['fl1', 'ob1', 'cl1', 'fl2'], middle: ['cl1', 'ob1', 'ca', 'fl1'], low: ['bn1', 'bcl', 'cl1'] },
     strings: { high: ['vn1', 'vn2'], middle: ['vn2', 'va', 'vn1'], low: ['vc', 'va', 'db'] },
     brass: { high: ['tp1', 'hn1', 'tp2'], middle: ['hn1', 'hn2', 'tp2'], low: ['tbn1', 'tba', 'hn3'] },
   };
-  return table[family][register];
+  const list = table[family][register];
+  if (family === 'brass' && register === 'middle' && settings?.foreground === 'brass') {
+    return ['tp1', ...list.filter((id) => id !== 'tp1')];
+  }
+  return list;
 }
 
 function overlaps(start: number, end: number, spans: readonly BusySpan[]): boolean {
@@ -753,7 +779,7 @@ export function planSymphonicDistribution(input: {
         ) ?? { partId: phraseMelodyCarrier, shift: phraseMelodyShift }
         : pickPart(
         parts,
-        pools(chosenFamily === 'brass' ? 'brass' : chosenFamily, register),
+        pools(chosenFamily === 'brass' ? 'brass' : chosenFamily, register, settings),
         [note.midi],
         busy,
         [{ start: note.onset, end: note.onset + note.duration }],
@@ -762,7 +788,7 @@ export function planSymphonicDistribution(input: {
         settings,
       ) ?? pickPart(
         parts,
-        [...pools('strings', register), ...pools('woodwind', register), ...pools('brass', register)],
+        [...pools('strings', register), ...pools('woodwind', register), ...pools('brass', register, settings)],
         [note.midi],
         busy,
         [{ start: note.onset, end: note.onset + note.duration }],
@@ -858,9 +884,14 @@ export function planSymphonicDistribution(input: {
     }
 
     const bassOnCello = layeredPhrase?.id === phrase.id || (eRow?.energy === 'peak' || eRow?.energy === 'high');
+    const noErowBassBase = bassOnCello ? ['vc', 'db', 'bn1', 'tba'] : ['db', 'vc', 'bn1', 'tba'];
+    const noErowBassIds =
+      settings.families.brass !== 'off' && (settings.families.strings === 'off' || settings.foreground === 'brass')
+        ? [...noErowBassBase.slice(0, -1), 'tbn1', noErowBassBase[noErowBassBase.length - 1]!]
+        : noErowBassBase;
     const phraseBassIds = eRow
       ? orderedPhraseBassParts(eRow, settings, priorPhraseBassCarrier)
-      : bassOnCello ? ['vc', 'db', 'bn1', 'tba'] : ['db', 'vc', 'bn1', 'tba'];
+      : noErowBassIds;
     let phraseBassCarrier: string | null = null;
     for (const note of localBass) {
       const held = heldInstrument(note);
@@ -979,6 +1010,17 @@ export function planSymphonicDistribution(input: {
       const noteEnd = note.onset + note.duration;
       return note.onset < rescueDialogueWindow.end - 1e-6 && noteEnd > rescueDialogueWindow.start + 1e-6;
     };
+    const melodyPartsAvoidingHarmonySegment = (segment: { onset: number; duration: number }): Set<string> => {
+      const avoid = new Set<string>();
+      const end = segment.onset + segment.duration;
+      for (const mel of localMelody) {
+        const melEnd = mel.onset + mel.duration;
+        if (mel.onset >= end - 1e-6 || melEnd <= segment.onset + 1e-6) continue;
+        const partId = placements.find((item) => item.eventId === mel.id && item.role === 'primary-melody')?.partId;
+        if (partId) avoid.add(partId);
+      }
+      return avoid;
+    };
     for (const note of localHarmony) {
       if (skipInnerColour && !note.locked) {
         omissions.push({ eventId: note.id, reason: 'Intro exposure keeps inner colour silent so the opening line stays audible.' });
@@ -1038,16 +1080,36 @@ export function planSymphonicDistribution(input: {
         continue;
       }
       for (const segment of harmonySegments) {
-        const choice = pickPart(
+        const harmonyAvoid = melodyPartsAvoidingHarmonySegment(segment);
+        let choice = pickPart(
           parts,
           supportPartIds,
           [note.midi],
           busy,
           [{ start: segment.onset, end: segment.onset + segment.duration }],
-          new Set(melodyParts),
+          harmonyAvoid,
           note.locked,
           settings,
         );
+        if (!choice && note.locked) {
+          const lockedFallback = [
+            ...supportPartIds,
+            ...pools('brass', register),
+            ...pools('woodwind', register),
+            ...pools('strings', register),
+            'hp',
+          ].filter((id, index, list) => list.indexOf(id) === index && activityOf(id, settings) !== 'off');
+          choice = pickPart(
+            parts,
+            lockedFallback,
+            [note.midi],
+            busy,
+            [{ start: segment.onset, end: segment.onset + segment.duration }],
+            harmonyAvoid,
+            true,
+            settings,
+          );
+        }
         if (!choice) {
           if (note.locked) return { ok: false, error: `Locked inner event ${note.id} has no instrument at the sounding pitch.` };
           omissions.push({ eventId: note.id, reason: 'Inner colour had no free instrument in range.' });

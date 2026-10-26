@@ -11,6 +11,7 @@ import { PentatonicEnginePage } from './pentatonic/PentatonicEnginePage';
 import { HexatonicEnginePage } from './hexatonic/HexatonicEnginePage';
 import { BhlComposerPage } from './bhl/BhlComposerPage';
 import { PracticeStudioPage } from './practice/PracticeStudioPage';
+import { LongLinePracticePage } from './long-line-practice/LongLinePracticePage';
 import { EvaluationDashboardPage } from './evaluation/EvaluationDashboardPage';
 import { DevelopmentStudioPage } from './develop/DevelopmentStudioPage';
 import { WwhPerformanceV8 } from './pages/WwhPerformanceV8';
@@ -542,6 +543,13 @@ export default function App() {
             Practice &amp; Scales Studio
           </button>
           <button
+            className={tab === 'long-line-practice' ? '' : 'secondary'}
+            onClick={() => goToTab('long-line-practice')}
+            type="button"
+          >
+            Long-Line Practice
+          </button>
+          <button
             className={tab === 'evaluation' ? '' : 'secondary'}
             onClick={() => goToTab('evaluation')}
             type="button"
@@ -609,6 +617,7 @@ export default function App() {
       {tab === 'piano-chamber' && <PianoChamberPage />}
       {tab === 'bhl' && <BhlComposerPage />}
       {tab === 'practice' && <PracticeStudioPage />}
+      {tab === 'long-line-practice' && <LongLinePracticePage />}
       {tab === 'evaluation' && <EvaluationDashboardPage />}
       {tab === 'develop' && <DevelopmentStudioPage />}
       {tab === 'wwh-v8' && <WwhPerformanceV8 />}

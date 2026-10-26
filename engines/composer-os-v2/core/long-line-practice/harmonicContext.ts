@@ -5,8 +5,16 @@
  */
 
 import { canonicalPitchSet, mod12 } from '../pentatonic/pitch';
-import { generateLongLine, longLineEventSignature } from './generateLongLine';
+import {
+  applyLyricalBassDialogue,
+  extractLyricalMotif,
+  generateLongLine,
+  generateLyricalMotifBar,
+  longLineEventSignature,
+  type LyricalMotifCell,
+} from './generateLongLine';
 import { longLineMeterSpanQuarters } from './meter';
+import { mulberry32, randInt } from './prng';
 import {
   LONG_LINE_PRACTICE_VERSION,
   LONG_LINE_PROFILES,
@@ -65,6 +73,12 @@ function generateProfileOverHarmony(args: {
   let anchorMidi: number | undefined;
   let previousField: readonly number[] | undefined;
 
+  // Lyrical only: 2–4-bar motif phrases across changing fields. Other profiles stay per-bar.
+  const phraseRng = mulberry32((seed ^ 0x2f1a7c13) >>> 0);
+  let phraseLen = 0;
+  let phraseIndex = 0;
+  let lyricalMotif: LyricalMotifCell | null = null;
+
   for (let barIndex = 0; barIndex < fields.length; barIndex += 1) {
     const field = fields[barIndex]!;
     // Lyrical keeps common-tone bar joins. Intervallic / experimental use anchor only so
@@ -75,27 +89,84 @@ function generateProfileOverHarmony(args: {
         : undefined;
     const meter = metersByBar[barIndex];
     const barSpan = meter ? longLineMeterSpanQuarters(meter) : beatsPerBar;
+    const barSeed = (seed + barIndex * 0x9e3779b9) >>> 0;
 
-    const slice = generateLongLine({
-      pitchClasses: field,
-      bars: 1,
-      register,
-      profile,
-      // Distinct per-bar stream; profile salt still applied inside generateLongLine.
-      seed: (seed + barIndex * 0x9e3779b9) >>> 0,
-      beatsPerBar: barSpan,
-      anchorMidi,
-      preferPitchClasses: prefer && prefer.length > 0 ? prefer : undefined,
-    });
+    let barEvents: LongLineEvent[];
 
-    for (const event of slice.events) {
+    if (profile === 'lyrical') {
+      if (phraseIndex >= phraseLen) {
+        phraseLen = Math.min(randInt(phraseRng, 2, 4), fields.length - barIndex);
+        phraseIndex = 0;
+        lyricalMotif = null;
+      }
+
+      const barBass = bassEventsByBar[barIndex] ?? [];
+
+      if (lyricalMotif && phraseIndex > 0) {
+        const developed = generateLyricalMotifBar({
+          pitchClasses: field,
+          register,
+          seed,
+          beatsPerBar: barSpan,
+          barIndex,
+          motif: lyricalMotif,
+          developIndex: phraseIndex,
+          phraseLen,
+          anchorMidi,
+          preferPitchClasses: prefer && prefer.length > 0 ? prefer : undefined,
+          bassEvents: barBass,
+        });
+        barEvents = developed.events;
+      } else {
+        const slice = generateLongLine({
+          pitchClasses: field,
+          bars: 1,
+          register,
+          profile,
+          seed: barSeed,
+          beatsPerBar: barSpan,
+          anchorMidi,
+          preferPitchClasses: prefer && prefer.length > 0 ? prefer : undefined,
+        });
+        barEvents = slice.events.map((event) => ({ ...event, bar: barIndex }));
+        // Lyrical dialogue: respond to preserved bass timing/contour when present.
+        if (barBass.length > 0) {
+          barEvents = applyLyricalBassDialogue({
+            events: barEvents,
+            bassEvents: barBass,
+            pitchClasses: field,
+            register,
+            beatsPerBar: barSpan,
+            barIndex,
+            seed,
+          });
+        }
+        lyricalMotif = extractLyricalMotif(barEvents, field);
+      }
+      phraseIndex += 1;
+    } else {
+      const slice = generateLongLine({
+        pitchClasses: field,
+        bars: 1,
+        register,
+        profile,
+        // Distinct per-bar stream; profile salt still applied inside generateLongLine.
+        seed: barSeed,
+        beatsPerBar: barSpan,
+        anchorMidi,
+        preferPitchClasses: prefer && prefer.length > 0 ? prefer : undefined,
+      });
+      barEvents = slice.events.map((event) => ({ ...event, bar: barIndex }));
+    }
+
+    for (const event of barEvents) {
       events.push({
         ...event,
         bar: barIndex,
       });
     }
 
-    const last = slice.events[slice.events.length - 1];
+    const last = barEvents[barEvents.length - 1];
     if (last) anchorMidi = last.midi;
     previousField = field;
   }

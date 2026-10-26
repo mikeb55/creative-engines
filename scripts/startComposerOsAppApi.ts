@@ -30,6 +30,10 @@ import {
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
 import { apiHarmonyLab, apiOrchestrate } from '../engines/composer-os-v2/app-api/orchestrateApp';
 import {
+  apiLongLinePractice,
+  apiLongLinePracticeProbe,
+} from '../engines/composer-os-v2/app-api/longLinePracticeApp';
+import {
   apiBhlCandidates,
   apiBhlCatalog,
   apiBhlCompare,
@@ -507,6 +511,24 @@ app.post('/api/piano-chamber', (req: Request, res: Response) => {
 app.post('/api/harmony-lab', (req: Request, res: Response) => {
   try {
     const result = apiHarmonyLab(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/long-line-practice/probe', (req: Request, res: Response) => {
+  try {
+    const result = apiLongLinePracticeProbe(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/long-line-practice', (req: Request, res: Response) => {
+  try {
+    const result = apiLongLinePractice(req.body);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });

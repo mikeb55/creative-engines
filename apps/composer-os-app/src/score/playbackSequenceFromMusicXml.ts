@@ -14,11 +14,19 @@ export type PlaybackLoad =
   | { ok: true; sequence: PlaybackSequence }
   | { ok: false; error: string; sequence: PlaybackSequence | null };
 
+export type PlaybackSequenceOptions = {
+  /** When set and positive, overrides the MusicXML printed tempo for audition only. */
+  tempoBpm?: number;
+};
+
 /**
  * Turn MusicXML into the existing playback sequence.
  * Invalid markup returns an error and does not throw.
  */
-export function playbackSequenceFromMusicXml(xml: string | null | undefined): PlaybackLoad {
+export function playbackSequenceFromMusicXml(
+  xml: string | null | undefined,
+  options?: PlaybackSequenceOptions,
+): PlaybackLoad {
   const source = typeof xml === 'string' ? xml.trim() : '';
   if (!source) {
     return { ok: false, error: 'No MusicXML to play.', sequence: null };
@@ -28,7 +36,12 @@ export function playbackSequenceFromMusicXml(xml: string | null | undefined): Pl
     if (doc.getElementsByTagName('parsererror').length > 0) {
       return { ok: false, error: 'MusicXML could not be parsed.', sequence: null };
     }
-    const sequence = parseXmlToPlaybackSequence(source, tempoFromMusicXml(source), '4/4');
+    const override = options?.tempoBpm;
+    const tempo =
+      override != null && Number.isFinite(override) && override > 0
+        ? override
+        : tempoFromMusicXml(source);
+    const sequence = parseXmlToPlaybackSequence(source, tempo, '4/4');
     if (!sequence.notes.length) {
       return { ok: false, error: 'No playable notes in this score.', sequence };
     }

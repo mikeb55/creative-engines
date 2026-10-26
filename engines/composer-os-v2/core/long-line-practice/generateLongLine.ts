@@ -13,6 +13,7 @@ import {
   type LongLineRegister,
   type LongLineRequest,
   type LongLineResult,
+  type LongLineTimedBassEvent,
 } from './types';
 
 const EPS = 1e-9;
@@ -238,9 +239,416 @@ function onsetBias(profile: LongLineProfile, rng: () => number, beatsPerBar: num
   return grid.length ? pick(rng, grid) : 0;
 }
 
+/** Degree-step + rhythm cell for lyrical 2–4-bar phrase continuity. */
+export interface LyricalMotifCell {
+  steps: readonly number[];
+  durations: readonly number[];
+}
+
+/** Signed shortest step on the degree circle. */
+function degreeStepBetween(fromMidi: number, toMidi: number, orderedPcs: readonly number[]): number {
+  const n = orderedPcs.length;
+  if (n <= 0) return 0;
+  const d0 = degreeIndex(fromMidi, orderedPcs);
+  const d1 = degreeIndex(toMidi, orderedPcs);
+  let step = d1 - d0;
+  if (step > n / 2) step -= n;
+  if (step < -n / 2) step += n;
+  return step;
+}
+
+/** Capture contour + rhythm from a bar's note events. */
+export function extractLyricalMotif(
+  events: readonly LongLineEvent[],
+  orderedPcs: readonly number[],
+): LyricalMotifCell | null {
+  if (events.length === 0) return null;
+  const durations = events.map((e) => e.duration);
+  const steps: number[] = [];
+  for (let i = 1; i < events.length; i += 1) {
+    steps.push(degreeStepBetween(events[i - 1]!.midi, events[i]!.midi, orderedPcs));
+  }
+  return { steps, durations };
+}
+
+function varyLyricalDurations(
+  base: readonly number[],
+  rng: () => number,
+  phraseEnding: boolean,
+): number[] {
+  const out = base.map((d) => d);
+  if (out.length === 0) return out;
+  // Rhythmic variation: stretch one value, shrink another (keep sparse feel).
+  if (out.length >= 2 && rng() < 0.7) {
+    const i = randInt(rng, 0, out.length - 1);
+    const j = (i + 1) % out.length;
+    const stretch = rng() < 0.5 ? 1.5 : 0.75;
+    out[i] = Math.max(0.5, Math.round(out[i]! * stretch * 2) / 2);
+    out[j] = Math.max(0.5, Math.round(out[j]! * (stretch > 1 ? 0.75 : 1.25) * 2) / 2);
+  } else if (out.length === 1 && rng() < 0.5) {
+    out[0] = Math.max(1, Math.round(out[0]! * (rng() < 0.5 ? 1.5 : 0.75) * 2) / 2);
+  }
+  if (phraseEnding) {
+    const last = out.length - 1;
+    out[last] = Math.max(out[last]!, 2);
+  }
+  return out;
+}
+
+function developLyricalSteps(
+  base: readonly number[],
+  rng: () => number,
+  developIndex: number,
+): number[] {
+  if (base.length === 0) return [];
+  // Contour shaping: invert, or nudge one step, keep identity recognisable.
+  // Replace static 0-steps so development does not stall on repeated midis.
+  const nonStatic = (steps: number[]): number[] =>
+    steps.map((s) => (s === 0 ? pick(rng, [-1, 1] as const) : s));
+  if (developIndex > 0 && rng() < 0.55) {
+    return nonStatic(base.map((s) => -s));
+  }
+  if (developIndex > 0 && rng() < 0.4) {
+    const out = nonStatic([...base]);
+    const i = randInt(rng, 0, out.length - 1);
+    const nudge = pick(rng, [-1, 1] as const);
+    out[i] = out[i]! + nudge === 0 ? nudge : out[i]! + nudge;
+    return out;
+  }
+  return nonStatic([...base]);
+}
+
+/** Signed bass contour at or before `beat` (0 = unknown / static). */
+function bassDirectionAt(bass: readonly LongLineTimedBassEvent[], beat: number): number {
+  if (bass.length < 2) return 0;
+  const sorted = [...bass].sort((a, b) => a.startBeat - b.startBeat || a.midi - b.midi);
+  let dir = 0;
+  for (let i = 1; i < sorted.length; i += 1) {
+    if (sorted[i]!.startBeat <= beat + EPS) {
+      dir = Math.sign(sorted[i]!.midi - sorted[i - 1]!.midi);
+    }
+  }
+  if (dir !== 0) return dir;
+  // Upcoming move in this bar still colours early guitar replies.
+  if (beat <= sorted[1]!.startBeat + 0.5) {
+    return Math.sign(sorted[1]!.midi - sorted[0]!.midi);
+  }
+  return 0;
+}
+
+/** Prefer a field midi in `wantDir` from cursor (±1 degree), else nearest pool tone. */
+function midiTowardDirection(
+  pool: readonly number[],
+  orderedPcs: readonly number[],
+  cursor: number,
+  wantDir: number,
+  rng: () => number,
+): number {
+  if (pool.length === 0) return cursor;
+  if (wantDir === 0) return cursor;
+  const deg = degreeIndex(cursor, orderedPcs);
+  const step = wantDir > 0 ? 1 : -1;
+  let midi = midiAtDegree(deg + step, orderedPcs, pool, cursor);
+  if (midi === cursor && orderedPcs.length > 1) {
+    midi = midiAtDegree(deg + step * 2, orderedPcs, pool, cursor);
+  }
+  if (midi === cursor && pool.length > 1) {
+    // Register nudge in the wanted direction when degree walk collapses.
+    const candidates = pool.filter((m) => (wantDir > 0 ? m > cursor : m < cursor));
+    if (candidates.length > 0) {
+      midi = pick(rng, candidates);
+    }
+  }
+  return midi;
+}
+
+function bassRhythmGrid(bass: readonly LongLineTimedBassEvent[], beatsPerBar: number): number[] {
+  const grid: number[] = [];
+  for (const ev of bass) {
+    for (const offset of [0, 0.5, 1, 1.5]) {
+      const t = ev.startBeat + offset;
+      if (t >= -EPS && t < beatsPerBar - 0.25) grid.push(Math.round(t * 1000) / 1000);
+    }
+  }
+  return grid;
+}
+
+/**
+ * Repack one bar: monotonic onsets, no overlap, clamp to bar span.
+ * Preserves pitch classes already validated by caller.
+ */
+function repackBarEvents(
+  events: readonly LongLineEvent[],
+  beatsPerBar: number,
+  barIndex: number,
+): LongLineEvent[] {
+  if (events.length === 0) return [];
+  const sorted = [...events].sort((a, b) => a.startBeat - b.startBeat || a.midi - b.midi);
+  const out: LongLineEvent[] = [];
+  let cursorT = 0;
+  for (const ev of sorted) {
+    let t = Math.max(ev.startBeat, cursorT);
+    t = Math.min(t, Math.max(0, beatsPerBar - 0.25));
+    let dur = Math.min(ev.duration, beatsPerBar - t);
+    if (dur <= EPS) continue;
+    // Keep a little air before the next packed note when we had to push.
+    out.push({
+      bar: barIndex,
+      startBeat: Math.round(t * 1000) / 1000,
+      duration: Math.round(dur * 1000) / 1000,
+      midi: ev.midi,
+      pitchClass: mod12(ev.midi),
+    });
+    cursorT = t + dur;
+    if (cursorT >= beatsPerBar - EPS) break;
+  }
+  return out.length > 0
+    ? out
+    : [
+        {
+          bar: barIndex,
+          startBeat: 0,
+          duration: Math.min(1, beatsPerBar),
+          midi: events[0]!.midi,
+          pitchClass: mod12(events[0]!.midi),
+        },
+      ];
+}
+
+/**
+ * Lyrical-only guitar↔bass dialogue over a single bar.
+ * - complementary spacing around strong bass arrivals
+ * - contrary / oblique motion vs bass contour
+ * - onsets loosely coupled to the bass rhythm grid
+ * Bass events are never rewritten. Pitches stay inside field + register.
+ * No-op when bass timing is absent (context-free / midis-only paths).
+ */
+export function applyLyricalBassDialogue(args: {
+  events: readonly LongLineEvent[];
+  bassEvents: readonly LongLineTimedBassEvent[];
+  pitchClasses: readonly number[];
+  register: LongLineRegister;
+  beatsPerBar: number;
+  barIndex: number;
+  seed: number;
+}): LongLineEvent[] {
+  const { events, bassEvents, beatsPerBar, barIndex, seed } = args;
+  if (events.length === 0 || bassEvents.length === 0) {
+    return events.map((e) => ({ ...e }));
+  }
+  const pitchClasses = canonicalPitchSet(args.pitchClasses);
+  const pool = midisInRegister(pitchClasses, args.register);
+  if (pitchClasses.length === 0 || pool.length === 0) {
+    return events.map((e) => ({ ...e }));
+  }
+
+  const rng = mulberry32((seed ^ 0x41a7d105 ^ (barIndex * 0x9e3779b9)) >>> 0);
+  const arrivals = bassEvents.map((e) => e.startBeat);
+  const grid = bassRhythmGrid(bassEvents, beatsPerBar);
+  const shaped: LongLineEvent[] = [];
+  let cursor = events[0]!.midi;
+
+  for (let i = 0; i < events.length; i += 1) {
+    const ev = events[i]!;
+    let t = ev.startBeat;
+    let dur = ev.duration;
+    let midi = ev.midi;
+    const prevEnd = shaped.length > 0 ? shaped[shaped.length - 1]!.startBeat + shaped[shaped.length - 1]!.duration : 0;
+
+    // Complementary spacing: avoid stacking attacks on strong bass arrivals.
+    const hitArrival = arrivals.find((a) => Math.abs(a - t) < 0.22);
+    if (hitArrival !== undefined) {
+      const complements = [hitArrival + 0.5, hitArrival + 1, hitArrival - 0.5]
+        .map((x) => Math.round(x * 1000) / 1000)
+        .filter((x) => x >= prevEnd - EPS && x >= 0 && x < beatsPerBar - 0.25);
+      if (complements.length > 0) {
+        t = complements.reduce((best, c) => (Math.abs(c - ev.startBeat) < Math.abs(best - ev.startBeat) ? c : best));
+      } else {
+        t = Math.min(beatsPerBar - 0.5, Math.max(prevEnd, hitArrival + 0.5));
+      }
+    }
+
+    // Rhythm coupling: if far from every bass-relative slot, snap toward one.
+    const nearGrid = grid.some((g) => Math.abs(g - t) < 0.35);
+    if (!nearGrid && grid.length > 0 && rng() < 0.6) {
+      const legal = grid.filter((g) => g >= prevEnd - EPS && g < beatsPerBar - 0.25);
+      if (legal.length > 0) {
+        t = legal.reduce((best, g) => (Math.abs(g - t) < Math.abs(best - t) ? g : best));
+      }
+    }
+
+    // Leave air before a bass arrival that would land inside this sustain.
+    for (const arrival of arrivals) {
+      if (t + EPS < arrival && t + dur > arrival + EPS) {
+        const gapEnd = arrival - 0.125;
+        if (gapEnd > t + 0.25) {
+          dur = gapEnd - t;
+        }
+      }
+    }
+
+    // Contrary / oblique vs bass contour (first note may still answer an early move).
+    const bassDir = bassDirectionAt(bassEvents, t);
+    if (bassDir !== 0) {
+      const roll = rng();
+      if (i === 0) {
+        if (roll < 0.45) {
+          midi = midiTowardDirection(pool, pitchClasses, midi, -bassDir, rng);
+        }
+      } else if (roll < 0.55) {
+        midi = midiTowardDirection(pool, pitchClasses, cursor, -bassDir, rng);
+      } else if (roll < 0.8) {
+        // Oblique: hold while bass moves.
+        midi = cursor;
+      }
+    }
+
+    // Keep legal field tone inside register.
+    if (!pool.includes(midi)) {
+      midi = midiAtDegree(degreeIndex(midi, pitchClasses), pitchClasses, pool, cursor);
+    }
+
+    dur = Math.min(dur, beatsPerBar - t);
+    if (dur <= EPS) continue;
+
+    shaped.push({
+      bar: barIndex,
+      startBeat: Math.round(t * 1000) / 1000,
+      duration: Math.round(dur * 1000) / 1000,
+      midi,
+      pitchClass: mod12(midi),
+    });
+    cursor = midi;
+  }
+
+  return repackBarEvents(shaped.length > 0 ? shaped : events, beatsPerBar, barIndex);
+}
+
+/**
+ * Emit one lyrical bar by developing a motif cell into the current field.
+ * Used by harmonic-context phrase continuity and multi-bar lyrical generation.
+ */
+export function generateLyricalMotifBar(args: {
+  pitchClasses: readonly number[];
+  register: LongLineRegister;
+  seed: number;
+  beatsPerBar: number;
+  barIndex: number;
+  motif: LyricalMotifCell;
+  developIndex: number;
+  phraseLen: number;
+  anchorMidi?: number;
+  preferPitchClasses?: readonly number[];
+  /** Optional timed bass — lyrical dialogue only; never rewritten. */
+  bassEvents?: readonly LongLineTimedBassEvent[];
+}): { events: LongLineEvent[]; motif: LyricalMotifCell } {
+  const pitchClasses = canonicalPitchSet(args.pitchClasses);
+  const pool = midisInRegister(pitchClasses, args.register);
+  if (pitchClasses.length === 0 || pool.length === 0) {
+    throw new Error('long-line-practice: motif bar needs non-empty field in register');
+  }
+  const rng = mulberry32((args.seed ^ profileSalt('lyrical') ^ (args.barIndex * 0x85ebca6b)) >>> 0);
+  const phraseEnding = args.developIndex >= args.phraseLen - 1;
+  const steps = developLyricalSteps(args.motif.steps, rng, args.developIndex);
+  const durations = varyLyricalDurations(args.motif.durations, rng, phraseEnding);
+
+  let cursor = pickStartMidi(pool, pitchClasses, args.anchorMidi, args.preferPitchClasses);
+  let degree = degreeIndex(cursor, pitchClasses);
+  // Leave common-tone join, but do not restart phrase on exact prior midi.
+  if (
+    args.anchorMidi !== undefined &&
+    cursor === args.anchorMidi &&
+    pitchClasses.length > 1 &&
+    args.developIndex > 0
+  ) {
+    degree += rng() < 0.5 ? 1 : -1;
+    cursor = midiAtDegree(degree, pitchClasses, pool, args.anchorMidi);
+    degree = degreeIndex(cursor, pitchClasses);
+  }
+  let t = 0;
+  if (args.developIndex > 0 && rng() < 0.3) {
+    t = onsetBias('lyrical', rng, args.beatsPerBar);
+  }
+
+  const events: LongLineEvent[] = [];
+  const noteCount = Math.max(1, durations.length);
+  // Phrase ending: leave trailing space (breath) — cap fill before bar end.
+  const fillCap = phraseEnding
+    ? Math.max(args.beatsPerBar * 0.55, args.beatsPerBar - 1.5)
+    : args.beatsPerBar;
+
+  for (let i = 0; i < noteCount; i += 1) {
+    if (t >= fillCap - EPS) break;
+    if (i > 0 && rng() < LYRICAL_REST_CHANCE * 0.6 && t > EPS) {
+      const restDur = Math.min(0.5, fillCap - t);
+      t += restDur;
+      if (t >= fillCap - EPS) break;
+    }
+
+    if (i > 0) {
+      let step = steps[i - 1] ?? pick(rng, LYRICAL_STEPS);
+      if (step === 0) step = pick(rng, [-1, 1] as const);
+      degree += step;
+    }
+    let midi = i === 0 ? cursor : midiAtDegree(degree, pitchClasses, pool, cursor);
+    // Avoid consecutive unison — lyrical stays sparse, not stuck.
+    if (i > 0 && midi === cursor && pitchClasses.length > 1) {
+      degree += rng() < 0.5 ? 1 : -1;
+      midi = midiAtDegree(degree, pitchClasses, pool, cursor);
+    }
+    degree = degreeIndex(midi, pitchClasses);
+    cursor = midi;
+
+    let dur = durations[i] ?? pick(rng, LYRICAL_DURATIONS);
+    if (phraseEnding && i === noteCount - 1) {
+      dur = Math.max(dur, Math.min(2, fillCap - t));
+    }
+    dur = Math.min(dur, fillCap - t);
+    if (dur <= EPS) break;
+
+    events.push({
+      bar: args.barIndex,
+      startBeat: Math.round(t * 1000) / 1000,
+      duration: Math.round(dur * 1000) / 1000,
+      midi,
+      pitchClass: mod12(midi),
+    });
+    t += dur;
+  }
+
+  if (events.length === 0) {
+    const midi = pickStartMidi(pool, pitchClasses, args.anchorMidi, args.preferPitchClasses);
+    events.push({
+      bar: args.barIndex,
+      startBeat: 0,
+      duration: Math.min(phraseEnding ? 2 : 1, args.beatsPerBar),
+      midi,
+      pitchClass: mod12(midi),
+    });
+  }
+
+  const dialogued =
+    args.bassEvents && args.bassEvents.length > 0
+      ? applyLyricalBassDialogue({
+          events,
+          bassEvents: args.bassEvents,
+          pitchClasses,
+          register: args.register,
+          beatsPerBar: args.beatsPerBar,
+          barIndex: args.barIndex,
+          seed: args.seed,
+        })
+      : events;
+
+  const refreshed = extractLyricalMotif(dialogued, pitchClasses) ?? args.motif;
+  return { events: dialogued, motif: refreshed };
+}
+
 /**
  * Generate one monophonic long line from a pitch collection.
  * All note pitch classes stay inside the collection; all midis stay in register.
+ * Lyrical bars>4: 2–4-bar motif phrases (rhythmic variation, contour, endings).
+ * Lyrical bars≤4: legacy path (golden-stable).
  */
 export function generateLongLine(request: LongLineRequest): LongLineResult {
   const pitchClasses = canonicalPitchSet(request.pitchClasses);
@@ -286,7 +694,44 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
   let sequenceStep = pick(rng, steps);
   let sequenceLeft = profile === 'intervallic' ? randInt(rng, 3, 5) : 0;
 
+  // Lyrical phrase windows (bars > 4 only — preserves ≤4-bar golden).
+  const useLyricalPhrases = profile === 'lyrical' && bars > 4;
+  let phraseLen = 0;
+  let phraseIndex = 0;
+  let lyricalMotif: LyricalMotifCell | null = null;
+
   for (let bar = 0; bar < bars; bar += 1) {
+    if (useLyricalPhrases) {
+      if (phraseIndex >= phraseLen) {
+        phraseLen = Math.min(randInt(rng, 2, 4), bars - bar);
+        phraseIndex = 0;
+        lyricalMotif = null;
+      }
+
+      if (lyricalMotif && phraseIndex > 0) {
+        const developed = generateLyricalMotifBar({
+          pitchClasses,
+          register,
+          seed: request.seed,
+          beatsPerBar,
+          barIndex: bar,
+          motif: lyricalMotif,
+          developIndex: phraseIndex,
+          phraseLen,
+          anchorMidi: cursor,
+        });
+        for (const event of developed.events) {
+          events.push(event);
+          cursor = event.midi;
+        }
+        degree = degreeIndex(cursor, pitchClasses);
+        lane = laneIndexOf(pool, cursor);
+        // Keep statement motif for continuity; refresh only on new phrase.
+        phraseIndex += 1;
+        continue;
+      }
+    }
+
     let t = profile === 'experimental' && bar > 0 ? onsetBias(profile, rng, beatsPerBar) % beatsPerBar : 0;
     if (profile === 'lyrical' && bar > 0 && rng() < 0.35) {
       t = onsetBias(profile, rng, beatsPerBar);
@@ -295,9 +740,16 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
       t = onsetBias(profile, rng, beatsPerBar);
     }
 
-    while (t < beatsPerBar - EPS) {
+    // Lyrical phrase ending on free-generated last phrase bar: leave breath.
+    const phraseEndingFree =
+      useLyricalPhrases && phraseLen > 0 && phraseIndex === phraseLen - 1 && lyricalMotif === null;
+    const fillCap = phraseEndingFree
+      ? Math.max(beatsPerBar * 0.55, beatsPerBar - 1.5)
+      : beatsPerBar;
+
+    while (t < fillCap - EPS) {
       if (rng() < restChance && t > EPS) {
-        const restDur = Math.min(pick(rng, durations), beatsPerBar - t);
+        const restDur = Math.min(pick(rng, durations), fillCap - t);
         t += restDur;
         continue;
       }
@@ -312,6 +764,10 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
         }
       } else {
         step = pick(rng, steps);
+        // Phrase-developed lyrical: fewer static holds so motif cells stay mobile.
+        if (useLyricalPhrases && step === 0 && rng() < 0.7) {
+          step = pick(rng, [-1, 1] as const);
+        }
       }
 
       let midi: number;
@@ -330,6 +786,10 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
       } else {
         degree += step;
         midi = midiAtDegree(degree, pitchClasses, pool, cursor);
+        if (useLyricalPhrases && midi === cursor && pitchClasses.length > 1) {
+          degree += rng() < 0.5 ? 1 : -1;
+          midi = midiAtDegree(degree, pitchClasses, pool, cursor);
+        }
         degree = degreeIndex(midi, pitchClasses);
         lane = laneIndexOf(pool, midi);
       }
@@ -340,7 +800,10 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
         // Asymmetry: stretch or compress once in a while.
         dur = Math.max(0.25, dur * (rng() < 0.5 ? 0.5 : 1.5));
       }
-      dur = Math.min(dur, beatsPerBar - t);
+      if (phraseEndingFree && t + dur >= fillCap - EPS) {
+        dur = Math.max(dur, Math.min(2, fillCap - t));
+      }
+      dur = Math.min(dur, fillCap - t);
       if (dur <= EPS) break;
 
       events.push({
@@ -365,10 +828,18 @@ export function generateLongLine(request: LongLineRequest): LongLineResult {
       events.push({
         bar,
         startBeat: 0,
-        duration: Math.min(1, beatsPerBar),
+        duration: Math.min(phraseEndingFree ? 2 : 1, beatsPerBar),
         midi,
         pitchClass: mod12(midi),
       });
+    }
+
+    if (useLyricalPhrases) {
+      const justWrote = events.filter((e) => e.bar === bar);
+      if (phraseIndex === 0) {
+        lyricalMotif = extractLyricalMotif(justWrote, pitchClasses);
+      }
+      phraseIndex += 1;
     }
   }
 

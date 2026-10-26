@@ -125,6 +125,12 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     if (path === '/harmony-lab') {
       return ipcInvoke<T>('composer-os-api:harmony-lab', body ?? {});
     }
+    if (path === '/long-line-practice/probe') {
+      return ipcInvoke<T>('composer-os-api:long-line-practice-probe', body ?? {});
+    }
+    if (path === '/long-line-practice') {
+      return ipcInvoke<T>('composer-os-api:long-line-practice', body ?? {});
+    }
     if (path === '/piano-chamber') {
       return ipcInvoke<T>('composer-os-api:piano-chamber', body ?? {});
     }
@@ -350,6 +356,36 @@ export const api = {
       lockStatus?: string;
       intervalText?: string;
     }>('/harmony-lab', req),
+  longLinePracticeProbe: (req: { xml: string }) =>
+    post<{
+      ok: boolean;
+      error?: string;
+      issues?: readonly string[];
+      barCount?: number;
+      tempoBpm?: number | null;
+      sourceSha256?: string;
+      register?: { low: number; high: number };
+    }>('/long-line-practice/probe', req),
+  longLinePractice: (req: {
+    xml: string;
+    startBar: number;
+    endBar: number;
+    register: { low: number; high: number };
+    seed: number;
+    tempoBpmFallback?: number;
+    profiles?: readonly ('lyrical' | 'intervallic' | 'experimental')[];
+  }) =>
+    post<{
+      ok: boolean;
+      error?: string;
+      issues?: readonly string[];
+      context?: {
+        canGenerate?: boolean;
+        range?: { startBar: number; endBar: number };
+        issues?: readonly string[];
+      } | null;
+      scores?: Array<{ profile: 'lyrical' | 'intervallic' | 'experimental'; title: string; xml: string }>;
+    }>('/long-line-practice', req),
   composePiano: (req: Record<string, unknown>) =>
     post<{
       ok: boolean;

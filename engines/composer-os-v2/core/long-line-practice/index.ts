@@ -36,6 +36,10 @@ export {
   defaultLongLineRegister,
   midisInRegister,
   longLineEventSignature,
+  extractLyricalMotif,
+  generateLyricalMotifBar,
+  applyLyricalBassDialogue,
+  type LyricalMotifCell,
 } from './generateLongLine';
 
 export { generateLongLinesOverHarmony, eventsRespectHarmonyFields } from './harmonicContext';
