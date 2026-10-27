@@ -213,6 +213,8 @@ For each phase: **Deliverable** · **Acceptance gate** · **Roles** (Terminal / 
 
 **Research-evidence note (planning context only; does not unpark).** From the 27 October 2026 Perplexity report *“Transforming music while preserving recognisable identity”*: **M1** has the strongest direct perceptual support; **M2** has structural and computational precedents; **M3** radical kernel reconstruction remains **recognisability-unproven**. Treat **traceable derivation**, **audible recognition**, and **artistic quality** as **independent** assessments — never collapse them. **No automatic recognition thresholds or guarantees**; human MORPH selection and artistic review remain required. PARKED prerequisites, five-phase GUI gates, and evaluation safeguards above are unchanged.
 
+**Open-source reuse candidates (provisional; does not unpark).** Classifications are provisional only — **no candidate has been integration-tested**, and **no verified complete M3 solution exists**. Licence and compatibility checks are required before any adoption. Candidates: **music21** — REUSE (pitch/rhythm and MusicXML); **Partitura** — REUSE (symbolic score processing); **Strasheela** — REFERENCE (motif constraints); **melody-reduction-algo** — ADAPT (melodic reduction); **calpytools** — REFERENCE (pitch-set transformations). Five-phase GUI gates and PARKED status above are unchanged.
+
 ---
 
 
