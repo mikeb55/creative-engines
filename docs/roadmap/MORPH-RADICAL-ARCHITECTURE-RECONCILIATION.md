@@ -215,6 +215,8 @@ For each phase: **Deliverable** · **Acceptance gate** · **Roles** (Terminal / 
 
 **Open-source reuse candidates (provisional; does not unpark).** Classifications are provisional only — **no candidate has been integration-tested**, and **no verified complete M3 solution exists**. Licence and compatibility checks are required before any adoption. Candidates: **music21** — REUSE (pitch/rhythm and MusicXML); **Partitura** — REUSE (symbolic score processing); **Strasheela** — REFERENCE (motif constraints); **melody-reduction-algo** — ADAPT (melodic reduction); **calpytools** — REFERENCE (pitch-set transformations). Five-phase GUI gates and PARKED status above are unchanged.
 
+**Artistic-quality note (human review criteria only; does not unpark).** Not automatic scores. Review complete passages against: (1) consequential musical development; (2) source-specific musical identity; (3) expressive contrast, silence and pacing; (4) meaningful instrumental dialogue; (5) comparative review of complete passages. Clarifications: **M1** is locally bounded, **not** artistically modest; **M2** requires convincing formal development; **M3** requires a compelling new work — **derivation**, **recognition**, and **artistic quality** remain separate assessments. Five-phase GUI gates, locks, and PARKED status above are unchanged.
+
 ---
 
 
