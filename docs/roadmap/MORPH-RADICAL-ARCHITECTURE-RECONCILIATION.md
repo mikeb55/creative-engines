@@ -174,13 +174,26 @@ Inspected entry points only. Capability = what the code actually exports / does.
 
 ## 7. Reuse order after unpark (planning only)
 
-1. Freeze hashes (leadsheets, MORPH guitar-verified, Radical Performance editions).
-2. MORPH skeleton: types + lock validation + source report (no note writing).
-3. M1 DEVELOP write path behind comparative selection; wire existing feasibility + evaluation.
-4. Only then Radical Performance schema (MODEL/TRANSFORM/INVENT) importing one album fixture read-only.
-5. Architecture B/C remain optional proposal interfaces — not dependencies for milestone 1.
+**Prerequisites unchanged.** Recording (~30 Nov 2026) + preservation hash inventory, then **explicit unpark** of the parked proposal, before any phase below. Do not schedule engine work from this document alone.
+
+**Authoritative selection semantics retained.** MORPH comparative selection uses **KEEP / DEVELOP / REWRITE** only as defined by MORPH. Artistic review records **ACCEPT / REVISE / REJECT** separately — do not conflate the two vocabularies. (`pcKeep` remains unrelated.)
+
+**Deferred across all phases:** M3, Radical Performance TRANSFORM / INVENT, UI, and batch / nine-song work. Architecture B/C remain optional proposal interfaces — not dependencies for these phases.
+
+### Gated development phases
+
+1. **After explicit unpark — freeze + thin M1 contract.** Freeze source hashes (leadsheets, MORPH guitar-verified, Radical Performance editions). Establish a thin M1 identity / lock contract using verified existing helpers only (e.g. `verifyLockedCopy` / `compareLockedSpan` / dual-part hash pattern as appropriate). No note-writing engine expansion in this phase.
+
+2. **Black Aura M1 DEVELOP proof.** One complete musical passage; locked bass / form; source comparison; compatible feasibility / evaluation receipts; blank human BMEF. Record MORPH KEEP/DEVELOP/REWRITE against comparators, and artistic ACCEPT/REVISE/REJECT separately. **Human artistic review required before any expansion.**
+
+3. **Second approved M1 proof.** Harden only what the working path requires. No speculative generalisation.
+
+4. **Choose one branch.** Advance **M2** *or* Radical Performance **MODEL**; keep the other branch parked. Do not open both.
+
+5. **Document demonstrated contracts.** Record what was proven, known limitations, and remaining parked work (including the unchosen branch from phase 4, plus deferred M3 / TRANSFORM / INVENT / UI / batch).
 
 ---
+
 
 ## 8. Reference index
 
