@@ -174,23 +174,42 @@ Inspected entry points only. Capability = what the code actually exports / does.
 
 ## 7. Reuse order after unpark (planning only)
 
-**Prerequisites unchanged.** Recording (~30 Nov 2026) + preservation hash inventory, then **explicit unpark** of the parked proposal, before any phase below. Do not schedule engine work from this document alone.
+**Prerequisites unchanged (PARKED until met).** Recording (~30 Nov 2026) + preservation hash inventory, then **explicit unpark** of the parked proposal, before any phase below. Do not schedule engine work from this document alone.
 
 **Authoritative selection semantics retained.** MORPH comparative selection uses **KEEP / DEVELOP / REWRITE** only as defined by MORPH. Artistic review records **ACCEPT / REVISE / REJECT** separately — do not conflate the two vocabularies. (`pcKeep` remains unrelated.)
 
-**Deferred across all phases:** M3, Radical Performance TRANSFORM / INVENT, UI, and batch / nine-song work. Architecture B/C remain optional proposal interfaces — not dependencies for these phases.
+**Cross-cutting rules for all phases.** Do **not** fabricate adapters. Do **not** equate instrumental feasibility, lock receipts, or evaluator output with artistic approval. **ScoreModel is not mandatory** for the first M1 proof. Run **GCE only where a supported representation and path exist** — never invent a GCE number. Architecture B/C remain optional proposal interfaces — not dependencies.
+
+**Phase-dependent deferrals (replace any blanket “defer M3 / TRANSFORM / INVENT / UI / batch forever” reading).** Work deferred **until its phase** is opened and prior gates pass: M2 / M3 + their GUI extensions (phase 3); Radical Performance MODEL then TRANSFORM (phase 4 — MODEL inspection gate before TRANSFORM controls); INVENT + unified GUI / desktop acceptance (phase 5). Batch / nine-song work stays deferred until after phase-5 acceptance unless Mike explicitly scopes a narrower batch. Earlier phases may ship only the UI / desktop surface named in that phase’s deliverable. **Reuse existing desktop architecture** (Composer OS desktop / app-api / IPC surfaces already in repo) — no parallel desktop stack.
 
 ### Gated development phases
 
-1. **After explicit unpark — freeze + thin M1 contract.** Freeze source hashes (leadsheets, MORPH guitar-verified, Radical Performance editions). Establish a thin M1 identity / lock contract using verified existing helpers only (e.g. `verifyLockedCopy` / `compareLockedSpan` / dual-part hash pattern as appropriate). No note-writing engine expansion in this phase.
+For each phase: **Deliverable** · **Acceptance gate** · **Roles** (Terminal / Cursor / Mike).
 
-2. **Black Aura M1 DEVELOP proof.** One complete musical passage; locked bass / form; source comparison; compatible feasibility / evaluation receipts; blank human BMEF. Record MORPH KEEP/DEVELOP/REWRITE against comparators, and artistic ACCEPT/REVISE/REJECT separately. **Human artistic review required before any expansion.**
+1. **Preservation, explicit unpark, and thin identity / lock contract**
+   - **Deliverable:** Frozen SHA-256 inventory (leadsheets, MORPH guitar-verified, Radical Performance editions); written thin M1 identity / lock contract using verified existing helpers only (e.g. `verifyLockedCopy` / `compareLockedSpan` / dual-part hash pattern as appropriate). No note-writing engine expansion.
+   - **Acceptance gate:** Hashes recorded; unpark decision documented; contract names locks and identity cells without inventing missing modules.
+   - **Roles:** Terminal — hash inventory / freeze scripts. Cursor — thin contract text only (docs). Mike — explicit unpark and contract sign-off.
 
-3. **Second approved M1 proof.** Harden only what the working path requires. No speculative generalisation.
+2. **Black Aura M1 DEVELOP proof; usable M1 desktop GUI; bass / form locked; human artistic gate**
+   - **Deliverable:** One complete Black Aura M1 DEVELOP MusicXML passage; bass / form (bar count / metre / tempo / rehearsal as contracted) locked; source comparison; compatible feasibility / machine receipts; blank human BMEF. ScoreModel optional. GCE only if supported for that export. Plus a **usable M1 desktop GUI** on the **existing** desktop architecture covering: score loading, transformation controls, preview, approval (KEEP/DEVELOP/REWRITE + ACCEPT/REVISE/REJECT capture), and MusicXML / Markdown export; second approved M1 source proof on the same hardened path; installed-app proof. Harden only what the working path requires.
+   - **Acceptance gate:** Locks hold; KEEP/DEVELOP/REWRITE recorded against comparators; separate ACCEPT/REVISE/REJECT from Mike. Feasibility ≠ approval. Desktop demonstrates score load → transform controls → preview → approval → export on an installed build (not menu fiction). **Human artistic review required before phase 3.**
+   - **Roles:** Terminal — generation / lock / feasibility / install / launch / export verification. Cursor — wire only what the M1 proof + listed GUI surfaces need on existing desktop; no speculative adapters or new desktop stack. Mike — artistic gate (ACCEPT/REVISE/REJECT), MORPH selection record, and usable-GUI accept/reject.
 
-4. **Choose one branch.** Advance **M2** *or* Radical Performance **MODEL**; keep the other branch parked. Do not open both.
+3. **M2 then M3, independently gated; GUI extensions independently gated; derivation ≠ recognisability**
+   - **Deliverable:** M2 form-aware work only after phase-2 gate; then M3 kernel rebuild only after a separate M2 gate. **GUI extensions** for M2 and M3 are **independently gated** (M2 GUI only after M2 gate; M3 GUI only after M3 gate) on the existing desktop architecture. Each step documents that **derivation from source is not the same as recognisability**.
+   - **Acceptance gate:** Independent pass/fail per tier (M2 gate before M3; each GUI extension gated with its tier). Recognisability judged by human MORPH selection + artistic review — not by “derived successfully” alone.
+   - **Roles:** Terminal — tier runs / lock receipts / GUI surface checks. Cursor — M2 then M3 implementation and matching GUI extensions only when gated open. Mike — per-tier KEEP/DEVELOP/REWRITE and ACCEPT/REVISE/REJECT.
 
-5. **Document demonstrated contracts.** Record what was proven, known limitations, and remaining parked work (including the unchosen branch from phase 4, plus deferred M3 / TRANSFORM / INVENT / UI / batch).
+4. **Radical Performance MODEL then TRANSFORM; MODEL inspection before TRANSFORM controls**
+   - **Deliverable:** Radical Performance **MODEL** as its own authority (not a MORPH substitute); evidence tiers and uncertainty labels visible on outputs / reviews, including **MODEL inspection** on the existing desktop GUI. Radical Performance **TRANSFORM** only after the MODEL inspection gate passes, and only inside declared compositional permissions (what may move, what stays locked); TRANSFORM controls appear only after that gate.
+   - **Acceptance gate:** MODEL outputs state what was verified vs assumed; no silent upgrade to artistic approval; MORPH and Radical Performance authorities remain distinct; **MODEL inspection ACCEPT required before TRANSFORM controls / implementation open.** Permission set written and enforced for TRANSFORM; violations fail closed; feasibility / lock pass still does not imply ACCEPT.
+   - **Roles:** Terminal — MODEL generation / receipt dumps; permission-constrained TRANSFORM runs. Cursor — MODEL surface + evidence/uncertainty fields first; TRANSFORM controls / wiring only after MODEL gate. Mike — MODEL artistic review (separate from MORPH selection), permission set, then TRANSFORM ACCEPT/REVISE/REJECT.
+
+5. **INVENT, unified GUI, and desktop acceptance testing**
+   - **Deliverable:** Radical Performance **INVENT** plus full MORPH ↔ Radical Performance integration; **unified GUI** on the existing desktop architecture; desktop acceptance testing of the integrated path (MusicXML / Markdown).
+   - **Acceptance gate:** End-to-end MusicXML / Markdown path works on installed desktop under unified GUI; authorities, locks, evidence tiers, and human gates all still distinct; Mike records integration ACCEPT or sends REVISE with named gaps.
+   - **Roles:** Terminal — installed-app integration and desktop acceptance checks. Cursor — INVENT + unified GUI / integration wiring only after phase-4 gate. Mike — final integration artistic / product acceptance.
 
 ---
 
