@@ -217,6 +217,15 @@ For each phase: **Deliverable** · **Acceptance gate** · **Roles** (Terminal / 
 
 **Artistic-quality note (human review criteria only; does not unpark).** Not automatic scores. Review complete passages against: (1) consequential musical development; (2) source-specific musical identity; (3) expressive contrast, silence and pacing; (4) meaningful instrumental dialogue; (5) comparative review of complete passages. Clarifications: **M1** is locally bounded, **not** artistically modest; **M2** requires convincing formal development; **M3** requires a compelling new work — **derivation**, **recognition**, and **artistic quality** remain separate assessments. Five-phase GUI gates, locks, and PARKED status above are unchanged.
 
+**Practical M1 delivery checklist (work packages only; does not unpark or replace the five phases).** Within each package, keep **implementation**, **verification**, and **approval** as **separate gates**. MORPH remains **PARKED** until prerequisites are met. M2 / M3, Radical Performance MODEL/TRANSFORM, INVENT, GUI gates, locks, and safeguards above are unchanged.
+
+1. Preserve sources and SHA-256 inventory.
+2. Explicit unpark + approved thin M1 contract.
+3. Black Aura M1 proof + independent lock verification — reuse existing motif operators and MusicXML transforms where compatible; add source-bound M1 development and bass/form lock verification.
+4. Mike’s artistic approval + second-source proof.
+5. Extend existing Development Studio GUI (reuse load, preview, playback, export) — not a separate MORPH screen or desktop stack; add missing identity, comparative selection, artistic approval, and Markdown lineage functions.
+6. Installed-app verification + Mike’s final acceptance — treat installed-app behaviour as unverified until this gate passes.
+
 ---
 
 
