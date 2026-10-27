@@ -211,6 +211,8 @@ For each phase: **Deliverable** · **Acceptance gate** · **Roles** (Terminal / 
    - **Acceptance gate:** End-to-end MusicXML / Markdown path works on installed desktop under unified GUI; authorities, locks, evidence tiers, and human gates all still distinct; Mike records integration ACCEPT or sends REVISE with named gaps.
    - **Roles:** Terminal — installed-app integration and desktop acceptance checks. Cursor — INVENT + unified GUI / integration wiring only after phase-4 gate. Mike — final integration artistic / product acceptance.
 
+**Research-evidence note (planning context only; does not unpark).** From the 27 October 2026 Perplexity report *“Transforming music while preserving recognisable identity”*: **M1** has the strongest direct perceptual support; **M2** has structural and computational precedents; **M3** radical kernel reconstruction remains **recognisability-unproven**. Treat **traceable derivation**, **audible recognition**, and **artistic quality** as **independent** assessments — never collapse them. **No automatic recognition thresholds or guarantees**; human MORPH selection and artistic review remain required. PARKED prerequisites, five-phase GUI gates, and evaluation safeguards above are unchanged.
+
 ---
 
 
