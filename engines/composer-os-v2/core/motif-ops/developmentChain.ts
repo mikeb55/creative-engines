@@ -1,10 +1,14 @@
 /**
  * Developing variation: each step is applied to the previous result.
  * Lineage ids stay readable: m1, m1.r, m1.r.fh.
+ *
+ * Source-bound M1 roots come from motifFromDiscoveredPattern (explicit cell pick).
+ * buildChain never invents a root and never mutates the source score.
  */
 
 import { applyOperator, type OperatorParams } from './operators';
 import { lineageSuffix, type Motif, type OperatorId, type TransformStep } from './types';
+export { motifFromDiscoveredPattern } from './motifDiscovery';
 
 export interface ChainPlanStep {
   op: OperatorId;

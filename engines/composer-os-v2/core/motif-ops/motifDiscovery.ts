@@ -4,6 +4,7 @@
  */
 
 import type { CanonicalEvaluationScore } from '../musical-evaluation/canonicalScore';
+import type { Motif } from './types';
 
 export interface DiscoveredOccurrence {
   bar: number;
@@ -13,6 +14,9 @@ export interface DiscoveredOccurrence {
 
 export interface DiscoveredPattern {
   id: string;
+  /** Absolute MIDI of the prototype's first sounding note (source pitch, not relative). */
+  anchorMidi: number;
+  /** Onsets and midis relative to the prototype's first note. */
   points: Array<{ onset: number; midi: number }>;
   occurrences: DiscoveredOccurrence[];
 }
@@ -73,6 +77,7 @@ export function discoverMotifs(score: CanonicalEvaluationScore, partFilter?: rea
       const proto = slices[0]!;
       ranked.push({
         id: '',
+        anchorMidi: proto[0]!.midi,
         points: proto.map((point) => ({ onset: point.onset - proto[0]!.onset, midi: point.midi - proto[0]!.midi })),
         occurrences: slices.map((slice) => ({
           bar: slice[0]!.bar,
@@ -107,4 +112,28 @@ function signature(slice: readonly Point[]): string {
   const origin = slice[0]!;
   const body = slice.slice(1).map((point) => `${point.onset - origin.onset}:${point.midi - origin.midi}`);
   return `${slice.length}|${body.join(',')}`;
+}
+
+/**
+ * Source-bound Motif from an explicitly chosen discovered cell.
+ * Absolute pitches use anchorMidi (+ optional occurrence transposition).
+ * Does not mutate the source score or pattern.
+ */
+export function motifFromDiscoveredPattern(
+  pattern: DiscoveredPattern,
+  occurrenceIndex = 0,
+): Motif {
+  const occurrence = pattern.occurrences[occurrenceIndex] ?? pattern.occurrences[0];
+  const shift = (occurrence?.transposition ?? 0) + pattern.anchorMidi;
+  const points = pattern.points;
+  const events = points.map((point, index) => {
+    const next = points[index + 1];
+    const gap = next ? next.onset - point.onset : 1;
+    return {
+      onset: point.onset,
+      duration: gap > 0 ? gap : 1,
+      midi: shift + point.midi,
+    };
+  });
+  return { id: pattern.id || 'm1', events: events.map((event) => ({ ...event })) };
 }

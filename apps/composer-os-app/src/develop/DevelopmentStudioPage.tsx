@@ -3,7 +3,8 @@
  * Nothing on this page is musically approved.
  */
 import { useMemo, useState } from 'react';
-import { buildChain } from '@composer-os/core/motif-ops/developmentChain';
+import { buildChain, motifFromDiscoveredPattern } from '@composer-os/core/motif-ops/developmentChain';
+import type { DiscoveredPattern } from '@composer-os/core/motif-ops/motifDiscovery';
 import { C_MAJOR_FIELD, type Motif, type OperatorId } from '@composer-os/core/motif-ops/types';
 import { useLastGenerate } from '@renderer/context/LastGenerateContext';
 import { navigateToRoute } from '../router/appRouter';
@@ -69,7 +70,8 @@ export function DevelopmentStudioPage() {
   const [symbol, setSymbol] = useState('Cmaj7');
   const [voicedXml, setVoicedXml] = useState('');
   const [gripText, setGripText] = useState('');
-  const [found, setFound] = useState<string[]>([]);
+  const [patterns, setPatterns] = useState<DiscoveredPattern[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const current = useMemo(() => motifFromChain(root, plan), [root, plan]);
   const chain = useMemo(() => buildChain(root, plan), [root, plan]);
@@ -91,12 +93,25 @@ export function DevelopmentStudioPage() {
       return;
     }
     const result = await api.developDiscover({ xml: sourceXml });
-    const row = result as { ok?: boolean; error?: string; discovery?: { patterns?: Array<{ id: string }> } };
+    const row = result as {
+      ok?: boolean;
+      error?: string;
+      discovery?: { patterns?: DiscoveredPattern[] };
+    };
     if (!row.ok) {
       setError(row.error || 'Discovery did not run.');
       return;
     }
-    setFound((row.discovery?.patterns ?? []).map((pattern) => pattern.id));
+    const foundPatterns = row.discovery?.patterns ?? [];
+    setPatterns(foundPatterns);
+    setSelectedId(null);
+    setError('');
+  }
+
+  function selectDiscoveredCell(pattern: DiscoveredPattern) {
+    setSelectedId(pattern.id);
+    setRoot(motifFromDiscoveredPattern(pattern));
+    setPlan([]);
     setError('');
   }
 
@@ -166,7 +181,25 @@ export function DevelopmentStudioPage() {
       <section>
         <h3>Cell</h3>
         <button type="button" onClick={() => void findCells()}>Found in this score</button>
-        <p data-testid="develop-found">{found.join(', ') || 'No discovered cell yet.'}</p>
+        <p data-testid="develop-found">
+          {patterns.length
+            ? patterns.map((pattern) => (
+              <button
+                key={pattern.id}
+                type="button"
+                data-testid={`develop-cell-${pattern.id}`}
+                aria-pressed={selectedId === pattern.id}
+                onClick={() => selectDiscoveredCell(pattern)}
+                style={{ marginRight: '0.35rem' }}
+              >
+                {pattern.id}
+              </button>
+            ))
+            : 'No discovered cell yet.'}
+        </p>
+        <p data-testid="develop-selected-cell">
+          Selected cell: {selectedId ?? 'none — example cell until you pick one'}
+        </p>
         <p>Working cell: {current.events.map((event) => event.midi ?? 'rest').join(' ')}</p>
       </section>
 
@@ -178,7 +211,7 @@ export function DevelopmentStudioPage() {
               {item.label}
             </button>
           ))}
-          <button type="button" className="secondary" onClick={() => { setPlan([]); setRoot(emptyMotif()); }}>Make another</button>
+          <button type="button" className="secondary" onClick={() => { setPlan([]); setRoot(emptyMotif()); setSelectedId(null); }}>Make another</button>
         </div>
         <div data-testid="develop-lineage" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
           {chain.lineageIds.map((id, index) => (
