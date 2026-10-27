@@ -26,10 +26,60 @@ const FIXTURE = path.join(FIXTURE_DIR, 'duo-8bar-fixture.musicxml');
 const FIXTURE_78 = path.join(FIXTURE_DIR, 'duo-7-8-only-fixture.musicxml');
 const FIXTURE_MIXED = path.join(FIXTURE_DIR, 'duo-mixed-metre-fixture.musicxml');
 
+/** MORPH M1 Black Aura authoritative duo leadsheet (immutable master). */
+const BLACK_AURA_V20 =
+  '/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V2.0.musicxml';
+const BLACK_AURA_V20_SHA =
+  'b85f7731f0232c02ae588c63f2950037a340f62af64fe42b74b03157da4fccfd';
+
 const SOFT_RANGES = {
   guitarMidi: { min: 40, max: 76 },
   bassMidi: { min: 28, max: 55 },
 };
+
+/** Ordered P2 note stream: pitch (or rest), duration — order-sensitive. */
+function bassStreamFingerprint(xml: string): string {
+  const doc = parseMusicXml(xml);
+  const parts = Array.from(doc.getElementsByTagName('part'));
+  const bass = parts.find((p) => p.getAttribute('id') === 'P2');
+  if (!bass) throw new Error('P2 bass part missing');
+  return Array.from(bass.getElementsByTagName('note'))
+    .map((n) => {
+      const duration = n.getElementsByTagName('duration')[0]?.textContent ?? '';
+      if (n.getElementsByTagName('rest').length) return `R:${duration}`;
+      const step = n.getElementsByTagName('step')[0]?.textContent ?? '';
+      const alter = n.getElementsByTagName('alter')[0]?.textContent ?? '0';
+      const octave = n.getElementsByTagName('octave')[0]?.textContent ?? '';
+      return `${step}|${alter}|${octave}|${duration}`;
+    })
+    .join(';');
+}
+
+/** Metre, tempo and rehearsal markers by part/bar — structural lock surface. */
+function metreTempoRehearsalFingerprint(xml: string): string {
+  const doc = parseMusicXml(xml);
+  const chunks: string[] = [];
+  for (const part of Array.from(doc.getElementsByTagName('part'))) {
+    const pid = part.getAttribute('id') ?? '?';
+    for (const measure of Array.from(part.getElementsByTagName('measure'))) {
+      const num = measure.getAttribute('number') ?? '?';
+      const beats = measure.getElementsByTagName('beats')[0]?.textContent;
+      const beatType = measure.getElementsByTagName('beat-type')[0]?.textContent;
+      if (beats && beatType) chunks.push(`${pid}|${num}|time:${beats}/${beatType}`);
+      for (const reh of Array.from(measure.getElementsByTagName('rehearsal'))) {
+        chunks.push(`${pid}|${num}|reh:${reh.textContent ?? ''}`);
+      }
+      for (const pm of Array.from(measure.getElementsByTagName('per-minute'))) {
+        chunks.push(`${pid}|${num}|tempo:${pm.textContent ?? ''}`);
+      }
+      for (const sound of Array.from(measure.getElementsByTagName('sound'))) {
+        const tempo = sound.getAttribute('tempo');
+        if (tempo) chunks.push(`${pid}|${num}|soundTempo:${tempo}`);
+      }
+    }
+  }
+  return chunks.join(';');
+}
 
 describe('wwhDualPartTransform', () => {
   let outDir: string;
@@ -235,5 +285,117 @@ describe('wwhDualPartTransform', () => {
         preserveHarmony: true,
       }),
     ).toThrow(/lockGuitar/);
+  });
+
+  test('lockBass=true preserves bass pitch, duration, rests and order on harmonic', () => {
+    const sourceXml = fs.readFileSync(FIXTURE, 'utf8');
+    const sourceBass = bassStreamFingerprint(sourceXml);
+    const result = runDualPartTransform({
+      sourcePath: FIXTURE,
+      outDir,
+      profiles: ['harmonic'],
+      lockBass: true,
+      motifBars: [1, 2],
+      title: 'LockBass True',
+      stem: 'lockbass-true',
+      seed: 24024,
+      bhlWorld: 'F',
+      minHarmonyCount: 4,
+    });
+    expect(result.outputs).toHaveLength(1);
+    expect(bassStreamFingerprint(result.outputs[0]!.xml)).toBe(sourceBass);
+  });
+
+  test('lockBass=false retains harmonic bass rewriting', () => {
+    const sourceXml = fs.readFileSync(FIXTURE, 'utf8');
+    const sourceBass = bassStreamFingerprint(sourceXml);
+    const result = runDualPartTransform({
+      sourcePath: FIXTURE,
+      outDir,
+      profiles: ['harmonic'],
+      lockBass: false,
+      motifBars: [1, 2],
+      title: 'LockBass False',
+      stem: 'lockbass-false',
+      seed: 24024,
+      bhlWorld: 'F',
+      minHarmonyCount: 4,
+    });
+    expect(result.outputs).toHaveLength(1);
+    expect(bassStreamFingerprint(result.outputs[0]!.xml)).not.toBe(sourceBass);
+  });
+
+  test('bassOnly + lockBass=true is rejected', () => {
+    expect(() =>
+      runDualPartTransform({
+        sourcePath: FIXTURE,
+        outDir,
+        mode: 'bassOnly',
+        lockGuitar: true,
+        preserveHarmony: true,
+        lockBass: true,
+      }),
+    ).toThrow(/bassOnly.*lockBass|lockBass.*bassOnly|conflicting options/);
+  });
+
+  test('lockBass=true preserves source SHA and writes output separately', () => {
+    const before = sha256File(FIXTURE);
+    const result = runDualPartTransform({
+      sourcePath: FIXTURE,
+      outDir,
+      profiles: ['harmonic'],
+      lockBass: true,
+      motifBars: [1, 2],
+      title: 'LockBass SHA',
+      stem: 'lockbass-sha',
+      seed: 24024,
+      bhlWorld: 'F',
+      minHarmonyCount: 4,
+    });
+    expect(result.outputs).toHaveLength(1);
+    const out = result.outputs[0]!;
+    expect(sha256File(FIXTURE)).toBe(before);
+    expect(sha256File(FIXTURE)).toBe(result.sourceSha256);
+    expect(out.path.startsWith(outDir)).toBe(true);
+    expect(path.resolve(out.path)).not.toBe(path.resolve(FIXTURE));
+    expect(fs.existsSync(out.path)).toBe(true);
+    expect(fs.readFileSync(out.path, 'utf8')).toBe(out.xml);
+  });
+
+  test('Black Aura M1 harmonic lockBass keeps structural locks and separate output', () => {
+    expect(fs.existsSync(BLACK_AURA_V20)).toBe(true);
+    const beforeSha = sha256File(BLACK_AURA_V20);
+    expect(beforeSha).toBe(BLACK_AURA_V20_SHA);
+
+    const sourceXml = fs.readFileSync(BLACK_AURA_V20, 'utf8');
+    const sourceBass = bassStreamFingerprint(sourceXml);
+    const sourceStructure = metreTempoRehearsalFingerprint(sourceXml);
+
+    const result = runDualPartTransform({
+      sourcePath: BLACK_AURA_V20,
+      outDir,
+      profiles: ['harmonic'],
+      lockBass: true,
+      expectedSha256: BLACK_AURA_V20_SHA,
+      motifBars: [1, 2],
+      title: 'Black Aura',
+      stem: 'Black-Aura-M1-lockBass',
+      seed: 24024,
+      bhlWorld: 'F',
+    });
+
+    expect(result.barCount).toBe(39);
+    expect(result.outputs).toHaveLength(1);
+    const out = result.outputs[0]!;
+    expect(countBars(out.xml)).toBe(39);
+    expect(bassStreamFingerprint(out.xml)).toBe(sourceBass);
+    expect(metreTempoRehearsalFingerprint(out.xml)).toBe(sourceStructure);
+
+    expect(sha256File(BLACK_AURA_V20)).toBe(beforeSha);
+    expect(sha256File(BLACK_AURA_V20)).toBe(result.sourceSha256);
+    expect(out.path.startsWith(outDir)).toBe(true);
+    expect(path.resolve(out.path)).not.toBe(path.resolve(BLACK_AURA_V20));
+    expect(fs.existsSync(out.path)).toBe(true);
+    expect(fs.readFileSync(out.path, 'utf8')).toBe(out.xml);
   });
 });

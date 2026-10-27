@@ -36,6 +36,11 @@ export type DualPartTransformOptions = {
   lockGuitar?: boolean;
   /** Required true when mode=bassOnly. */
   preserveHarmony?: boolean;
+  /**
+   * When true, harmonic profile keeps source bass pitches/rhythms (skips bass counterpoint rewrite).
+   * Default false. Incompatible with mode=bassOnly.
+   */
+  lockBass?: boolean;
   /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
   /** Optional SHA-256 gate on source. */
@@ -504,6 +509,8 @@ export function transformHarmonic(
     seed: number;
     bhlWorld: BhlWorldId;
     bassMidi: { min: number; max: number };
+    /** When true, keep source bass (no rewriteBassCounterpoint). Default false. */
+    lockBass?: boolean;
   },
 ): { xml: string; feasibility: number; world: string | null } {
   const bhl = composeBhlGuitar({
@@ -516,9 +523,11 @@ export function transformHarmonic(
   const harmDoc = parseMusicXml(bhl.xml);
   setTitle(harmDoc, opts.title, opts.movement);
   restoreRadicalHarmony(harmDoc, sourceXml, opts.motifBars);
-  const writableBass = new Set<number>();
-  for (let b = 1; b <= opts.barCount; b++) if (!opts.motifBars.has(b)) writableBass.add(b);
-  rewriteBassCounterpoint(harmDoc, writableBass, opts.bassMidi);
+  if (!opts.lockBass) {
+    const writableBass = new Set<number>();
+    for (let b = 1; b <= opts.barCount; b++) if (!opts.motifBars.has(b)) writableBass.add(b);
+    rewriteBassCounterpoint(harmDoc, writableBass, opts.bassMidi);
+  }
   return {
     xml: serialize(harmDoc),
     feasibility: bhl.feasibility.length,
@@ -683,6 +692,11 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   const phraseAccentBars = options.phraseAccentBars ?? form.phraseAccentBars;
   const seed = options.seed ?? 24024;
   const bhlWorld = options.bhlWorld ?? 'F';
+  const lockBass = options.lockBass === true;
+
+  if (mode === 'bassOnly' && lockBass) {
+    throw new Error('conflicting options: bassOnly mode and lockBass cannot both be set');
+  }
 
   if (mode === 'bassOnly') {
     if (options.lockGuitar !== true || options.preserveHarmony !== true) {
@@ -798,11 +812,14 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
         seed,
         bhlWorld,
         bassMidi,
+        lockBass,
       });
       xml = harm.xml;
       id = 'A-Harmonic';
       file = `A-Harmonic-${stem}.musicxml`;
-      note = `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked.`;
+      note = lockBass
+        ? `BHL world ${harm.world ?? bhlWorld} guitar; bass locked to source; motif bars locked.`
+        : `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked.`;
     } else if (profile === 'contrapuntal') {
       xml = transformContrapuntal(sourceXml, {
         motifBars,
