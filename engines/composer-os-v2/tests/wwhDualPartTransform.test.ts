@@ -20,6 +20,8 @@ import {
   validateDualPartXml,
   verifyBassOnlyLocks,
 } from '../core/duo/wwhDualPartTransform';
+import { compareScores } from '../core/musical-evaluation/service';
+import { runTechnicalChecks } from '../core/musical-evaluation/technicalChecks';
 
 const FIXTURE_DIR = path.resolve(__dirname, '../resources/test-fixtures/wwh-dual-part');
 const FIXTURE = path.join(FIXTURE_DIR, 'duo-8bar-fixture.musicxml');
@@ -377,7 +379,7 @@ describe('wwhDualPartTransform', () => {
       profiles: ['harmonic'],
       lockBass: true,
       expectedSha256: BLACK_AURA_V20_SHA,
-      motifBars: [1, 2],
+      motifBars: [9, 11],
       title: 'Black Aura',
       stem: 'Black-Aura-M1-lockBass',
       seed: 24024,
@@ -397,5 +399,34 @@ describe('wwhDualPartTransform', () => {
     expect(path.resolve(out.path)).not.toBe(path.resolve(BLACK_AURA_V20));
     expect(fs.existsSync(out.path)).toBe(true);
     expect(fs.readFileSync(out.path, 'utf8')).toBe(out.xml);
+
+    const receipt = compareScores({
+      scores: [
+        { label: 'Black-Aura-original', xml: sourceXml },
+        { label: 'Black-Aura-M1-harmonic-lockBass', xml: out.xml },
+      ],
+    });
+    expect(receipt.comparison).not.toBeNull();
+    expect(receipt.comparison!.differences.length).toBeGreaterThan(0);
+    expect(receipt.comparison!.rank).toBeNull();
+    expect(receipt.comparison!.musicalQualityScore).toBeNull();
+    expect(receipt.bmef.machineRatings).toBeNull();
+    expect(receipt.bmef.machineDecision).toBeNull();
+    expect(receipt.humanJudgement).toBeNull();
+
+    const tech = runTechnicalChecks({
+      xml: out.xml,
+      lock: {
+        sourceXml,
+        spec: {
+          span: { from: 1, to: 39 },
+          bassPartId: 'P2',
+          guitarPartId: 'P1',
+          protectedGuitarBars: [],
+        },
+      },
+    });
+    expect(tech.summary.parse).toBe('pass');
+    expect(tech.summary['source-lock']).toBe('pass');
   });
 });
