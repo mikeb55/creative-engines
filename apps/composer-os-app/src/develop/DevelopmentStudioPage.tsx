@@ -58,6 +58,49 @@ function motifFromChain(root: Motif, plan: Array<{ op: OperatorId; params?: Reco
   return chain.results[chain.results.length - 1] ?? root;
 }
 
+const PITCH_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+/** Display-only: MIDI number → pitch name. Not analysis. */
+function midiToPitchName(midi: number): string {
+  const pc = ((Math.trunc(midi) % 12) + 12) % 12;
+  const octave = Math.floor(Math.trunc(midi) / 12) - 1;
+  return `${PITCH_NAMES[pc]!}${octave}`;
+}
+
+/** Unique source bars from discovery occurrences only. */
+function discoveredBars(pattern: DiscoveredPattern): number[] {
+  return [...new Set(pattern.occurrences.map((o) => o.bar))].sort((a, b) => a - b);
+}
+
+/** Prototype absolute MIDI from anchorMidi + relative points. */
+function discoveredAbsoluteMidis(pattern: DiscoveredPattern): number[] {
+  if (!Number.isFinite(pattern.anchorMidi) || !pattern.points.length) return [];
+  return pattern.points.map((point) => pattern.anchorMidi + point.midi);
+}
+
+function discoveredPatternButtonLabel(pattern: DiscoveredPattern): string {
+  const parts: string[] = [pattern.id];
+  const bars = discoveredBars(pattern);
+  if (bars.length) parts.push(`bars ${bars.join(', ')}`);
+  const midis = discoveredAbsoluteMidis(pattern);
+  if (midis.length) {
+    parts.push(midis.map(midiToPitchName).join(' '));
+  }
+  return parts.join(' · ');
+}
+
+function discoveredPatternDetailLines(pattern: DiscoveredPattern): string[] {
+  const lines: string[] = [`ID: ${pattern.id}`];
+  const bars = discoveredBars(pattern);
+  if (bars.length) lines.push(`Source bars: ${bars.join(', ')}`);
+  const midis = discoveredAbsoluteMidis(pattern);
+  if (midis.length) {
+    lines.push(`Pitches: ${midis.map(midiToPitchName).join(' ')}`);
+    lines.push(`MIDI: ${midis.join(' ')}`);
+  }
+  return lines;
+}
+
 export function DevelopmentStudioPage() {
   const last = useLastGenerate() as { musicXml?: string | null };
   const [xml, setXml] = useState('');
@@ -73,12 +116,29 @@ export function DevelopmentStudioPage() {
   const [patterns, setPatterns] = useState<DiscoveredPattern[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  /** Separate from imported source `xml` — never overwrites source. */
+  const [harmonicOutXml, setHarmonicOutXml] = useState('');
+  const [harmonicOutNote, setHarmonicOutNote] = useState('');
+  const [harmonicLineage, setHarmonicLineage] = useState('');
   const current = useMemo(() => motifFromChain(root, plan), [root, plan]);
   const chain = useMemo(() => buildChain(root, plan), [root, plan]);
+  const selectedPattern = useMemo(
+    () => (selectedId ? patterns.find((p) => p.id === selectedId) ?? null : null),
+    [patterns, selectedId],
+  );
+  /** Motif bars from explicit user cell selection only — never auto-picked. */
+  const motifBarsFromSelection = useMemo(() => {
+    if (!selectedPattern) return null;
+    const bars = [...new Set(selectedPattern.occurrences.map((o) => o.bar))].sort((a, b) => a - b);
+    return bars.length ? bars : null;
+  }, [selectedPattern]);
 
   function loadText(text: string, name: string) {
     setXml(text);
     setLabel(name);
+    setHarmonicOutXml('');
+    setHarmonicOutNote('');
+    setHarmonicLineage('');
     setError('');
   }
 
@@ -143,6 +203,56 @@ export function DevelopmentStudioPage() {
     setError('');
   }
 
+  /**
+   * Black Aura M1 — harmonic dual-part via /develop/dual-part (lockBass=true).
+   * Explicit cell motif bars required; source `xml` never overwritten.
+   */
+  async function runHarmonicLockBass() {
+    const sourceXml = xml.trim();
+    if (!sourceXml) {
+      setError('Load MusicXML before harmonic transform.');
+      return;
+    }
+    const motifBars = motifBarsFromSelection;
+    if (!motifBars?.length) {
+      setHarmonicOutXml('');
+      setHarmonicOutNote('');
+      setHarmonicLineage('');
+      setError('Select a cell so motif bars reach the transform. No silent defaults.');
+      return;
+    }
+    const stem = `${(label || 'black-aura-m1').replace(/\.[^.]+$/, '')}-harmonic-lockbass`;
+    setHarmonicOutXml('');
+    setHarmonicOutNote('');
+    setHarmonicLineage('');
+    setError('');
+    const row = (await api.developDualPart({
+      xml: sourceXml,
+      motifBars,
+      lockBass: true,
+      title: label || 'Black Aura M1',
+      stem,
+      label: label || 'imported',
+      selectedCellId: selectedId,
+    })) as {
+      ok?: boolean;
+      error?: string;
+      result?: {
+        musicXml: string;
+        note: string;
+        lineage: string;
+      };
+    };
+    if (!row.ok || !row.result?.musicXml) {
+      setError(row.error || 'Dual-part harmonic transform did not run.');
+      return;
+    }
+    setHarmonicOutXml(row.result.musicXml);
+    setHarmonicOutNote(row.result.note);
+    setHarmonicLineage(row.result.lineage);
+    setError('');
+  }
+
   function exportXml(text: string, name: string) {
     const blob = new Blob([text], { type: 'application/vnd.recordare.musicxml+xml' });
     const link = document.createElement('a');
@@ -152,7 +262,8 @@ export function DevelopmentStudioPage() {
     URL.revokeObjectURL(link.href);
   }
 
-  const handoffXml = voicedXml || xml;
+  /** Prefer separate transform/voicing outputs; never mutate imported `xml`. */
+  const handoffXml = harmonicOutXml || voicedXml || xml;
 
   return (
     <section data-testid="develop-page" style={{ display: 'grid', gap: '0.8rem', maxWidth: '54rem' }}>
@@ -181,7 +292,7 @@ export function DevelopmentStudioPage() {
       <section>
         <h3>Cell</h3>
         <button type="button" onClick={() => void findCells()}>Found in this score</button>
-        <p data-testid="develop-found">
+        <div data-testid="develop-found" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', alignItems: 'flex-start' }}>
           {patterns.length
             ? patterns.map((pattern) => (
               <button
@@ -190,16 +301,25 @@ export function DevelopmentStudioPage() {
                 data-testid={`develop-cell-${pattern.id}`}
                 aria-pressed={selectedId === pattern.id}
                 onClick={() => selectDiscoveredCell(pattern)}
-                style={{ marginRight: '0.35rem' }}
+                title={discoveredPatternDetailLines(pattern).join(' · ')}
               >
-                {pattern.id}
+                {discoveredPatternButtonLabel(pattern)}
               </button>
             ))
             : 'No discovered cell yet.'}
-        </p>
-        <p data-testid="develop-selected-cell">
-          Selected cell: {selectedId ?? 'none — example cell until you pick one'}
-        </p>
+        </div>
+        <div data-testid="develop-selected-cell" style={{ display: 'grid', gap: '0.25rem' }}>
+          {selectedPattern ? (
+            <>
+              <p style={{ margin: 0 }}>Selected cell</p>
+              {discoveredPatternDetailLines(selectedPattern).map((line) => (
+                <p key={line} style={{ margin: 0 }}>{line}</p>
+              ))}
+            </>
+          ) : (
+            <p style={{ margin: 0 }}>Selected cell: none — example cell until you pick one</p>
+          )}
+        </div>
         <p>Working cell: {current.events.map((event) => event.midi ?? 'rest').join(' ')}</p>
       </section>
 
@@ -251,6 +371,31 @@ export function DevelopmentStudioPage() {
         <pre data-testid="develop-grips">{gripText}</pre>
         <ScorePreview musicXml={voicedXml || null} />
         <ScoreAudition musicXml={voicedXml || null} label="Chord melody" />
+      </section>
+
+      <section data-testid="develop-m1-harmonic">
+        <h3>Black Aura M1 — harmonic (lock bass)</h3>
+        <p style={{ margin: 0 }}>
+          User-triggered only. Uses imported score and explicitly selected cell bars. Source MusicXML stays immutable; output is separate. Not musically approved.
+        </p>
+        <p data-testid="develop-m1-motif-bars" style={{ margin: 0 }}>
+          Motif bars for lock: {motifBarsFromSelection?.join(', ') ?? 'none selected — select a cell first'}
+        </p>
+        <button type="button" data-testid="develop-m1-harmonic-run" onClick={() => void runHarmonicLockBass()}>
+          Run harmonic transform (lockBass)
+        </button>
+        <pre data-testid="develop-m1-lineage">{harmonicLineage}</pre>
+        {harmonicOutNote ? <p data-testid="develop-m1-note">{harmonicOutNote}</p> : null}
+        <ScorePreview musicXml={harmonicOutXml || null} />
+        <ScoreAudition musicXml={harmonicOutXml || null} label="M1 harmonic candidate" />
+        <button
+          type="button"
+          data-testid="develop-m1-export"
+          disabled={!harmonicOutXml}
+          onClick={() => harmonicOutXml && exportXml(harmonicOutXml, `${label || 'black-aura-m1'}-harmonic-lockbass.musicxml`)}
+        >
+          Export M1 harmonic MusicXML
+        </button>
       </section>
 
       <section>

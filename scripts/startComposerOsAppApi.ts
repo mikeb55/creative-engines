@@ -48,7 +48,7 @@ import {
   apiBhlScratch,
 } from '../engines/composer-os-v2/app-api/bhlApp';
 import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../engines/composer-os-v2/app-api/evaluationApp';
-import { apiDevelopCoherence, apiDevelopDiscover, apiDevelopVoice } from '../engines/composer-os-v2/app-api/developApp';
+import { apiDevelopCoherence, apiDevelopDiscover, apiDevelopDualPart, apiDevelopVoice } from '../engines/composer-os-v2/app-api/developApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import {
   apiHexatonicOpenLaboratoryReview,
@@ -394,6 +394,15 @@ app.post('/api/develop/voice', (req: Request, res: Response) => {
 app.post('/api/develop/coherence', (req: Request, res: Response) => {
   try {
     const result = apiDevelopCoherence(req.body);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+app.post('/api/develop/dual-part', (req: Request, res: Response) => {
+  try {
+    const result = apiDevelopDualPart(req.body);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });
