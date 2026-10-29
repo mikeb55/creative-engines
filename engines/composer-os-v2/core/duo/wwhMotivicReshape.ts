@@ -2,6 +2,9 @@
  * MORPH M2 RESHAPE — opt-in motivic reconstruction on one declared multi-bar guitar window.
  * Root cell via motifFromDiscoveredPattern; development via buildChain; write via writePhraseMeasureEvents.
  * Does not invent form, change bar count, or touch bass/harmony outside note rewrite in-window.
+ *
+ * MORPH M3 REIMAGINE — same writer/chain; window must sit outside IdentityKernel locks
+ * (cells ∪ anchors ∪ returnBars ∪ protectedGuitarBars).
  */
 
 import fs from 'node:fs';
@@ -13,6 +16,7 @@ import {
 } from '../motif-ops/motifDiscovery';
 import type { OperatorParams } from '../motif-ops/operators';
 import type { MotifNoteEvent, OperatorId } from '../motif-ops/types';
+import type { IdentityKernel } from './wwhIdentityKernel';
 import { writePhraseMeasureEvents } from './wwhSourceAnchoredHarmonic';
 
 export type ReshapeOpId = 'invert' | 'expand-intervals' | 'sequence-real';
@@ -57,6 +61,35 @@ export type MotivicReshapeResult = {
   xml: string;
   receipt: MotivicReshapeReceipt;
 };
+
+export type IdentityReimagineOpts = {
+  sourcePath: string;
+  /** Pre-validated M3 IdentityKernel (caller runs assertIdentityKernel). */
+  kernel: IdentityKernel;
+  window: { from: number; to: number };
+  ops: readonly MotivicReshapePlanStep[];
+  pattern: DiscoveredPattern;
+  occurrenceIndex?: number;
+  title: string;
+  movement: string;
+  guitarPartId?: string;
+};
+
+export type IdentityReimagineResult = MotivicReshapeResult & {
+  /** Bars frozen from kernel (cells ∪ anchors ∪ returns ∪ protected). */
+  identityBars: number[];
+};
+
+/** Sorted unique IdentityKernel lock bars. */
+export function identityKernelLockedBars(kernel: IdentityKernel): number[] {
+  const bars: number[] = [
+    ...kernel.anchorBars,
+    ...kernel.returnBars,
+    ...kernel.protectedGuitarBars,
+  ];
+  for (const cell of kernel.cells) bars.push(...cell.bars);
+  return [...new Set(bars)].sort((a, b) => a - b);
+}
 
 const ALLOWED_OPS: ReadonlySet<string> = new Set([
   'invert',
@@ -267,4 +300,31 @@ export function transformMotivicReshape(opts: MotivicReshapeOpts): MotivicReshap
       })),
     },
   };
+}
+
+/**
+ * Opt-in M3 REIMAGINE: rewrite one declared guitar window via M2 reshape writer/chain.
+ * Preserves bass, bar count, metre, measure durations; freezes IdentityKernel lock bars.
+ */
+export function transformIdentityReimagine(
+  opts: IdentityReimagineOpts,
+): IdentityReimagineResult {
+  if (opts.kernel.mode !== 'M3') {
+    throw new Error(`identityReimagine requires kernel.mode 'M3'`);
+  }
+  const identityBars = identityKernelLockedBars(opts.kernel);
+  const reshaped = transformMotivicReshape({
+    sourcePath: opts.sourcePath,
+    window: opts.window,
+    ops: opts.ops,
+    pattern: opts.pattern,
+    occurrenceIndex: opts.occurrenceIndex,
+    motifBars: identityBars,
+    protectedGuitarBars: opts.kernel.protectedGuitarBars,
+    anchorBars: [...opts.kernel.anchorBars, ...opts.kernel.returnBars],
+    title: opts.title,
+    movement: opts.movement,
+    guitarPartId: opts.guitarPartId,
+  });
+  return { ...reshaped, identityBars };
 }

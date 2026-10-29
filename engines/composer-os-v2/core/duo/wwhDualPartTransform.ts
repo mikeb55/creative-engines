@@ -18,12 +18,23 @@ import {
 } from './wwhBassOnlyTransform';
 import { transformHarmonicSourceAnchored } from './wwhSourceAnchoredHarmonic';
 import {
+  transformIdentityReimagine,
   transformMotivicReshape,
   type MotivicReshapePlanStep,
+  type MotivicReshapeReceipt,
 } from './wwhMotivicReshape';
 import type { DiscoveredPattern } from '../motif-ops/motifDiscovery';
+import type {
+  IdentityKernel,
+  IdentityKernelFingerprints,
+} from './wwhIdentityKernel';
 
-export type DualPartProfile = 'harmonic' | 'contrapuntal' | 'rhythmic' | 'reshape';
+export type DualPartProfile =
+  | 'harmonic'
+  | 'contrapuntal'
+  | 'rhythmic'
+  | 'reshape'
+  | 'reimagine';
 export type DualPartMode = 'dual' | 'bassOnly';
 export type { BassOnlyProfile };
 
@@ -37,6 +48,14 @@ export type MotivicReshapeRequest = {
   occurrenceIndex?: number;
   /** Structural anchors frozen in addition to motifBars / protectedGuitarBars. */
   anchorBars?: number[];
+};
+
+/** Opt-in MORPH M3 REIMAGINE: one window outside IdentityKernel locks (requires identityKernel). */
+export type IdentityReimagineRequest = {
+  window: BarRange;
+  ops: readonly MotivicReshapePlanStep[];
+  pattern: DiscoveredPattern;
+  occurrenceIndex?: number;
 };
 
 export type DualPartTransformOptions = {
@@ -67,6 +86,16 @@ export type DualPartTransformOptions = {
    * Default undefined — M1/legacy paths unchanged. Does not enable M3.
    */
   motivicReshape?: MotivicReshapeRequest;
+  /**
+   * Opt-in MORPH M3 IdentityKernel (V0.3): assert gate before dual-part / REIMAGINE work.
+   * Required when identityReimagine is set. Default undefined — M1/M2 unchanged.
+   */
+  identityKernel?: IdentityKernel;
+  /**
+   * Opt-in MORPH M3 REIMAGINE: one multi-bar guitar window via M2 writer/chain.
+   * Requires identityKernel. Default undefined — no M3 rewrite.
+   */
+  identityReimagine?: IdentityReimagineRequest;
   /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
   /**
@@ -103,6 +132,26 @@ export type DualPartOutput = {
   sha256: string;
 };
 
+/** Receipt when options.identityKernel is provided and asserts successfully. */
+export type IdentityKernelValidationReceipt = {
+  ok: true;
+  mode: 'M3';
+  failures: readonly [];
+  fingerprints: IdentityKernelFingerprints;
+  requiredProtectedBars: readonly number[];
+};
+
+/** M3 REIMAGINE receipt: lineage vs identity preservation reported separately. */
+export type IdentityReimagineReceipt = {
+  transformOk: boolean;
+  identityPreserved: boolean;
+  window: BarRange;
+  identityBars: readonly number[];
+  lineageIds: readonly string[];
+  ops: readonly string[];
+  reshape: MotivicReshapeReceipt;
+};
+
 export type DualPartTransformResult = {
   sourcePath: string;
   sourceSha256: string;
@@ -111,6 +160,10 @@ export type DualPartTransformResult = {
   outputs: DualPartOutput[];
   validation: string[];
   motifOk: boolean;
+  /** Present only when options.identityKernel was supplied and passed assert. */
+  identityKernel?: IdentityKernelValidationReceipt;
+  /** Present when options.identityReimagine ran (transformOk ≠ identityPreserved). */
+  identityReimagine?: IdentityReimagineReceipt;
 };
 
 const STEP_PC: Record<string, number> = {
@@ -753,6 +806,33 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
 
   const sourceXml = fs.readFileSync(sourcePath, 'utf8');
   const barCount = countBars(sourceXml);
+
+  if (options.identityReimagine && !options.identityKernel) {
+    throw new Error('identityReimagine requires identityKernel');
+  }
+
+  let identityKernelReceipt: IdentityKernelValidationReceipt | undefined;
+  if (options.identityKernel) {
+    // Lazy load avoids circular init with wwhIdentityKernel → this module.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { assertIdentityKernel } = require('./wwhIdentityKernel') as typeof import('./wwhIdentityKernel');
+    const asserted = assertIdentityKernel(sourceXml, options.identityKernel);
+    if (!asserted.ok) {
+      throw new Error(
+        `identityKernel invalid: ${asserted.failures.join('; ') || 'unknown failure'}`,
+      );
+    }
+    identityKernelReceipt = {
+      ok: true,
+      mode: 'M3',
+      failures: [],
+      fingerprints: asserted.fingerprints,
+      requiredProtectedBars: asserted.requiredProtectedBars,
+    };
+  }
+
+  let identityReimagineReceipt: IdentityReimagineReceipt | undefined;
+
   const form = defaultFormWindows(barCount);
   const motifBars = new Set(options.motifBars?.length ? options.motifBars : [1, 2]);
   const protectedGuitarBars = new Set(
@@ -871,12 +951,18 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
             preserveHarmony: true,
           }).length === 0,
       ),
+      ...(identityKernelReceipt ? { identityKernel: identityKernelReceipt } : {}),
+      ...(identityReimagineReceipt
+        ? { identityReimagine: identityReimagineReceipt }
+        : {}),
     };
   }
 
-  const profiles = options.profiles?.length
-    ? options.profiles.filter((p) => p !== 'reshape')
-    : (['harmonic', 'contrapuntal', 'rhythmic'] as DualPartProfile[]);
+  // undefined → default M1 trio; explicit [] → reshape/reimagine-only (no default profiles).
+  const profiles =
+    options.profiles !== undefined
+      ? options.profiles.filter((p) => p !== 'reshape' && p !== 'reimagine')
+      : (['harmonic', 'contrapuntal', 'rhythmic'] as DualPartProfile[]);
 
   if (options.motivicReshape) {
     if (mode === 'bassOnly') {
@@ -915,6 +1001,66 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
       xml: reshaped.xml,
       note: `M2 RESHAPE window ${r.window.from}-${r.window.to}; cell ${r.patternId}; lineage ${r.lineageIds.join('→')}; ops ${r.ops.join(',')}; bass/harmony preserved;`,
       sha256: sha256Text(reshaped.xml),
+    });
+  }
+
+  if (options.identityReimagine) {
+    if (mode === 'bassOnly') {
+      throw new Error('identityReimagine requires dual mode');
+    }
+    if (!options.identityKernel || !identityKernelReceipt) {
+      throw new Error('identityReimagine requires validated identityKernel');
+    }
+    const req = options.identityReimagine;
+    const reimagined = transformIdentityReimagine({
+      sourcePath,
+      kernel: options.identityKernel,
+      window: req.window,
+      ops: req.ops,
+      pattern: req.pattern,
+      occurrenceIndex: req.occurrenceIndex,
+      title,
+      movement: `${title} — Identity Reimagine (M3)`,
+    });
+    const identityPreserved = protectedGuitarIntact(
+      sourceXml,
+      reimagined.xml,
+      reimagined.identityBars,
+    );
+    identityReimagineReceipt = {
+      transformOk: true,
+      identityPreserved,
+      window: { from: req.window.from, to: req.window.to },
+      identityBars: reimagined.identityBars,
+      lineageIds: reimagined.receipt.lineageIds,
+      ops: reimagined.receipt.ops,
+      reshape: reimagined.receipt,
+    };
+    if (!identityPreserved) {
+      validation.push(
+        'M3-Reimagine: identityPreserved=false (kernel lock bars changed)',
+      );
+    }
+    const id = 'M3-Reimagine';
+    const file = `M3-Reimagine-${stem}.musicxml`;
+    const outPath = path.join(outDir, file);
+    fs.writeFileSync(outPath, reimagined.xml, 'utf8');
+    const issues = validateDualPartXml(id, reimagined.xml, {
+      expectedBars: barCount,
+      guitarMidi,
+      bassMidi,
+      minHarmonyCount,
+    });
+    validation.push(...issues);
+    const r = reimagined.receipt;
+    outputs.push({
+      id,
+      profile: 'reimagine',
+      file,
+      path: outPath,
+      xml: reimagined.xml,
+      note: `M3 REIMAGINE window ${r.window.from}-${r.window.to}; cell ${r.patternId}; lineage ${r.lineageIds.join('→')}; ops ${r.ops.join(',')}; identityBars ${reimagined.identityBars.join(',')}; identityPreserved=${identityPreserved}; bass/harmony/barCount preserved;`,
+      sha256: sha256Text(reimagined.xml),
     });
   }
 
@@ -1037,6 +1183,10 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
     outputs,
     validation,
     motifOk: outputs.every((o) => motifIntact(sourceXml, o.xml, motifBars)),
+    ...(identityKernelReceipt ? { identityKernel: identityKernelReceipt } : {}),
+    ...(identityReimagineReceipt
+      ? { identityReimagine: identityReimagineReceipt }
+      : {}),
   };
 }
 
