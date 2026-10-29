@@ -7,7 +7,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { isBhlWorldId } from '../core/bhl/bhlWorlds';
 import { voiceRadicalChordMelody, type ChordMelodyRequest } from '../core/chord-melody/radicalChordMelody';
-import { runDualPartTransform, sha256Text } from '../core/duo/wwhDualPartTransform';
+import { parseProtectedGuitarBarSpec } from '../core/duo/parseProtectedGuitarBars';
+import { countBars, runDualPartTransform, sha256Text } from '../core/duo/wwhDualPartTransform';
 import { discoverMotifs } from '../core/motif-ops/motifDiscovery';
 import { buildCoherenceReport } from '../core/musical-evaluation/coherenceReport';
 import { ingestCanonicalScore } from '../core/musical-evaluation/canonicalScore';
@@ -44,6 +45,7 @@ export type DevelopDualPartSuccess = {
     outputSha256: string;
     barCount: number;
     motifBars: number[];
+    protectedGuitarBars: number[];
     lockBass: true;
     lineage: string;
     validation: string[];
@@ -77,6 +79,41 @@ export function apiDevelopDualPart(body: unknown): DevelopDualPartSuccess | { ok
     return { ok: false, error: 'M1 dual-part requires lockBass=true.' };
   }
 
+  let barCount: number;
+  try {
+    barCount = countBars(xml);
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Could not read score bar count from MusicXML.',
+    };
+  }
+  if (!Number.isInteger(barCount) || barCount < 1) {
+    return { ok: false, error: 'Could not read score bar count from MusicXML.' };
+  }
+
+  let protectedGuitarBars: number[] = [];
+  if (o.protectedGuitarBars !== undefined && o.protectedGuitarBars !== null && o.protectedGuitarBars !== '') {
+    if (Array.isArray(o.protectedGuitarBars)) {
+      for (const raw of o.protectedGuitarBars) {
+        if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 1 || raw > barCount) {
+          return {
+            ok: false,
+            error: `protectedGuitarBars entry ${String(raw)} must be an integer in 1–${barCount}.`,
+          };
+        }
+        if (!protectedGuitarBars.includes(raw)) protectedGuitarBars.push(raw);
+      }
+      protectedGuitarBars.sort((a, b) => a - b);
+    } else if (typeof o.protectedGuitarBars === 'string') {
+      const parsed = parseProtectedGuitarBarSpec(o.protectedGuitarBars, barCount);
+      if (!parsed.ok) return parsed;
+      protectedGuitarBars = parsed.bars;
+    } else {
+      return { ok: false, error: 'protectedGuitarBars must be a string spec or number[].' };
+    }
+  }
+
   const title =
     typeof o.title === 'string' && o.title.trim() ? o.title.trim() : 'Black Aura M1';
   const stem =
@@ -103,6 +140,7 @@ export function apiDevelopDualPart(body: unknown): DevelopDualPartSuccess | { ok
       profiles: ['harmonic'],
       lockBass: true,
       motifBars,
+      ...(protectedGuitarBars.length ? { protectedGuitarBars } : {}),
       title,
       stem,
       expectedSha256,
@@ -120,6 +158,7 @@ export function apiDevelopDualPart(body: unknown): DevelopDualPartSuccess | { ok
       `mode: M1 harmonic`,
       `lockBass: true`,
       `motifBars: ${motifBars.join(', ')}`,
+      `protectedGuitarBars: ${protectedGuitarBars.length ? protectedGuitarBars.join(', ') : '(none)'}`,
       `selected cell: ${selectedCellId}`,
       `barCount: ${result.barCount}`,
       `profiles: harmonic`,
@@ -140,6 +179,7 @@ export function apiDevelopDualPart(body: unknown): DevelopDualPartSuccess | { ok
         outputSha256: out.sha256,
         barCount: result.barCount,
         motifBars,
+        protectedGuitarBars,
         lockBass: true,
         lineage,
         validation: result.validation,

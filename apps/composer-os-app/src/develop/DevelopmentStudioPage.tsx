@@ -3,6 +3,7 @@
  * Nothing on this page is musically approved.
  */
 import { useMemo, useState } from 'react';
+import { parseProtectedGuitarBarSpec } from '@composer-os/core/duo/parseProtectedGuitarBars';
 import { buildChain, motifFromDiscoveredPattern } from '@composer-os/core/motif-ops/developmentChain';
 import type { DiscoveredPattern } from '@composer-os/core/motif-ops/motifDiscovery';
 import { C_MAJOR_FIELD, type Motif, type OperatorId } from '@composer-os/core/motif-ops/types';
@@ -14,6 +15,16 @@ import { storeEvaluationHandoff } from '../bhl/bhlHexatonicHandoff';
 import { play, sequenceFromTimedNotes } from '../playback/playbackEngine';
 import { ScorePreview } from '../score/ScorePreview';
 import { ScoreAudition } from '../score/ScoreAudition';
+
+/** P1 measure count from loaded MusicXML (browser DOMParser). */
+function scoreBarCountFromXml(xml: string): number {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) return 0;
+  const parts = Array.from(doc.getElementsByTagName('part'));
+  const p1 = parts.find((p) => p.getAttribute('id') === 'P1') ?? parts[0];
+  if (!p1) return 0;
+  return p1.getElementsByTagName('measure').length;
+}
 
 const OPERATORS: Array<{ op: OperatorId; label: string; params?: Record<string, number | string> }> = [
   { op: 'invert', label: 'Turn upside down', params: { axis: 60 } },
@@ -120,6 +131,8 @@ export function DevelopmentStudioPage() {
   const [harmonicOutXml, setHarmonicOutXml] = useState('');
   const [harmonicOutNote, setHarmonicOutNote] = useState('');
   const [harmonicLineage, setHarmonicLineage] = useState('');
+  /** Optional M1 extra guitar locks — e.g. "28-29, 33, 36-39". Empty = none. */
+  const [protectGuitarBarsText, setProtectGuitarBarsText] = useState('');
   const current = useMemo(() => motifFromChain(root, plan), [root, plan]);
   const chain = useMemo(() => buildChain(root, plan), [root, plan]);
   const selectedPattern = useMemo(
@@ -139,6 +152,7 @@ export function DevelopmentStudioPage() {
     setHarmonicOutXml('');
     setHarmonicOutNote('');
     setHarmonicLineage('');
+    setProtectGuitarBarsText('');
     setError('');
   }
 
@@ -221,6 +235,20 @@ export function DevelopmentStudioPage() {
       setError('Select a cell so motif bars reach the transform. No silent defaults.');
       return;
     }
+    const barCount = scoreBarCountFromXml(sourceXml);
+    if (barCount < 1) {
+      setError('Could not read score bar count from MusicXML.');
+      return;
+    }
+    const protectedParsed = parseProtectedGuitarBarSpec(protectGuitarBarsText, barCount);
+    if (!protectedParsed.ok) {
+      setHarmonicOutXml('');
+      setHarmonicOutNote('');
+      setHarmonicLineage('');
+      setError(protectedParsed.error);
+      return;
+    }
+    const protectedGuitarBars = protectedParsed.bars;
     const stem = `${(label || 'black-aura-m1').replace(/\.[^.]+$/, '')}-harmonic-lockbass`;
     setHarmonicOutXml('');
     setHarmonicOutNote('');
@@ -229,6 +257,7 @@ export function DevelopmentStudioPage() {
     const row = (await api.developDualPart({
       xml: sourceXml,
       motifBars,
+      ...(protectedGuitarBars.length ? { protectedGuitarBars } : {}),
       lockBass: true,
       title: label || 'Black Aura M1',
       stem,
@@ -260,6 +289,13 @@ export function DevelopmentStudioPage() {
     link.download = name;
     link.click();
     URL.revokeObjectURL(link.href);
+  }
+
+  /** M1 export name only — MusicXML bytes unchanged. Strip trailing .musicxml/.xml once. */
+  function m1HarmonicExportFilename(compositionLabel: string, motifId: string | null): string {
+    const base = (compositionLabel || 'black-aura-m1').replace(/\.(musicxml|xml)$/i, '');
+    if (!motifId) return `${base}-harmonic-lockbass.musicxml`;
+    return `${motifId}-${base}-M1-Harmonic.musicxml`;
   }
 
   /** Prefer separate transform/voicing outputs; never mutate imported `xml`. */
@@ -381,6 +417,19 @@ export function DevelopmentStudioPage() {
         <p data-testid="develop-m1-motif-bars" style={{ margin: 0 }}>
           Motif bars for lock: {motifBarsFromSelection?.join(', ') ?? 'none selected — select a cell first'}
         </p>
+        <label htmlFor="develop-m1-protect-guitar-bars">
+          Protect guitar bars
+          <input
+            id="develop-m1-protect-guitar-bars"
+            data-testid="develop-m1-protect-guitar-bars"
+            value={protectGuitarBarsText}
+            placeholder="e.g. 28-29, 33, 36-39"
+            onChange={(event) => setProtectGuitarBarsText(event.target.value)}
+          />
+        </label>
+        <p style={{ margin: 0, fontSize: '0.9rem' }}>
+          Optional. Bars and inclusive ranges. Empty = no extra protection (motif locks still apply).
+        </p>
         <button type="button" data-testid="develop-m1-harmonic-run" onClick={() => void runHarmonicLockBass()}>
           Run harmonic transform (lockBass)
         </button>
@@ -392,7 +441,10 @@ export function DevelopmentStudioPage() {
           type="button"
           data-testid="develop-m1-export"
           disabled={!harmonicOutXml}
-          onClick={() => harmonicOutXml && exportXml(harmonicOutXml, `${label || 'black-aura-m1'}-harmonic-lockbass.musicxml`)}
+          onClick={() =>
+            harmonicOutXml &&
+            exportXml(harmonicOutXml, m1HarmonicExportFilename(label, selectedId))
+          }
         >
           Export M1 harmonic MusicXML
         </button>
