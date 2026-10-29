@@ -16,6 +16,7 @@ import {
   verifyBassOnlyLocks,
   type BassOnlyProfile,
 } from './wwhBassOnlyTransform';
+import { transformHarmonicSourceAnchored } from './wwhSourceAnchoredHarmonic';
 
 export type DualPartProfile = 'harmonic' | 'contrapuntal' | 'rhythmic';
 export type DualPartMode = 'dual' | 'bassOnly';
@@ -41,6 +42,11 @@ export type DualPartTransformOptions = {
    * Default false. Incompatible with mode=bassOnly.
    */
   lockBass?: boolean;
+  /**
+   * Opt-in experimental harmonic path: source-anchored ±3 pc nudges (no bar rewrite).
+   * Default false — legacy composeBhlGuitar harmonic path unchanged.
+   */
+  sourceAnchored?: boolean;
   /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
   /**
@@ -747,6 +753,7 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   const seed = options.seed ?? 24024;
   const bhlWorld = options.bhlWorld ?? 'F';
   const lockBass = options.lockBass === true;
+  const sourceAnchored = options.sourceAnchored === true;
 
   if (mode === 'bassOnly' && lockBass) {
     throw new Error('conflicting options: bassOnly mode and lockBass cannot both be set');
@@ -858,27 +865,47 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
     let file: string;
 
     if (profile === 'harmonic') {
-      const harm = transformHarmonic(sourcePath, sourceXml, {
-        motifBars,
-        protectedGuitarBars,
-        title,
-        movement: `${title} — Harmonic Candidate`,
-        barCount,
-        seed,
-        bhlWorld,
-        bassMidi,
-        lockBass,
-      });
-      xml = harm.xml;
-      id = 'A-Harmonic';
-      file = `A-Harmonic-${stem}.musicxml`;
       const protectedNote =
         protectedGuitarBars.size > 0
           ? ` protected guitar bars ${[...protectedGuitarBars].sort((a, b) => a - b).join(',')};`
           : '';
-      note = lockBass
-        ? `BHL world ${harm.world ?? bhlWorld} guitar; bass locked to source; motif bars locked;${protectedNote}`
-        : `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked;${protectedNote}`;
+      if (sourceAnchored) {
+        if (!lockBass) {
+          throw new Error('sourceAnchored harmonic requires lockBass=true');
+        }
+        const anchored = transformHarmonicSourceAnchored({
+          sourcePath,
+          motifBars,
+          protectedGuitarBars,
+          title,
+          movement: `${title} — Source-Anchored Harmonic (experimental)`,
+          barCount,
+          seed,
+          bhlWorld,
+        });
+        xml = anchored.xml;
+        id = 'A-Harmonic-SourceAnchored';
+        file = `A-Harmonic-SourceAnchored-${stem}.musicxml`;
+        note = `EXPERIMENTAL source-anchored BHL world ${anchored.world}; ±${anchored.maxAbsShift || 3} pc; edited ${anchored.editedNotes} notes; bass locked; motif+gestures locked;${protectedNote}`;
+      } else {
+        const harm = transformHarmonic(sourcePath, sourceXml, {
+          motifBars,
+          protectedGuitarBars,
+          title,
+          movement: `${title} — Harmonic Candidate`,
+          barCount,
+          seed,
+          bhlWorld,
+          bassMidi,
+          lockBass,
+        });
+        xml = harm.xml;
+        id = 'A-Harmonic';
+        file = `A-Harmonic-${stem}.musicxml`;
+        note = lockBass
+          ? `BHL world ${harm.world ?? bhlWorld} guitar; bass locked to source; motif bars locked;${protectedNote}`
+          : `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked;${protectedNote}`;
+      }
     } else if (profile === 'contrapuntal') {
       xml = transformContrapuntal(sourceXml, {
         motifBars,
@@ -959,6 +986,8 @@ export function parseCliArgs(argv: string[]): {
   mode?: DualPartMode;
   lockGuitar?: boolean;
   preserveHarmony?: boolean;
+  lockBass?: boolean;
+  sourceAnchored?: boolean;
   motifBars?: number[];
   expectedSha?: string;
   title?: string;
@@ -1002,6 +1031,8 @@ export function parseCliArgs(argv: string[]): {
       : has('no-preserve-harmony')
         ? false
         : undefined,
+    lockBass: has('lock-bass') ? true : undefined,
+    sourceAnchored: has('source-anchored') ? true : undefined,
     motifBars: parseMotifBars(arg('motif-bars'), []),
     expectedSha: arg('expected-sha'),
     title: arg('title'),
