@@ -43,6 +43,11 @@ export type DualPartTransformOptions = {
   lockBass?: boolean;
   /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
+  /**
+   * Optional extra guitar bars kept pitch/duration/rest/order-identical on harmonic
+   * (merged with motifBars for BHL lock). Default: none — never auto-protects.
+   */
+  protectedGuitarBars?: number[];
   /** Optional SHA-256 gate on source. */
   expectedSha256?: string;
   title?: string;
@@ -503,6 +508,8 @@ export function transformHarmonic(
   sourceXml: string,
   opts: {
     motifBars: Set<number>;
+    /** Extra guitar bars to leave untouched (beyond motifBars). Default none. */
+    protectedGuitarBars?: Set<number>;
     title: string;
     movement: string;
     barCount: number;
@@ -513,12 +520,16 @@ export function transformHarmonic(
     lockBass?: boolean;
   },
 ): { xml: string; feasibility: number; world: string | null } {
+  const protectedForBhl = new Set<number>(opts.motifBars);
+  if (opts.protectedGuitarBars) {
+    for (const bar of opts.protectedGuitarBars) protectedForBhl.add(bar);
+  }
   const bhl = composeBhlGuitar({
     sourcePath,
     span: { from: 1, to: opts.barCount },
     seed: opts.seed,
     world: opts.bhlWorld,
-    protectedGuitarBars: [...opts.motifBars],
+    protectedGuitarBars: [...protectedForBhl],
   });
   const harmDoc = parseMusicXml(bhl.xml);
   setTitle(harmDoc, opts.title, opts.movement);
@@ -645,6 +656,46 @@ export function motifIntact(
   return true;
 }
 
+/** Ordered P1 note stream for named bars: pitch/rest + duration — order-sensitive. */
+export function guitarBarsStreamFingerprint(xml: string, bars: Iterable<number>): string {
+  const wanted = new Set(bars);
+  if (wanted.size === 0) return '';
+  const doc = parseMusicXml(xml);
+  const gtr = partById(doc, 'P1');
+  const chunks: string[] = [];
+  for (const measure of measuresOf(gtr)) {
+    const bar = barNumber(measure);
+    if (!wanted.has(bar)) continue;
+    for (const n of elementChildren(measure, 'note')) {
+      const duration = textOf(n, 'duration');
+      if (elementChildren(n, 'rest').length) {
+        chunks.push(`${bar}|R:${duration}`);
+        continue;
+      }
+      const pitch = elementChildren(n, 'pitch')[0];
+      const step = textOf(pitch, 'step');
+      const alter = textOf(pitch, 'alter') || '0';
+      const octave = textOf(pitch, 'octave');
+      chunks.push(`${bar}|${step}|${alter}|${octave}|${duration}`);
+    }
+  }
+  return chunks.join(';');
+}
+
+/** True when protected guitar bars match source pitch, duration, rests and order. */
+export function protectedGuitarIntact(
+  sourceXml: string,
+  candXml: string,
+  protectedBars: Iterable<number>,
+): boolean {
+  const bars = [...protectedBars];
+  if (bars.length === 0) return true;
+  return (
+    guitarBarsStreamFingerprint(sourceXml, bars) ===
+    guitarBarsStreamFingerprint(candXml, bars)
+  );
+}
+
 function parseRange(raw: string | undefined): BarRange | undefined {
   if (!raw) return undefined;
   const m = raw.match(/^(\d+)\s*-\s*(\d+)$/);
@@ -678,6 +729,9 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   const barCount = countBars(sourceXml);
   const form = defaultFormWindows(barCount);
   const motifBars = new Set(options.motifBars?.length ? options.motifBars : [1, 2]);
+  const protectedGuitarBars = new Set(
+    (options.protectedGuitarBars ?? []).filter((n) => Number.isFinite(n) && n > 0),
+  );
   const mode: DualPartMode = options.mode ?? 'dual';
   const title = options.title ?? 'WWH Duo';
   const stem = options.stem ?? path.basename(sourcePath, path.extname(sourcePath));
@@ -806,6 +860,7 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
     if (profile === 'harmonic') {
       const harm = transformHarmonic(sourcePath, sourceXml, {
         motifBars,
+        protectedGuitarBars,
         title,
         movement: `${title} — Harmonic Candidate`,
         barCount,
@@ -817,9 +872,13 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
       xml = harm.xml;
       id = 'A-Harmonic';
       file = `A-Harmonic-${stem}.musicxml`;
+      const protectedNote =
+        protectedGuitarBars.size > 0
+          ? ` protected guitar bars ${[...protectedGuitarBars].sort((a, b) => a - b).join(',')};`
+          : '';
       note = lockBass
-        ? `BHL world ${harm.world ?? bhlWorld} guitar; bass locked to source; motif bars locked.`
-        : `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked.`;
+        ? `BHL world ${harm.world ?? bhlWorld} guitar; bass locked to source; motif bars locked;${protectedNote}`
+        : `BHL world ${harm.world ?? bhlWorld} guitar + dual-part bass counterpoint; motif bars locked;${protectedNote}`;
     } else if (profile === 'contrapuntal') {
       xml = transformContrapuntal(sourceXml, {
         motifBars,
@@ -858,6 +917,13 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
     validation.push(...issues);
     if (!motifIntact(sourceXml, xml, motifBars)) {
       validation.push(`${id}: MOTIF BARS altered`);
+    }
+    if (
+      profile === 'harmonic' &&
+      protectedGuitarBars.size > 0 &&
+      !protectedGuitarIntact(sourceXml, xml, protectedGuitarBars)
+    ) {
+      validation.push(`${id}: PROTECTED GUITAR BARS altered`);
     }
 
     const outPath = path.join(outDir, file);

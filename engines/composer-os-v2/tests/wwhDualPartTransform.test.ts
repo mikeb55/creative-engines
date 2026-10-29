@@ -13,8 +13,10 @@ import {
   deliberatelyMutateGuitarPitch,
   deliberatelyMutateHarmonyRoot,
   expectedBarTicks,
+  guitarBarsStreamFingerprint,
   motifIntact,
   parseMusicXml,
+  protectedGuitarIntact,
   runDualPartTransform,
   sha256File,
   validateDualPartXml,
@@ -423,6 +425,58 @@ describe('wwhDualPartTransform', () => {
           bassPartId: 'P2',
           guitarPartId: 'P1',
           protectedGuitarBars: [],
+        },
+      },
+    });
+    expect(tech.summary.parse).toBe('pass');
+    expect(tech.summary['source-lock']).toBe('pass');
+  });
+
+  test('Black Aura M1 protectedGuitarBars 28-29 preserve guitar stream exactly', () => {
+    expect(fs.existsSync(BLACK_AURA_V20)).toBe(true);
+    const beforeSha = sha256File(BLACK_AURA_V20);
+    expect(beforeSha).toBe(BLACK_AURA_V20_SHA);
+
+    const sourceXml = fs.readFileSync(BLACK_AURA_V20, 'utf8');
+    const sourceBass = bassStreamFingerprint(sourceXml);
+    const protectedBars = [28, 29];
+    const sourceProtected = guitarBarsStreamFingerprint(sourceXml, protectedBars);
+
+    const result = runDualPartTransform({
+      sourcePath: BLACK_AURA_V20,
+      outDir,
+      profiles: ['harmonic'],
+      lockBass: true,
+      expectedSha256: BLACK_AURA_V20_SHA,
+      motifBars: [9, 11],
+      protectedGuitarBars: protectedBars,
+      title: 'Black Aura',
+      stem: 'Black-Aura-M1-protected-28-29',
+      seed: 24024,
+      bhlWorld: 'F',
+    });
+
+    expect(result.barCount).toBe(39);
+    expect(result.outputs).toHaveLength(1);
+    const out = result.outputs[0]!;
+    expect(result.validation.filter((v) => /PROTECTED GUITAR/.test(v))).toHaveLength(0);
+    expect(bassStreamFingerprint(out.xml)).toBe(sourceBass);
+    expect(motifIntact(sourceXml, out.xml, [9, 11])).toBe(true);
+    expect(protectedGuitarIntact(sourceXml, out.xml, protectedBars)).toBe(true);
+    expect(guitarBarsStreamFingerprint(out.xml, protectedBars)).toBe(sourceProtected);
+
+    expect(sha256File(BLACK_AURA_V20)).toBe(beforeSha);
+    expect(path.resolve(out.path)).not.toBe(path.resolve(BLACK_AURA_V20));
+
+    const tech = runTechnicalChecks({
+      xml: out.xml,
+      lock: {
+        sourceXml,
+        spec: {
+          span: { from: 1, to: 39 },
+          bassPartId: 'P2',
+          guitarPartId: 'P1',
+          protectedGuitarBars: protectedBars,
         },
       },
     });
