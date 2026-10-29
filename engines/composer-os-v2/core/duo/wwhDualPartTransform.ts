@@ -17,12 +17,27 @@ import {
   type BassOnlyProfile,
 } from './wwhBassOnlyTransform';
 import { transformHarmonicSourceAnchored } from './wwhSourceAnchoredHarmonic';
+import {
+  transformMotivicReshape,
+  type MotivicReshapePlanStep,
+} from './wwhMotivicReshape';
+import type { DiscoveredPattern } from '../motif-ops/motifDiscovery';
 
-export type DualPartProfile = 'harmonic' | 'contrapuntal' | 'rhythmic';
+export type DualPartProfile = 'harmonic' | 'contrapuntal' | 'rhythmic' | 'reshape';
 export type DualPartMode = 'dual' | 'bassOnly';
 export type { BassOnlyProfile };
 
 export type BarRange = { from: number; to: number };
+
+/** Opt-in MORPH M2 RESHAPE config (ignored unless provided). */
+export type MotivicReshapeRequest = {
+  window: BarRange;
+  ops: readonly MotivicReshapePlanStep[];
+  pattern: DiscoveredPattern;
+  occurrenceIndex?: number;
+  /** Structural anchors frozen in addition to motifBars / protectedGuitarBars. */
+  anchorBars?: number[];
+};
 
 export type DualPartTransformOptions = {
   sourcePath: string;
@@ -47,6 +62,11 @@ export type DualPartTransformOptions = {
    * Default false — legacy composeBhlGuitar harmonic path unchanged.
    */
   sourceAnchored?: boolean;
+  /**
+   * Opt-in MORPH M2 RESHAPE: one declared multi-bar guitar window via motif-ops chain.
+   * Default undefined — M1/legacy paths unchanged. Does not enable M3.
+   */
+  motivicReshape?: MotivicReshapeRequest;
   /** Guitar bars left pitch-identical (dual mode). Default: [1, 2]. */
   motifBars?: number[];
   /**
@@ -855,8 +875,48 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
   }
 
   const profiles = options.profiles?.length
-    ? options.profiles
+    ? options.profiles.filter((p) => p !== 'reshape')
     : (['harmonic', 'contrapuntal', 'rhythmic'] as DualPartProfile[]);
+
+  if (options.motivicReshape) {
+    if (mode === 'bassOnly') {
+      throw new Error('motivicReshape requires dual mode');
+    }
+    const req = options.motivicReshape;
+    const reshaped = transformMotivicReshape({
+      sourcePath,
+      window: req.window,
+      ops: req.ops,
+      pattern: req.pattern,
+      occurrenceIndex: req.occurrenceIndex,
+      motifBars,
+      protectedGuitarBars,
+      anchorBars: req.anchorBars,
+      title,
+      movement: `${title} — Motivic Reshape (M2)`,
+    });
+    const id = 'M2-Reshape';
+    const file = `M2-Reshape-${stem}.musicxml`;
+    const outPath = path.join(outDir, file);
+    fs.writeFileSync(outPath, reshaped.xml, 'utf8');
+    const issues = validateDualPartXml(id, reshaped.xml, {
+      expectedBars: barCount,
+      guitarMidi,
+      bassMidi,
+      minHarmonyCount,
+    });
+    validation.push(...issues);
+    const r = reshaped.receipt;
+    outputs.push({
+      id,
+      profile: 'reshape',
+      file,
+      path: outPath,
+      xml: reshaped.xml,
+      note: `M2 RESHAPE window ${r.window.from}-${r.window.to}; cell ${r.patternId}; lineage ${r.lineageIds.join('→')}; ops ${r.ops.join(',')}; bass/harmony preserved;`,
+      sha256: sha256Text(reshaped.xml),
+    });
+  }
 
   for (const profile of profiles) {
     let xml: string;
@@ -886,7 +946,10 @@ export function runDualPartTransform(options: DualPartTransformOptions): DualPar
         xml = anchored.xml;
         id = 'A-Harmonic-SourceAnchored';
         file = `A-Harmonic-SourceAnchored-${stem}.musicxml`;
-        note = `EXPERIMENTAL source-anchored BHL world ${anchored.world}; ±${anchored.maxAbsShift || 3} pc; edited ${anchored.editedNotes} notes; bass locked; motif+gestures locked;${protectedNote}`;
+        const phraseNote = anchored.phraseDevelop
+          ? ` phrase-develop bar ${anchored.phraseDevelop.bar} ${anchored.phraseDevelop.op}+${anchored.phraseDevelop.semitones} (${anchored.phraseDevelop.edits.length} notes);`
+          : '';
+        note = `EXPERIMENTAL source-anchored BHL world ${anchored.world}; ±${anchored.maxAbsShift || 3} pc; edited ${anchored.editedNotes} notes; bass locked; motif+gestures locked;${phraseNote}${protectedNote}`;
       } else {
         const harm = transformHarmonic(sourcePath, sourceXml, {
           motifBars,
