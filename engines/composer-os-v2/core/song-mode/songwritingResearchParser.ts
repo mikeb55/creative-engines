@@ -1,9 +1,8 @@
 /**
  * Parse Songwriting.md into structured rule lists (bullets only; no prose retention in API).
+ * Pure TS — no filesystem. Node loaders live in songwritingResearchLoader.ts.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import type {
   AuthorResearchBlock,
   AuthorRuleId,
@@ -293,12 +292,9 @@ function parseSongwritingResearchMarkdownImpl(raw: string): ParsedSongwritingRes
   };
 }
 
-export function getDefaultSongwritingResearchPath(): string {
-  return path.join(__dirname, 'data', 'Songwriting.md');
-}
-
 /**
- * Minimal research payload when file missing, parse throws, or quality gate fails.
+ * Minimal research payload when file missing, parse throws, quality gate fails,
+ * or browser/in-memory callers inject defaults (no Songwriting.md filesystem read).
  * `ok: true` so Song Mode does not block on researchParseOk / validation.
  */
 export function createDefaultSongwritingResearch(): ParsedSongwritingResearch {
@@ -324,48 +320,4 @@ export function createDefaultSongwritingResearch(): ParsedSongwritingResearch {
       minimumViableLines: 0,
     },
   };
-}
-
-export function loadSongwritingResearchFromPath(filePath: string): ParsedSongwritingResearch {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(filePath, 'utf-8');
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.warn(`[songwritingResearch] failed to read ${filePath}: ${msg}; using default songwriting rules`);
-    return createDefaultSongwritingResearch();
-  }
-  try {
-    const parsed = parseSongwritingResearchMarkdown(raw);
-    if (!parsed.ok) {
-      console.warn(
-        `[songwritingResearch] parse quality check failed for ${filePath}; using default songwriting rules`
-      );
-      return createDefaultSongwritingResearch();
-    }
-    return parsed;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.warn(`[songwritingResearch] parse threw (${filePath}): ${msg}; using default songwriting rules`);
-    return createDefaultSongwritingResearch();
-  }
-}
-
-export function loadSongwritingResearchFromEnvOrDefault(): ParsedSongwritingResearch {
-  const override = process.env.COMPOSER_OS_SONGWRITING_RESEARCH;
-  if (override && override.length > 0) {
-    return loadSongwritingResearchFromPath(override);
-  }
-  const dir = process.env.COMPOSER_OS_RESEARCH_DIR;
-  if (dir && dir.length > 0) {
-    const candidate = path.join(dir, 'Songwriting.md');
-    try {
-      if (fs.existsSync(candidate)) {
-        return loadSongwritingResearchFromPath(candidate);
-      }
-    } catch {
-      /* fall through */
-    }
-  }
-  return loadSongwritingResearchFromPath(getDefaultSongwritingResearchPath());
 }

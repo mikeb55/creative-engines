@@ -5,11 +5,19 @@
 
 import type { MusicContext } from '../music-context/musicContextTypes';
 
-export type SongSectionKind = 'verse' | 'pre_chorus' | 'chorus' | 'bridge';
+export type SongSectionKind =
+  | 'intro'
+  | 'verse'
+  | 'pre_chorus'
+  | 'chorus'
+  | 'bridge'
+  | 'outro';
 
 export interface SongSectionPlan {
   order: number;
   kind: SongSectionKind;
+  /** Optional bar budget from template planners (`planFromTemplate`). */
+  bars?: number;
   /** Per-section MusicContext producer (V104p7). */
   sectionEngine?: SongModeSectionEngine;
 }
@@ -29,10 +37,12 @@ export const DEFAULT_SONG_VOICE_TYPE: SongVoiceType = 'male_tenor';
 
 /** All supported section kinds (planner may use a subset by default). */
 export const SONG_MODE_SECTION_KINDS: readonly SongSectionKind[] = [
+  'intro',
   'verse',
   'pre_chorus',
   'chorus',
   'bridge',
+  'outro',
 ];
 
 /** Metadata-only flags for Song Mode preset (no runtime generation yet). */

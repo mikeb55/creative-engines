@@ -28,7 +28,8 @@ import { STUB_BB_COMPOSER_CHORD_POOLS } from './stubBbComposerChordPools';
 import { planProsodyPlaceholders } from './prosodyPlanner';
 import type { CompiledSong, SectionChordPlan } from './songCompilationTypes';
 import type { LeadSheetContract, LeadSheetChordSymbol, LeadSheetLyricPlaceholder } from './leadSheetContract';
-import { loadSongwritingResearchFromPath, loadSongwritingResearchFromEnvOrDefault } from './songwritingResearchParser';
+import { createDefaultSongwritingResearch } from './songwritingResearchParser';
+import type { ParsedSongwritingResearch } from './songwritingResearchTypes';
 import type { SongHook } from './songHookTypes';
 import type { SongSectionKind, SongSectionPlan, SongVoiceType } from './songModeTypes';
 import { DEFAULT_SONG_VOICE_TYPE } from './songModeTypes';
@@ -3744,7 +3745,11 @@ export function buildSectionChordPlans(
 
     let chordSymbols = row.chordSymbols;
     let chosenRowTags = row.chosenRowTags;
-    if (songwriterId === 'beatles' && beatlesExpand && beatlesExpand.template !== 'legacy_vc') {
+    if (typeof s.bars === 'number' && s.bars > 0) {
+      /** Template planners (`planFromTemplate`) attach per-section bar budgets. */
+      chordSymbols = expandChordSymbolsToBarLength(chordSymbols, s.bars);
+      chosenRowTags = [...chosenRowTags, `template_tile:${s.bars}b`];
+    } else if (songwriterId === 'beatles' && beatlesExpand && beatlesExpand.template !== 'legacy_vc') {
       const targets = beatlesSectionBarTargets(beatlesExpand.template, beatlesExpand.songTotalBars, sections.length);
       const tb = targets?.[s.order];
       if (tb != null && tb > 0) {
@@ -3785,6 +3790,8 @@ export interface BuildCompiledSongParams {
   sections: SongSectionPlan[];
   voiceType?: SongVoiceType;
   researchPathOverride?: string;
+  /** Injected research (browser / in-memory). Wins over path / env / bundled file. */
+  researchOverride?: ParsedSongwritingResearch;
   primarySongwriterStyle?: SongwriterRuleId | string | null;
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
   songwriterBlendWeight?: number;
@@ -3808,11 +3815,29 @@ export interface BuildCompiledSongParams {
   motifOpsEnabled?: boolean;
 }
 
+function resolveSongwritingResearch(params: {
+  researchOverride?: ParsedSongwritingResearch;
+  researchPathOverride?: string;
+}): ParsedSongwritingResearch {
+  if (params.researchOverride) return params.researchOverride;
+  const onNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+  if (!onNode) return createDefaultSongwritingResearch();
+  try {
+    // Node-only; keep fs out of static browser import graph when researchOverride is set.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const loader = require('./songwritingResearchLoader') as typeof import('./songwritingResearchLoader');
+    if (params.researchPathOverride) {
+      return loader.loadSongwritingResearchFromPath(params.researchPathOverride);
+    }
+    return loader.loadSongwritingResearchFromEnvOrDefault();
+  } catch {
+    return createDefaultSongwritingResearch();
+  }
+}
+
 export function buildCompiledSong(params: BuildCompiledSongParams): CompiledSong {
   const voiceType = params.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
-  const research = params.researchPathOverride
-    ? loadSongwritingResearchFromPath(params.researchPathOverride)
-    : loadSongwritingResearchFromEnvOrDefault();
+  const research: ParsedSongwritingResearch = resolveSongwritingResearch(params);
   const secondaryKey =
     typeof params.secondarySongwriterStyle === 'string'
       ? normalizeSongwriterStyleKey(params.secondarySongwriterStyle)

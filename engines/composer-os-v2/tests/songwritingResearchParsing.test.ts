@@ -6,8 +6,8 @@ import * as path from 'path';
 import {
   getDefaultSongwritingResearchPath,
   loadSongwritingResearchFromPath,
-  parseSongwritingResearchMarkdown,
-} from '../core/song-mode/songwritingResearchParser';
+} from '../core/song-mode/songwritingResearchLoader';
+import { parseSongwritingResearchMarkdown } from '../core/song-mode/songwritingResearchParser';
 
 export function runSongwritingResearchParsingTests(): { ok: boolean; name: string }[] {
   const out: { ok: boolean; name: string }[] = [];

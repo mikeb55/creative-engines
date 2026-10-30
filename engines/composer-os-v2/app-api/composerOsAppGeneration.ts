@@ -29,8 +29,10 @@ import { buildStringQuartetMusicContextFromGenerateInput } from '../core/string-
 import type { StringQuartetTextureArchetype } from '../core/string-quartet/stringQuartetMusicContextTypes';
 import { resolveBarMeterMapForGenerateRequest } from '../core/section-architecture/resolveGenerationBarMeterMap';
 import { runSongMode } from '../core/song-mode/runSongMode';
+import { applyChorusOpeningMotifRecall } from '../core/song-mode/chorusReturnIdentity';
 import { mapBigBandToMosaicSectionPlan } from '../core/big-band/bigBandToMosaicMapper';
 import { mapSongModeToMosaicSectionPlan } from '../core/song-mode/songModeToMosaicMapper';
+import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
 import type { SectionChordPlan } from '../core/song-mode/songCompilationTypes';
 import type {
   GrooveScaffoldSettings,
@@ -1474,6 +1476,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     musicXmlParsedLeadSheet
       ? musicXmlParsedLeadSheet
       : undefined;
+  const isFullSongTemplate = req.songFormTemplate === 'full_song';
   const sm = runSongMode({
     seed: effectiveSeed,
     title,
@@ -1485,6 +1488,7 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     songwriterBlendWeight: req.songwriterBlendWeight,
     authorOverlay: authorOv as AuthorRuleId | undefined,
     beatlesFormTemplate: req.beatlesFormTemplate,
+    songFormTemplate: isFullSongTemplate ? 'full_song' : undefined,
     beatlesMelodicLens: req.beatlesMelodicLens,
     radioheadMelodicContext: req.radioheadMelodicContext,
     motifOpsEnabled: req.motifOps?.enabled === true,
@@ -1715,7 +1719,8 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     : effectiveSong;
   const mosaicExplicitOptIn =
     (Array.isArray(req.mosaicSectionPlan) && req.mosaicSectionPlan.length >= 2) ||
-    req.mosaicOutputFormat != null;
+    req.mosaicOutputFormat != null ||
+    isFullSongTemplate;
   const mosaicPlan = mosaicExplicitOptIn
     ? req.mosaicSectionPlan && req.mosaicSectionPlan.length >= 2
       ? req.mosaicSectionPlan
@@ -1723,6 +1728,18 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
           songwriterStyleId: req.primarySongwriterStyle,
         })
     : [];
+  if (
+    isFullSongTemplate &&
+    !harmonyLockFromUserOrImport &&
+    sm.compiledSong.chordPlan?.length
+  ) {
+    const fullSongBars = sm.compiledSong.chordPlan.flatMap((p) => p.chordSymbols);
+    if (fullSongBars.length === resolvedSongModeTotalBars) {
+      lockedHarmonyBarsAuthoritative = fullSongBars;
+      chordProgressionText = fullSongBars.join('|');
+      harmonyModeForRun = 'custom_locked';
+    }
+  }
   const songModeGoldenPathOptions: RunGoldenPathOptions = mergeHarmonicVoiceFromRequest(req, {
     styleStack: mapAppStyleStackToEngine(req.styleStack),
     presetId: 'guitar_bass_duo',
@@ -1732,7 +1749,11 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
     ...(req.acknowledgeOpenIdiomEnding === true ? { acknowledgeOpenIdiomEnding: true } : {}),
     ...(req.openIdiomDefault === true ? { openIdiomDefault: true } : {}),
     ...(mosaicPlan.length >= 2 ? { mosaicSectionPlan: mosaicPlan } : {}),
-    ...(req.mosaicOutputFormat ? { mosaicOutputFormat: req.mosaicOutputFormat } : {}),
+    ...(req.mosaicOutputFormat
+      ? { mosaicOutputFormat: req.mosaicOutputFormat }
+      : isFullSongTemplate
+        ? { mosaicOutputFormat: 'melody-bass-chords' as const }
+        : {}),
     /** Explicit default matches UI default when `styleProfile` omitted (legacy clients). */
     styleProfile:
       req.styleProfile ??
@@ -2223,6 +2244,13 @@ function runSongStructure(req: GenerateRequest, outputDir: string): GenerateResu
   let filepath: string | undefined;
   let vocalLeadSheetFilepath: string | undefined;
   let midiFilepath: string | undefined;
+  if (isFullSongTemplate && gp.score && mosaicPlan.length >= 2) {
+    gp.score = applyChorusOpeningMotifRecall(gp.score, mosaicPlan, { openingBars: 1 });
+    const recalled = exportScoreModelToMusicXml(gp.score, {
+      bpm: typeof req.bpm === 'number' && req.bpm > 0 ? req.bpm : 120,
+    });
+    if (recalled.xml) gp.xml = recalled.xml;
+  }
   if (gp.xml) {
     filename = buildLabeledMusicXmlFilename(
       req.outputLabel,

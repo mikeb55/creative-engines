@@ -3,9 +3,61 @@
  */
 
 import type { BeatlesFormTemplateId } from '../compositionContext';
-import type { SongSectionPlan } from './songModeTypes';
+import type { SongSectionKind, SongSectionPlan } from './songModeTypes';
 
 export type { BeatlesFormTemplateId };
+
+/** Deterministic named song-form templates (`runSongMode` / GenerateRequest `songFormTemplate`). */
+export type SongFormTemplateId = 'full_song';
+
+const FULL_SONG_KINDS: readonly SongSectionKind[] = [
+  'intro',
+  'verse',
+  'pre_chorus',
+  'chorus',
+  'bridge',
+  'chorus',
+  'outro',
+] as const;
+
+/** Weights mirror Beatles `verse_chorus` long/short contrast (hook sections heavier). */
+const FULL_SONG_WEIGHTS: readonly number[] = [1, 2, 1, 2, 1, 2, 1];
+
+/**
+ * Deterministic weighted bar split that always sums to `totalBars`
+ * (same floor + remainder pattern as `beatlesSectionBarTargets`).
+ */
+function allocateWeightedBars(totalBars: number, weights: readonly number[]): number[] {
+  const safeTotal = Math.max(0, Math.floor(totalBars));
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const unit = weightSum > 0 ? Math.floor(safeTotal / weightSum) : 0;
+  const bars = weights.map((w) => w * unit);
+  let rem = safeTotal - bars.reduce((a, b) => a + b, 0);
+  let i = 0;
+  while (rem > 0 && bars.length > 0) {
+    bars[i % bars.length]! += 1;
+    rem -= 1;
+    i += 1;
+  }
+  return bars;
+}
+
+/**
+ * Named template → ordered section plan with per-section `bars` summing to `totalBars`.
+ * Currently: **`full_song`** = intro / verse / pre_chorus / chorus / bridge / chorus / outro.
+ */
+export function planFromTemplate(id: SongFormTemplateId, totalBars: number): SongSectionPlan[] {
+  if (id === 'full_song') {
+    const barTargets = allocateWeightedBars(totalBars, FULL_SONG_WEIGHTS);
+    return FULL_SONG_KINDS.map((kind, order) => ({
+      order,
+      kind,
+      bars: barTargets[order]!,
+    }));
+  }
+  const _exhaustive: never = id;
+  throw new Error(`Unknown song form template: ${String(_exhaustive)}`);
+}
 
 const DEFAULT_32_BAR_VC: SongSectionPlan[] = [
   { order: 0, kind: 'verse' },

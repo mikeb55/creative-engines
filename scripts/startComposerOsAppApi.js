@@ -49,6 +49,7 @@ const cors_1 = __importDefault(require("cors"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const composerOsApiCore_1 = require("../engines/composer-os-v2/app-api/composerOsApiCore.ts");
+const fullSongHttpAdapter_1 = require("../engines/composer-os-v2/app-api/fullSongHttpAdapter.ts");
 const bhlApp_1 = require("../engines/composer-os-v2/app-api/bhlApp.ts");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
@@ -98,6 +99,28 @@ app.post('/api/generate', (req, res) => {
             error: String(err),
             detail: process.env.NODE_ENV === 'development' ? String(err) : undefined,
         });
+    }
+});
+/** TunePainter boundary: JSON {seed,totalBars?} → musicXml (or raw MusicXML if Accept: xml). */
+app.post('/api/full-song', (req, res) => {
+    try {
+        const result = (0, fullSongHttpAdapter_1.apiGenerateFullSong)(req.body || {}, OUTPUT_DIR);
+        if (!result.success) {
+            res.status(400).json(result);
+            return;
+        }
+        const accept = typeof req.headers.accept === 'string' ? req.headers.accept : '';
+        const wantsXml = accept.includes('application/xml') ||
+            accept.includes('text/xml') ||
+            accept.includes('application/vnd.recordare.musicxml');
+        if (wantsXml) {
+            res.type('application/vnd.recordare.musicxml+xml').send(result.musicXml);
+            return;
+        }
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: String(err) });
     }
 });
 app.get('/api/outputs', (_req, res) => {

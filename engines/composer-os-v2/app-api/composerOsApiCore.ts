@@ -1009,6 +1009,7 @@ export function apiGenerate(
         body.beatlesFormTemplate === 'legacy_vc'
           ? body.beatlesFormTemplate
           : undefined,
+      songFormTemplate: body.songFormTemplate === 'full_song' ? 'full_song' : undefined,
       beatlesMelodicLens:
         body.beatlesMelodicLens === 'neutral' ||
         body.beatlesMelodicLens === 'lennon' ||

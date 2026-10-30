@@ -28,6 +28,7 @@ import {
   apiExportGuitarPro,
   apiGenerateComping,
 } from '../engines/composer-os-v2/app-api/composerOsApiCore';
+import { apiGenerateFullSong } from '../engines/composer-os-v2/app-api/fullSongHttpAdapter';
 import { apiHarmonyLab, apiOrchestrate } from '../engines/composer-os-v2/app-api/orchestrateApp';
 import {
   apiLongLinePractice,
@@ -48,7 +49,13 @@ import {
   apiBhlScratch,
 } from '../engines/composer-os-v2/app-api/bhlApp';
 import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../engines/composer-os-v2/app-api/evaluationApp';
-import { apiDevelopCoherence, apiDevelopDiscover, apiDevelopDualPart, apiDevelopVoice } from '../engines/composer-os-v2/app-api/developApp';
+import {
+  apiDevelopCoherence,
+  apiDevelopDiscover,
+  apiDevelopDualPart,
+  apiDevelopVoice,
+  type DevelopDualPartRequest,
+} from '../engines/composer-os-v2/app-api/developApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import {
   apiHexatonicOpenLaboratoryReview,
@@ -168,6 +175,35 @@ app.post('/api/generate', (req: Request, res: Response) => {
       success: false,
       error: String(err),
       detail: process.env.NODE_ENV === 'development' ? String(err) : undefined,
+    });
+  }
+});
+
+/**
+ * TunePainter / browser boundary: JSON `{ seed, totalBars? }` → MusicXML payload.
+ * Engines stay on Node; clients only consume musicXml.
+ */
+app.post('/api/full-song', (req: Request, res: Response) => {
+  try {
+    const result = apiGenerateFullSong(req.body ?? {}, OUTPUT_DIR);
+    if (!result.success) {
+      res.status(400).json(result);
+      return;
+    }
+    const wantsXml =
+      typeof req.headers.accept === 'string' &&
+      (req.headers.accept.includes('application/xml') ||
+        req.headers.accept.includes('text/xml') ||
+        req.headers.accept.includes('application/vnd.recordare.musicxml'));
+    if (wantsXml) {
+      res.type('application/vnd.recordare.musicxml+xml').send(result.musicXml);
+      return;
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: String(err),
     });
   }
 });
@@ -400,9 +436,12 @@ app.post('/api/develop/coherence', (req: Request, res: Response) => {
   }
 });
 
+// MORPH M1–M3: req.body is DevelopDualPartRequest — mode/motivicReshape/identityKernel/
+// identityReimagine forwarded unchanged; omit mode → M1. JSON result keeps MusicXML/SHA/lineage
+// and optional M3 identityKernel/identityReimagine receipts.
 app.post('/api/develop/dual-part', (req: Request, res: Response) => {
   try {
-    const result = apiDevelopDualPart(req.body);
+    const result = apiDevelopDualPart(req.body as DevelopDualPartRequest);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     res.status(500).json({ ok: false, error: err instanceof Error ? err.message : String(err) });

@@ -728,6 +728,12 @@ export interface GenerateRequest {
    */
   beatlesFormTemplate?: BeatlesFormTemplateId;
   /**
+   * Song Mode named form template (`planFromTemplate`).
+   * **`full_song`** → intro/verse/pre_chorus/chorus/bridge/chorus/outro + chorus return identity.
+   * When set, overrides Beatles form-template section planning.
+   */
+  songFormTemplate?: 'full_song';
+  /**
    * Song Mode / Beatles: Lennon vs McCartney vs blended (**default**) vs neutral melodic lens (`melodyBehaviourPlanner.ts`).
    */
   beatlesMelodicLens?: BeatlesMelodicLens;

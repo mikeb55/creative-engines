@@ -6,11 +6,14 @@ import { buildCompiledSong, buildLeadSheetContractFromCompiled, summaryStringFor
 import type { CompiledSong } from './songCompilationTypes';
 import type { LeadSheetContract } from './leadSheetContract';
 import { DEFAULT_SONG_VOICE_TYPE, type SongVoiceType } from './songModeTypes';
+import { alignRepeatedChorusHarmony } from './chorusReturnIdentity';
 import {
   planBeatlesPrimaryVVbV,
   planBeatlesSecondaryVerseChorus,
   planDefaultVerseChorusStructure,
   planExtendedPopStructure,
+  planFromTemplate,
+  type SongFormTemplateId,
 } from './songSectionPlanner';
 import {
   mergeSongModeValidation,
@@ -29,7 +32,12 @@ import {
   buildUniversalLeadSheetFromSongContract,
 } from '../lead-sheet/universalLeadSheetBuilder';
 import type { LeadSheet } from '../lead-sheet/leadSheetTypes';
-import type { AuthorRuleId, ClassicalSongRuleId, SongwriterRuleId } from './songwritingResearchTypes';
+import type {
+  AuthorRuleId,
+  ClassicalSongRuleId,
+  ParsedSongwritingResearch,
+  SongwriterRuleId,
+} from './songwritingResearchTypes';
 import type { BeatlesContextMode, BeatlesFormTemplateId, BeatlesMelodicLens } from '../compositionContext';
 import type { StylePairingInput } from '../style-pairing/stylePairingTypes';
 import { DEFAULT_PRIMARY_SONGWRITER_STYLE, normalizeSongwriterStyleKey } from './songwriterStyleProfiles';
@@ -46,6 +54,8 @@ export interface SongModeRunInput {
   voiceType?: SongVoiceType;
   /** Override bundled `data/Songwriting.md` (or `COMPOSER_OS_SONGWRITING_RESEARCH`). */
   researchPathOverride?: string;
+  /** Injected research payload (browser / in-memory; skips filesystem). */
+  researchOverride?: ParsedSongwritingResearch;
   /** Default `beatles` when omitted. Must not be `null`. */
   primarySongwriterStyle?: SongwriterRuleId | string | null;
   secondarySongwriterStyle?: SongwriterRuleId | string | null;
@@ -65,6 +75,11 @@ export interface SongModeRunInput {
   beatlesMelodicLens?: BeatlesMelodicLens;
   /** Beatles macro-form (`songSectionPlanner`). Default **`vv_br_v`** when primary is **`beatles`**. */
   beatlesFormTemplate?: BeatlesFormTemplateId;
+  /**
+   * Named Song Mode form template (e.g. **`full_song`**).
+   * When set, overrides `variant` / Beatles form template section planners.
+   */
+  songFormTemplate?: SongFormTemplateId;
   /** Radiohead — RH_MEL_05 acoustic vs electronic (`planMelodyBehaviour`). */
   radioheadMelodicContext?: 'acoustic' | 'electronic';
   /** V3.3 shared motif operators. Omitted or false leaves generator cells unchanged. */
@@ -106,19 +121,26 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
   const voiceType = input.voiceType ?? DEFAULT_SONG_VOICE_TYPE;
   const sectionBarTarget = input.totalBars ?? 32;
   const beatlesTpl = input.beatlesFormTemplate ?? 'vv_br_v';
+  const songFormTemplate = input.songFormTemplate;
   const sections =
-    input.variant === 'extended'
-      ? planExtendedPopStructure()
-      : primaryResolved === 'beatles' && beatlesTpl === 'vv_br_v'
-        ? planBeatlesPrimaryVVbV(sectionBarTarget)
-        : primaryResolved === 'beatles' && beatlesTpl === 'verse_chorus'
-          ? planBeatlesSecondaryVerseChorus(sectionBarTarget)
-          : primaryResolved === 'beatles' && beatlesTpl === 'legacy_vc'
-            ? planDefaultVerseChorusStructure(sectionBarTarget)
-            : planDefaultVerseChorusStructure(sectionBarTarget);
+    songFormTemplate === 'full_song'
+      ? planFromTemplate('full_song', sectionBarTarget)
+      : input.variant === 'extended'
+        ? planExtendedPopStructure()
+        : primaryResolved === 'beatles' && beatlesTpl === 'vv_br_v'
+          ? planBeatlesPrimaryVVbV(sectionBarTarget)
+          : primaryResolved === 'beatles' && beatlesTpl === 'verse_chorus'
+            ? planBeatlesSecondaryVerseChorus(sectionBarTarget)
+            : primaryResolved === 'beatles' && beatlesTpl === 'legacy_vc'
+              ? planDefaultVerseChorusStructure(sectionBarTarget)
+              : planDefaultVerseChorusStructure(sectionBarTarget);
 
   const planVal = validateSectionPlanForSongMode(sections, {
-    requireChorus: !(primaryResolved === 'beatles' && beatlesTpl === 'vv_br_v'),
+    requireChorus: !(
+      songFormTemplate !== 'full_song' &&
+      primaryResolved === 'beatles' &&
+      beatlesTpl === 'vv_br_v'
+    ),
   });
   const v0 = validateSongModeRunInput(input);
   const secondaryTrimmed =
@@ -135,6 +157,7 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     sections,
     voiceType,
     researchPathOverride: input.researchPathOverride,
+    researchOverride: input.researchOverride,
     primarySongwriterStyle: input.primarySongwriterStyle ?? undefined,
     secondarySongwriterStyle: secondaryTrimmed,
     songwriterBlendWeight: input.songwriterBlendWeight,
@@ -144,11 +167,19 @@ export function runSongMode(input: SongModeRunInput): SongModeRunResult {
     harmonicVoice: input.harmonicVoice ?? undefined,
     beatlesContext: input.beatlesContext,
     beatlesMelodicLens: input.beatlesMelodicLens,
-    beatlesFormTemplate: primaryResolved === 'beatles' ? beatlesTpl : undefined,
+    beatlesFormTemplate:
+      songFormTemplate === 'full_song'
+        ? undefined
+        : primaryResolved === 'beatles'
+          ? beatlesTpl
+          : undefined,
     songTotalBars: sectionBarTarget,
     radioheadMelodicContext: input.radioheadMelodicContext,
     motifOpsEnabled: input.motifOpsEnabled === true,
   });
+  if (songFormTemplate === 'full_song') {
+    compiled.chordPlan = alignRepeatedChorusHarmony(compiled.chordPlan);
+  }
   const lead = buildLeadSheetContractFromCompiled(compiled);
 
   const v1 = validateCompiledSong(compiled, { voiceType });

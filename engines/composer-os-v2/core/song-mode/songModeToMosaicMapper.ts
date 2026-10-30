@@ -19,6 +19,8 @@ type SectionChordPlanExtended = SectionChordPlan & {
 
 function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined {
   switch (kind) {
+    case 'intro':
+      return 'statement';
     case 'verse':
       return 'development';
     case 'pre_chorus':
@@ -26,6 +28,8 @@ function phraseRoleForSectionKind(kind: SongSectionKind): PhraseRole | undefined
     case 'chorus':
       return 'climax';
     case 'bridge':
+      return 'release';
+    case 'outro':
       return 'release';
     default: {
       const _exhaustive: never = kind;
