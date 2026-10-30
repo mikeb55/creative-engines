@@ -1,0 +1,7 @@
+reviewPath=/Users/user/Documents/DEVS/creative-engines/docs/roadmap/morph-evidence/Evaluation Records/A-Harmonic-Black-Aura-M1-durable-human-bmef.evaluation.json
+candidatePath=docs/roadmap/morph-evidence/A-Harmonic-Black-Aura-M1-durable.musicxml
+candidateSha256=bf9cac84ce421ef27360634303e5a4d94bd215fec7313dacb6ae8d1201f828f0
+receiptSha256=daf3f4dd167b601848f3f8698e9384fc4759ca79ab61c9202f6027f573c5f6d6
+decision=null
+tech.parse=pass
+tech.source-lock=pass

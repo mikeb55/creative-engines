@@ -1,0 +1,15 @@
+status=PASS
+sourcePath=/Users/user/Documents/DEVS/ECM-Album-Nov-2027/00 - WWH DUO LEADSHEETS/01-Black-Aura-Duo-Leadsheet-V2.0.musicxml
+sourceSha256=b85f7731f0232c02ae588c63f2950037a340f62af64fe42b74b03157da4fccfd
+candidatePath=docs/roadmap/morph-evidence/A-Harmonic-Black-Aura-M1-durable.musicxml
+candidateSha256=bf9cac84ce421ef27360634303e5a4d94bd215fec7313dacb6ae8d1201f828f0
+barCount=39
+motifBars=[9,11]
+protectedGuitarBars=[28,29]
+lockBass=true
+seed=24024
+motifIntact=true
+protectedGuitarIntact=true
+tech.parse=pass
+tech.source-lock=pass
+sourceUnchanged=true
