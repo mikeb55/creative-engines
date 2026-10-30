@@ -12,6 +12,7 @@ import {
   q,
   qAdd,
   qEq,
+  ticksOverDivisions,
   type Rational,
 } from '../bhl/bhlEvidence';
 
@@ -369,7 +370,7 @@ function walkPart(
       } else if (name === 'forward') {
         cursor += Number(textOf(node, 'duration') || 0);
       } else if (name === 'direction') {
-        const onsetInBar = textOf(node, 'offset') !== '' ? q(Number(textOf(node, 'offset')), divisions) : q(Math.max(cursor, 0), divisions);
+        const onsetInBar = textOf(node, 'offset') !== '' ? ticksOverDivisions(Number(textOf(node, 'offset')), divisions) : ticksOverDivisions(Math.max(cursor, 0), divisions);
         for (const typed of elementChildren(node, 'direction-type')) {
           for (const child of elementChildren(typed)) {
             if (child.nodeName === 'rehearsal') {
@@ -428,7 +429,7 @@ function walkPart(
           bar,
           partId,
           instrument: partName,
-          onsetInBar: offset !== '' ? q(Number(offset), divisions) : q(Math.max(cursor, 0), divisions),
+          onsetInBar: offset !== '' ? ticksOverDivisions(Number(offset), divisions) : ticksOverDivisions(Math.max(cursor, 0), divisions),
           text: `${step}${kindText}`,
         });
       } else if (name === 'barline') {
@@ -461,7 +462,7 @@ function walkPart(
             bar,
             partId,
             instrument: partName,
-            onsetInBar: q(Math.max(cursor, 0), divisions),
+            onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
             detail: 'grace notes are not placed on the sounding timeline',
           });
           continue;
@@ -472,7 +473,7 @@ function walkPart(
             bar,
             partId,
             instrument: partName,
-            onsetInBar: q(Math.max(cursor, 0), divisions),
+            onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
             detail: 'cue notes are not placed on the sounding timeline',
           });
           continue;
@@ -482,8 +483,8 @@ function walkPart(
         const voiceText = textOf(node, 'voice');
         if (voiceText) pendingVoice = voiceText;
         const onsetInBar = chord
-          ? barEvents.at(-1)?.onsetInBar ?? q(cursor, divisions)
-          : q(cursor, divisions);
+          ? barEvents.at(-1)?.onsetInBar ?? ticksOverDivisions(cursor, divisions)
+          : ticksOverDivisions(cursor, divisions);
         if (!chord) {
           cursor += dur;
         }
@@ -552,7 +553,7 @@ function walkPart(
           bar,
           printedBar,
           onset: qAdd(barStart, onsetInBar),
-          duration: q(dur, divisions),
+          duration: ticksOverDivisions(dur, divisions),
           onsetInBar,
           rest: rest || Boolean(unpitched),
           chord,
@@ -623,10 +624,10 @@ function strictMetre(time: Element):
 
 function cursorOnset(cursor: number, offsetText: string, divisions: number): Rational {
   const base = Math.max(cursor, 0);
-  if (offsetText === '') return q(base, divisions);
+  if (offsetText === '') return ticksOverDivisions(base, divisions);
   const offset = Number(offsetText);
-  if (!Number.isFinite(offset)) return q(base, divisions);
-  return q(base + offset, divisions);
+  if (!Number.isFinite(offset)) return ticksOverDivisions(base, divisions);
+  return ticksOverDivisions(base + offset, divisions);
 }
 
 function collectNamed(node: Element, names: ReadonlySet<string>, out: Element[]): void {
@@ -804,7 +805,7 @@ function walkPartStrict(
               bar,
               partId,
               instrument: partName,
-              onsetInBar: q(Math.max(cursor, 0), divisions),
+              onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
               detail: `bad divisions ${divisionText}`,
             });
           } else if (sawNote) {
@@ -813,7 +814,7 @@ function walkPartStrict(
               bar,
               partId,
               instrument: partName,
-              onsetInBar: q(Math.max(cursor, 0), divisions),
+              onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
               detail: 'divisions change after a note; the cursor unit is not rescaled',
             });
           } else {
@@ -828,7 +829,7 @@ function walkPartStrict(
               bar,
               partId,
               instrument: partName,
-              onsetInBar: q(Math.max(cursor, 0), divisions),
+              onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
               detail: 'a time signature after a note is not given a new bar length',
             });
           } else {
@@ -861,7 +862,7 @@ function walkPartStrict(
                 bar,
                 partId,
                 instrument: partName,
-                onsetInBar: q(Math.max(cursor, 0), divisions),
+                onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
                 detail: item.detail ?? 'unsupported transpose',
               });
             }
@@ -875,7 +876,7 @@ function walkPartStrict(
             bar,
             partId,
             instrument: partName,
-            onsetInBar: q(Math.max(cursor, 0), divisions),
+            onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
             detail: 'key or staff-details after a note are stored as unsupported and do not rewrite pitches',
           });
         }
@@ -992,7 +993,7 @@ function walkPartStrict(
             bar,
             partId,
             instrument: partName,
-            onsetInBar: q(Math.max(cursor, 0), divisions),
+            onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
             detail: `${kind} notes are not placed on the sounding timeline`,
           });
           continue;
@@ -1005,7 +1006,7 @@ function walkPartStrict(
             bar,
             partId,
             instrument: partName,
-            onsetInBar: q(Math.max(cursor, 0), divisions),
+            onsetInBar: ticksOverDivisions(Math.max(cursor, 0), divisions),
             detail: `duration ${textOf(node, 'duration')} is not a non-negative integer division count`,
           });
           continue;
@@ -1013,8 +1014,8 @@ function walkPartStrict(
         const voiceText = textOf(node, 'voice');
         if (voiceText) pendingVoice = voiceText;
         const onsetInBar = chord
-          ? barEvents.at(-1)?.onsetInBar ?? q(cursor, divisions)
-          : q(cursor, divisions);
+          ? barEvents.at(-1)?.onsetInBar ?? ticksOverDivisions(cursor, divisions)
+          : ticksOverDivisions(cursor, divisions);
         if (!chord) cursor += dur;
         const rest = elementChildren(node, 'rest').length > 0;
         const unpitched = elementChildren(node, 'unpitched')[0];
@@ -1115,7 +1116,7 @@ function walkPartStrict(
           bar,
           printedBar,
           onset: qAdd(barStart, onsetInBar),
-          duration: q(dur, divisions),
+          duration: ticksOverDivisions(dur, divisions),
           onsetInBar,
           rest: rest || Boolean(unpitched),
           chord,

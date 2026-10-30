@@ -204,6 +204,55 @@ export function q(n: number, d = 1): Rational {
   return { n: (sign * Math.abs(n)) / g, d: Math.abs(d) / g };
 }
 
+/** Max denominator when recovering float MusicXML duration ticks (e.g. 0.333… → 1/3). */
+const FLOAT_TICK_MAX_DEN = 1_000_000;
+
+/**
+ * Approximate a finite float as a reduced Rational via continued fractions.
+ * Rejects non-finite values. Integers pass through q().
+ */
+export function floatToRational(x: number, maxDen = FLOAT_TICK_MAX_DEN): Rational {
+  if (!Number.isFinite(x)) throw new Error(`not a rational float: ${x}`);
+  if (Number.isInteger(x)) return q(x, 1);
+  const sign = x < 0 ? -1 : 1;
+  let v = Math.abs(x);
+  let n0 = 0;
+  let d0 = 1;
+  let n1 = 1;
+  let d1 = 0;
+  for (let i = 0; i < 32; i += 1) {
+    const a = Math.floor(v + 1e-15);
+    const n = a * n1 + n0;
+    const d = a * d1 + d0;
+    if (d > maxDen) break;
+    n0 = n1;
+    d0 = d1;
+    n1 = n;
+    d1 = d;
+    const frac = v - a;
+    if (frac < 1e-12) break;
+    v = 1 / frac;
+  }
+  if (d1 === 0) throw new Error(`not a rational float: ${x}`);
+  return q(sign * n1, d1);
+}
+
+/**
+ * MusicXML duration/onset tick count over divisions → Rational.
+ * Integer ticks keep existing q(n,d). Float tick residue (e.g. 1/3 from bar÷3)
+ * converts via continued fraction — does not invent a different integer tick count.
+ */
+export function ticksOverDivisions(ticks: number, divisions: number): Rational {
+  if (!Number.isFinite(ticks) || !Number.isFinite(divisions) || !(divisions > 0)) {
+    throw new Error(`not a rational: ${ticks}/${divisions}`);
+  }
+  if (Number.isInteger(ticks) && Number.isInteger(divisions)) return q(ticks, divisions);
+  const tickQ = floatToRational(ticks);
+  if (Number.isInteger(divisions)) return q(tickQ.n, tickQ.d * divisions);
+  const divQ = floatToRational(divisions);
+  return q(tickQ.n * divQ.d, tickQ.d * divQ.n);
+}
+
 export function qAdd(a: Rational, b: Rational): Rational {
   return q(a.n * b.d + b.n * a.d, a.d * b.d);
 }
@@ -330,8 +379,8 @@ function walkPart(
         if (voiceText) pendingVoice = voiceText;
         const onsetTicks = chord ? cursor - (pitches.length ? 0 : 0) : cursor;
         const onset = chord
-          ? pitches.filter((item) => item.bar === bar).at(-1)?.onsetInBar ?? q(cursor, divisions)
-          : q(cursor, divisions);
+          ? pitches.filter((item) => item.bar === bar).at(-1)?.onsetInBar ?? ticksOverDivisions(cursor, divisions)
+          : ticksOverDivisions(cursor, divisions);
         if (!chord) {
           cursor += dur;
           if (cursor > maxCursor) maxCursor = cursor;
@@ -357,13 +406,13 @@ function walkPart(
           beatType,
           divisions,
           onset: qAdd(barStart, usedOnset),
-          duration: q(dur, divisions),
+          duration: ticksOverDivisions(dur, divisions),
           onsetInBar: usedOnset,
           rest,
           midi: rest ? null : midi,
           tieStart: tags.some((tag) => tag.getAttribute('type') === 'start'),
           tieStop: tags.some((tag) => tag.getAttribute('type') === 'stop'),
-          cursorEnd: q(maxCursor, divisions),
+          cursorEnd: ticksOverDivisions(maxCursor, divisions),
         });
       }
     }
@@ -381,7 +430,7 @@ function walkPart(
         warnings.push(`bar ${bar} ${partId}: walker groups ${folded.size}, measureViews notes ${view.notes.length}`);
       }
       view.notes.forEach((note, noteIndex) => {
-        const onset = q(note.onset, view.divisions);
+        const onset = ticksOverDivisions(note.onset, view.divisions);
         const found = pitches.find(
           (item) =>
             item.bar === bar &&
@@ -394,7 +443,7 @@ function walkPart(
       });
     }
     if (inSpan) {
-      metres.push({ bar, beats, beatType, quarters: metre, maxCursor: q(maxCursor, divisions) });
+      metres.push({ bar, beats, beatType, quarters: metre, maxCursor: ticksOverDivisions(maxCursor, divisions) });
     }
     barStart = qAdd(barStart, metre);
   });
