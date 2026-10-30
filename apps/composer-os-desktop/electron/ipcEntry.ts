@@ -46,7 +46,13 @@ import {
   apiBhlScratch,
 } from '../../../engines/composer-os-v2/app-api/bhlApp';
 import { apiCompareMusicalScores, apiCreateHumanReview, apiEvaluateMusicalScore, apiOpenHumanReview, apiSaveHumanReview } from '../../../engines/composer-os-v2/app-api/evaluationApp';
-import { apiDevelopCoherence, apiDevelopDiscover, apiDevelopDualPart, apiDevelopVoice } from '../../../engines/composer-os-v2/app-api/developApp';
+import {
+  apiDevelopCoherence,
+  apiDevelopDiscover,
+  apiDevelopDualPart,
+  apiDevelopVoice,
+  type DevelopDualPartRequest,
+} from '../../../engines/composer-os-v2/app-api/developApp';
 import { apiPentatonicOpenProject, apiPentatonicSaveProject } from '../../../engines/composer-os-v2/app-api/pentatonicProjectApp';
 import {
   apiHexatonicOpenLaboratoryReview,
@@ -462,7 +468,11 @@ export function registerComposerOsIpc(ipcMain: IpcMain, outputDir: string): void
   ipcMain.handle('composer-os-api:develop-discover', (_e, body: unknown) => apiDevelopDiscover(body));
   ipcMain.handle('composer-os-api:develop-voice', (_e, body: unknown) => apiDevelopVoice(body));
   ipcMain.handle('composer-os-api:develop-coherence', (_e, body: unknown) => apiDevelopCoherence(body));
-  ipcMain.handle('composer-os-api:develop-dual-part', (_e, body: unknown) => apiDevelopDualPart(body));
+  // MORPH M1–M3: forward DevelopDualPartRequest (mode, motivicReshape, identityKernel,
+  // identityReimagine) and full result (MusicXML/SHA/lineage + optional M3 receipts) unchanged.
+  ipcMain.handle('composer-os-api:develop-dual-part', (_e, body: DevelopDualPartRequest) =>
+    apiDevelopDualPart(body),
+  );
   ipcMain.handle('composer-os-api:evaluation-compare', (_e, body: unknown) => apiCompareMusicalScores(body));
   ipcMain.handle('composer-os-api:evaluation-review-create', (_e, body: unknown) => apiCreateHumanReview(body));
   ipcMain.handle('composer-os-api:evaluation-review-save', (_e, body: unknown) => apiSaveHumanReview(body));

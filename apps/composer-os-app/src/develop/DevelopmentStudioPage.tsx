@@ -2,14 +2,21 @@
  * Development Studio. Load a cell, transform it, voice it, hand it on.
  * Nothing on this page is musically approved.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { IdentityKernel } from '@composer-os/core/duo/wwhIdentityKernel';
+import type { MotivicReshapePlanStep, ReshapeOpId } from '@composer-os/core/duo/wwhMotivicReshape';
 import { parseProtectedGuitarBarSpec } from '@composer-os/core/duo/parseProtectedGuitarBars';
 import { buildChain, motifFromDiscoveredPattern } from '@composer-os/core/motif-ops/developmentChain';
 import type { DiscoveredPattern } from '@composer-os/core/motif-ops/motifDiscovery';
 import { C_MAJOR_FIELD, type Motif, type OperatorId } from '@composer-os/core/motif-ops/types';
 import { useLastGenerate } from '@renderer/context/LastGenerateContext';
 import { navigateToRoute } from '../router/appRouter';
-import { api } from '../services/api';
+import {
+  api,
+  type DevelopDualPartMode,
+  type DevelopDualPartClientRequest,
+  type DevelopDualPartResult,
+} from '../services/api';
 import { storePracticeHandoff } from '../practice/practiceHandoff';
 import { storeEvaluationHandoff } from '../bhl/bhlHexatonicHandoff';
 import { play, sequenceFromTimedNotes } from '../playback/playbackEngine';
@@ -25,6 +32,13 @@ function scoreBarCountFromXml(xml: string): number {
   if (!p1) return 0;
   return p1.getElementsByTagName('measure').length;
 }
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+const RESHAPE_OP_IDS: ReadonlySet<string> = new Set(['invert', 'expand-intervals', 'sequence-real']);
 
 const OPERATORS: Array<{ op: OperatorId; label: string; params?: Record<string, number | string> }> = [
   { op: 'invert', label: 'Turn upside down', params: { axis: 60 } },
@@ -49,6 +63,12 @@ const SOURCES = [
   ['shell-dyads', 'Shells'],
   ['upper-structure', 'Upper structures'],
 ] as const;
+
+const MODE_OPTIONS: Array<{ id: DevelopDualPartMode; label: string }> = [
+  { id: 'M1', label: 'M1 DEVELOP' },
+  { id: 'M2', label: 'M2 RESHAPE' },
+  { id: 'M3', label: 'M3 REIMAGINE' },
+];
 
 function emptyMotif(): Motif {
   return {
@@ -112,6 +132,86 @@ function discoveredPatternDetailLines(pattern: DiscoveredPattern): string[] {
   return lines;
 }
 
+/** Reshape-legal steps only — never invent ops to fill a window. */
+function reshapeOpsFromPlan(
+  plan: Array<{ op: OperatorId; params?: Record<string, number | string> }>,
+): MotivicReshapePlanStep[] {
+  const out: MotivicReshapePlanStep[] = [];
+  for (const step of plan) {
+    if (!RESHAPE_OP_IDS.has(step.op)) continue;
+    out.push({
+      op: step.op as ReshapeOpId,
+      ...(step.params ? { params: step.params } : {}),
+    });
+  }
+  return out;
+}
+
+/**
+ * Validate user-pasted IdentityKernel. Refuses empty/partial objects — does not invent fields.
+ */
+function parseDeclaredIdentityKernel(raw: string): { ok: true; kernel: IdentityKernel } | { ok: false; error: string } {
+  if (!raw.trim()) {
+    return { ok: false, error: 'Paste a declared IdentityKernel JSON. Studio will not invent one.' };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: 'IdentityKernel JSON did not parse.' };
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { ok: false, error: 'IdentityKernel must be a JSON object.' };
+  }
+  const k = parsed as Record<string, unknown>;
+  if (k.mode !== 'M3') {
+    return { ok: false, error: "IdentityKernel.mode must be 'M3'." };
+  }
+  if (typeof k.sourcePath !== 'string' || !k.sourcePath.trim()) {
+    return { ok: false, error: 'IdentityKernel.sourcePath required (declared path string).' };
+  }
+  if (typeof k.sourceSha !== 'string' || !k.sourceSha.trim()) {
+    return { ok: false, error: 'IdentityKernel.sourceSha required — must match loaded score SHA.' };
+  }
+  if (!Array.isArray(k.cells) || k.cells.length < 1 || k.cells.length > 5) {
+    return { ok: false, error: 'IdentityKernel.cells must have 1–5 declared cells.' };
+  }
+  if (!Array.isArray(k.anchorBars)) {
+    return { ok: false, error: 'IdentityKernel.anchorBars required (array; may be empty only if declared).' };
+  }
+  if (!Array.isArray(k.recognitionWindows) || k.recognitionWindows.length < 1) {
+    return { ok: false, error: 'IdentityKernel.recognitionWindows need ≥1 declared window.' };
+  }
+  if (!Array.isArray(k.returnBars) || k.returnBars.length < 1) {
+    return { ok: false, error: 'IdentityKernel.returnBars need ≥1 declared bar.' };
+  }
+  if (!Array.isArray(k.protectedGuitarBars)) {
+    return { ok: false, error: 'IdentityKernel.protectedGuitarBars required (do not omit locks).' };
+  }
+  return { ok: true, kernel: parsed as IdentityKernel };
+}
+
+function parseWindowSpec(
+  fromText: string,
+  toText: string,
+  barCount: number,
+): { ok: true; window: { from: number; to: number }; barList: number[] } | { ok: false; error: string } {
+  const from = Number(fromText);
+  const to = Number(toText);
+  if (!Number.isInteger(from) || !Number.isInteger(to)) {
+    return { ok: false, error: 'Reshape/reimagine window from/to must be integers.' };
+  }
+  if (from < 1 || to < 1 || from > barCount || to > barCount) {
+    return { ok: false, error: `Window must sit inside score bars 1–${barCount}.` };
+  }
+  if (!(from < to)) {
+    return { ok: false, error: 'Window must be multi-bar (from < to).' };
+  }
+  const barList: number[] = [];
+  for (let b = from; b <= to; b++) barList.push(b);
+  return { ok: true, window: { from, to }, barList };
+}
+
 export function DevelopmentStudioPage() {
   const last = useLastGenerate() as { musicXml?: string | null };
   const [xml, setXml] = useState('');
@@ -131,8 +231,15 @@ export function DevelopmentStudioPage() {
   const [harmonicOutXml, setHarmonicOutXml] = useState('');
   const [harmonicOutNote, setHarmonicOutNote] = useState('');
   const [harmonicLineage, setHarmonicLineage] = useState('');
-  /** Optional M1 extra guitar locks — e.g. "28-29, 33, 36-39". Empty = none. */
+  const [identityReceiptText, setIdentityReceiptText] = useState('');
+  /** Optional extra guitar locks — e.g. "28-29, 33, 36-39". Empty = none. */
   const [protectGuitarBarsText, setProtectGuitarBarsText] = useState('');
+  const [morphMode, setMorphMode] = useState<DevelopDualPartMode>('M1');
+  const [windowFromText, setWindowFromText] = useState('');
+  const [windowToText, setWindowToText] = useState('');
+  /** User-declared M3 kernel JSON only — never auto-built. */
+  const [identityKernelJson, setIdentityKernelJson] = useState('');
+  const [sourceSha, setSourceSha] = useState('');
   const current = useMemo(() => motifFromChain(root, plan), [root, plan]);
   const chain = useMemo(() => buildChain(root, plan), [root, plan]);
   const selectedPattern = useMemo(
@@ -146,13 +253,110 @@ export function DevelopmentStudioPage() {
     return bars.length ? bars : null;
   }, [selectedPattern]);
 
+  const reshapeOps = useMemo(() => reshapeOpsFromPlan(plan), [plan]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const text = xml.trim();
+    if (!text) {
+      setSourceSha('');
+      return;
+    }
+    void sha256Hex(text).then((hex) => {
+      if (!cancelled) setSourceSha(hex);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [xml]);
+
+  const morphBlockers = useMemo(() => {
+    const blockers: string[] = [];
+    const sourceXml = xml.trim();
+    if (!sourceXml) blockers.push('Load MusicXML first.');
+
+    const barCount = sourceXml ? scoreBarCountFromXml(sourceXml) : 0;
+    if (sourceXml && barCount < 1) blockers.push('Could not read score bar count from MusicXML.');
+
+    if (morphMode === 'M1') {
+      if (!motifBarsFromSelection?.length) {
+        blockers.push('Select a cell so motif bars reach the transform. No silent defaults.');
+      }
+      if (barCount >= 1) {
+        const protectedParsed = parseProtectedGuitarBarSpec(protectGuitarBarsText, barCount);
+        if (!protectedParsed.ok) blockers.push(protectedParsed.error);
+      }
+      return blockers;
+    }
+
+    if (!selectedPattern) blockers.push('Select a discovered cell for the reshape/reimagine pattern.');
+    if (!motifBarsFromSelection?.length) {
+      blockers.push('Select a cell with motif bars (locks). No silent defaults.');
+    }
+
+    if (barCount >= 1) {
+      const protectedParsed = parseProtectedGuitarBarSpec(protectGuitarBarsText, barCount);
+      if (!protectedParsed.ok) blockers.push(protectedParsed.error);
+
+      const windowParsed = parseWindowSpec(windowFromText, windowToText, barCount);
+      if (!windowParsed.ok) {
+        blockers.push(windowParsed.error);
+      } else {
+        const need = windowParsed.barList.length;
+        if (reshapeOps.length !== need) {
+          blockers.push(
+            `Need ${need} reshape ops (invert / expand-intervals / sequence-real) for window ${windowParsed.window.from}–${windowParsed.window.to}; plan has ${reshapeOps.length}. Add ops in Develop — Studio will not invent them.`,
+          );
+        }
+        if (motifBarsFromSelection?.length) {
+          const locked = new Set(motifBarsFromSelection);
+          if (barCount >= 1 && protectedParsed.ok) {
+            for (const b of protectedParsed.bars) locked.add(b);
+          }
+          const overlap = windowParsed.barList.filter((b) => locked.has(b));
+          if (overlap.length) {
+            blockers.push(`Window overlaps motif/protect locks at bars ${overlap.join(', ')}.`);
+          }
+        }
+      }
+    } else if (!windowFromText.trim() || !windowToText.trim()) {
+      blockers.push('Set an explicit multi-bar window (from < to).');
+    }
+
+    if (morphMode === 'M3') {
+      const kernelParsed = parseDeclaredIdentityKernel(identityKernelJson);
+      if (!kernelParsed.ok) {
+        blockers.push(kernelParsed.error);
+      } else if (sourceSha && kernelParsed.kernel.sourceSha !== sourceSha) {
+        blockers.push('IdentityKernel.sourceSha does not match loaded score SHA. Fix the declared kernel — Studio will not rewrite it.');
+      }
+    }
+
+    return blockers;
+  }, [
+    xml,
+    morphMode,
+    motifBarsFromSelection,
+    protectGuitarBarsText,
+    selectedPattern,
+    windowFromText,
+    windowToText,
+    reshapeOps,
+    identityKernelJson,
+    sourceSha,
+  ]);
+
   function loadText(text: string, name: string) {
     setXml(text);
     setLabel(name);
     setHarmonicOutXml('');
     setHarmonicOutNote('');
     setHarmonicLineage('');
+    setIdentityReceiptText('');
     setProtectGuitarBarsText('');
+    setWindowFromText('');
+    setWindowToText('');
+    setIdentityKernelJson('');
     setError('');
   }
 
@@ -217,9 +421,42 @@ export function DevelopmentStudioPage() {
     setError('');
   }
 
+  function clearMorphOutputs() {
+    setHarmonicOutXml('');
+    setHarmonicOutNote('');
+    setHarmonicLineage('');
+    setIdentityReceiptText('');
+  }
+
+  function applyMorphResult(row: DevelopDualPartResult) {
+    if (!row.ok || !row.result?.musicXml) {
+      setError(!row.ok ? row.error : 'Dual-part transform did not run.');
+      return;
+    }
+    setHarmonicOutXml(row.result.musicXml);
+    setHarmonicOutNote(row.result.note);
+    setHarmonicLineage(row.result.lineage);
+    if (row.result.identityKernel || row.result.identityReimagine) {
+      setIdentityReceiptText(
+        JSON.stringify(
+          {
+            ...(row.result.identityKernel ? { identityKernel: row.result.identityKernel } : {}),
+            ...(row.result.identityReimagine ? { identityReimagine: row.result.identityReimagine } : {}),
+          },
+          null,
+          2,
+        ),
+      );
+    } else {
+      setIdentityReceiptText('');
+    }
+    setError('');
+  }
+
   /**
    * Black Aura M1 — harmonic dual-part via /develop/dual-part (lockBass=true).
    * Explicit cell motif bars required; source `xml` never overwritten.
+   * Behaviour preserved when morphMode is M1.
    */
   async function runHarmonicLockBass() {
     const sourceXml = xml.trim();
@@ -229,9 +466,7 @@ export function DevelopmentStudioPage() {
     }
     const motifBars = motifBarsFromSelection;
     if (!motifBars?.length) {
-      setHarmonicOutXml('');
-      setHarmonicOutNote('');
-      setHarmonicLineage('');
+      clearMorphOutputs();
       setError('Select a cell so motif bars reach the transform. No silent defaults.');
       return;
     }
@@ -242,20 +477,17 @@ export function DevelopmentStudioPage() {
     }
     const protectedParsed = parseProtectedGuitarBarSpec(protectGuitarBarsText, barCount);
     if (!protectedParsed.ok) {
-      setHarmonicOutXml('');
-      setHarmonicOutNote('');
-      setHarmonicLineage('');
+      clearMorphOutputs();
       setError(protectedParsed.error);
       return;
     }
     const protectedGuitarBars = protectedParsed.bars;
     const stem = `${(label || 'black-aura-m1').replace(/\.[^.]+$/, '')}-harmonic-lockbass`;
-    setHarmonicOutXml('');
-    setHarmonicOutNote('');
-    setHarmonicLineage('');
+    clearMorphOutputs();
     setError('');
-    const row = (await api.developDualPart({
+    const row = await api.developDualPart({
       xml: sourceXml,
+      mode: 'M1',
       motifBars,
       ...(protectedGuitarBars.length ? { protectedGuitarBars } : {}),
       lockBass: true,
@@ -263,23 +495,83 @@ export function DevelopmentStudioPage() {
       stem,
       label: label || 'imported',
       selectedCellId: selectedId,
-    })) as {
-      ok?: boolean;
-      error?: string;
-      result?: {
-        musicXml: string;
-        note: string;
-        lineage: string;
-      };
-    };
-    if (!row.ok || !row.result?.musicXml) {
-      setError(row.error || 'Dual-part harmonic transform did not run.');
+    });
+    applyMorphResult(row);
+  }
+
+  async function runMorphDualPart() {
+    if (morphBlockers.length) {
+      setError(morphBlockers[0]!);
       return;
     }
-    setHarmonicOutXml(row.result.musicXml);
-    setHarmonicOutNote(row.result.note);
-    setHarmonicLineage(row.result.lineage);
+    if (morphMode === 'M1') {
+      await runHarmonicLockBass();
+      return;
+    }
+
+    const sourceXml = xml.trim();
+    const barCount = scoreBarCountFromXml(sourceXml);
+    const motifBars = motifBarsFromSelection!;
+    const protectedParsed = parseProtectedGuitarBarSpec(protectGuitarBarsText, barCount);
+    if (!protectedParsed.ok) {
+      setError(protectedParsed.error);
+      return;
+    }
+    const windowParsed = parseWindowSpec(windowFromText, windowToText, barCount);
+    if (!windowParsed.ok) {
+      setError(windowParsed.error);
+      return;
+    }
+    if (!selectedPattern) {
+      setError('Select a discovered cell for the reshape/reimagine pattern.');
+      return;
+    }
+    if (reshapeOps.length !== windowParsed.barList.length) {
+      setError('Reshape ops count must match window bars. Studio will not invent ops.');
+      return;
+    }
+
+    clearMorphOutputs();
     setError('');
+
+    const body: DevelopDualPartClientRequest = {
+      xml: sourceXml,
+      mode: morphMode,
+      motifBars,
+      ...(protectedParsed.bars.length ? { protectedGuitarBars: protectedParsed.bars } : {}),
+      title: label || (morphMode === 'M2' ? 'Black Aura M2' : 'Black Aura M3'),
+      stem: `${(label || 'black-aura').replace(/\.[^.]+$/, '')}-${morphMode === 'M2' ? 'reshape' : 'reimagine'}`,
+      label: label || 'imported',
+      selectedCellId: selectedId,
+    };
+
+    if (morphMode === 'M2') {
+      body.motivicReshape = {
+        window: windowParsed.window,
+        ops: reshapeOps,
+        pattern: selectedPattern,
+      };
+    } else {
+      const kernelParsed = parseDeclaredIdentityKernel(identityKernelJson);
+      if (!kernelParsed.ok) {
+        setError(kernelParsed.error);
+        return;
+      }
+      if (sourceSha && kernelParsed.kernel.sourceSha !== sourceSha) {
+        setError('IdentityKernel.sourceSha does not match loaded score SHA.');
+        return;
+      }
+      body.identityKernel = kernelParsed.kernel;
+      body.identityReimagine = {
+        window: windowParsed.window,
+        ops: reshapeOps,
+        pattern: selectedPattern,
+      };
+      if (kernelParsed.kernel.lockBass === true) body.lockBass = true;
+    }
+
+    const row = await api.developDualPart(body);
+    applyMorphResult(row);
   }
 
   function exportXml(text: string, name: string) {
@@ -291,15 +583,25 @@ export function DevelopmentStudioPage() {
     URL.revokeObjectURL(link.href);
   }
 
-  /** M1 export name only — MusicXML bytes unchanged. Strip trailing .musicxml/.xml once. */
-  function m1HarmonicExportFilename(compositionLabel: string, motifId: string | null): string {
-    const base = (compositionLabel || 'black-aura-m1').replace(/\.(musicxml|xml)$/i, '');
-    if (!motifId) return `${base}-harmonic-lockbass.musicxml`;
-    return `${motifId}-${base}-M1-Harmonic.musicxml`;
+  /** Export name — MusicXML bytes unchanged. Strip trailing .musicxml/.xml once. */
+  function morphExportFilename(compositionLabel: string, motifId: string | null, mode: DevelopDualPartMode): string {
+    const base = (compositionLabel || 'black-aura').replace(/\.(musicxml|xml)$/i, '');
+    const tag = mode === 'M1' ? 'M1-Harmonic' : mode === 'M2' ? 'M2-Reshape' : 'M3-Reimagine';
+    if (!motifId) {
+      return mode === 'M1' ? `${base}-harmonic-lockbass.musicxml` : `${base}-${tag}.musicxml`;
+    }
+    return `${motifId}-${base}-${tag}.musicxml`;
   }
 
   /** Prefer separate transform/voicing outputs; never mutate imported `xml`. */
   const handoffXml = harmonicOutXml || voicedXml || xml;
+  const runDisabled = morphBlockers.length > 0;
+  const runLabel =
+    morphMode === 'M1'
+      ? 'Run harmonic transform (lockBass)'
+      : morphMode === 'M2'
+        ? 'Run M2 RESHAPE'
+        : 'Run M3 REIMAGINE';
 
   return (
     <section data-testid="develop-page" style={{ display: 'grid', gap: '0.8rem', maxWidth: '54rem' }}>
@@ -361,10 +663,13 @@ export function DevelopmentStudioPage() {
 
       <section>
         <h3>Develop</h3>
+        <p style={{ margin: 0, fontSize: '0.9rem' }}>
+          M2/M3 use only invert / expand-intervals / sequence-real — one op per window bar. Other ops stay for local preview only.
+        </p>
         <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
           {OPERATORS.map((item) => (
             <button key={item.label} type="button" onClick={() => setPlan((rows) => [...rows, { op: item.op, params: item.params }])}>
-              {item.label}
+              {item.label}{RESHAPE_OP_IDS.has(item.op) ? ' · reshape' : ''}
             </button>
           ))}
           <button type="button" className="secondary" onClick={() => { setPlan([]); setRoot(emptyMotif()); setSelectedId(null); }}>Make another</button>
@@ -381,6 +686,9 @@ export function DevelopmentStudioPage() {
           ))}
         </div>
         <p>{chain.steps.map((step) => step.op).join(' → ') || 'No step yet.'}</p>
+        <p data-testid="develop-reshape-ops" style={{ margin: 0 }}>
+          Reshape ops queued: {reshapeOps.map((s) => s.op).join(' → ') || 'none'}
+        </p>
       </section>
 
       <section>
@@ -410,10 +718,27 @@ export function DevelopmentStudioPage() {
       </section>
 
       <section data-testid="develop-m1-harmonic">
-        <h3>Black Aura M1 — harmonic (lock bass)</h3>
+        <h3>MORPH dual-part</h3>
         <p style={{ margin: 0 }}>
-          User-triggered only. Uses imported score and explicitly selected cell bars. Source MusicXML stays immutable; output is separate. Not musically approved.
+          User-triggered only. Uses imported score and explicitly selected cell. Source MusicXML stays immutable; output is separate. Not musically approved.
         </p>
+        <label htmlFor="develop-morph-mode">
+          Mode
+          <select
+            id="develop-morph-mode"
+            data-testid="develop-morph-mode"
+            value={morphMode}
+            onChange={(event) => {
+              setMorphMode(event.target.value as DevelopDualPartMode);
+              clearMorphOutputs();
+              setError('');
+            }}
+          >
+            {MODE_OPTIONS.map((opt) => (
+              <option key={opt.id} value={opt.id}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
         <p data-testid="develop-m1-motif-bars" style={{ margin: 0 }}>
           Motif bars for lock: {motifBarsFromSelection?.join(', ') ?? 'none selected — select a cell first'}
         </p>
@@ -428,25 +753,100 @@ export function DevelopmentStudioPage() {
           />
         </label>
         <p style={{ margin: 0, fontSize: '0.9rem' }}>
-          Optional. Bars and inclusive ranges. Empty = no extra protection (motif locks still apply).
+          Optional extra locks. Empty = no extra protection (motif / IdentityKernel locks still apply). Never removes declared locks.
         </p>
-        <button type="button" data-testid="develop-m1-harmonic-run" onClick={() => void runHarmonicLockBass()}>
-          Run harmonic transform (lockBass)
+
+        {morphMode !== 'M1' ? (
+          <div data-testid="develop-morph-window" style={{ display: 'grid', gap: '0.35rem' }}>
+            <p style={{ margin: 0 }}>Reshape / reimagine window (multi-bar, from &lt; to)</p>
+            <label htmlFor="develop-morph-window-from">
+              From
+              <input
+                id="develop-morph-window-from"
+                data-testid="develop-morph-window-from"
+                value={windowFromText}
+                onChange={(event) => setWindowFromText(event.target.value)}
+              />
+            </label>
+            <label htmlFor="develop-morph-window-to">
+              To
+              <input
+                id="develop-morph-window-to"
+                data-testid="develop-morph-window-to"
+                value={windowToText}
+                onChange={(event) => setWindowToText(event.target.value)}
+              />
+            </label>
+          </div>
+        ) : null}
+
+        {morphMode === 'M3' ? (
+          <div data-testid="develop-morph-kernel" style={{ display: 'grid', gap: '0.35rem' }}>
+            <p style={{ margin: 0 }}>
+              Declared IdentityKernel JSON (required). Studio will not invent cells, anchors, returns, or protected bars.
+            </p>
+            {sourceSha ? (
+              <p data-testid="develop-morph-source-sha" style={{ margin: 0, fontSize: '0.85rem', wordBreak: 'break-all' }}>
+                Loaded score SHA-256 (paste into kernel.sourceSha if needed): {sourceSha}
+              </p>
+            ) : null}
+            <label htmlFor="develop-morph-kernel-json">
+              IdentityKernel
+              <textarea
+                id="develop-morph-kernel-json"
+                data-testid="develop-morph-kernel-json"
+                value={identityKernelJson}
+                rows={8}
+                placeholder='{"sourcePath":"...","sourceSha":"...","mode":"M3","cells":[...],"anchorBars":[...],"recognitionWindows":[...],"returnBars":[...],"protectedGuitarBars":[...]}'
+                onChange={(event) => setIdentityKernelJson(event.target.value)}
+              />
+            </label>
+          </div>
+        ) : null}
+
+        {runDisabled ? (
+          <ul data-testid="develop-morph-blockers" style={{ margin: 0, paddingLeft: '1.2rem' }}>
+            {morphBlockers.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        <button
+          type="button"
+          data-testid="develop-m1-harmonic-run"
+          disabled={runDisabled}
+          title={runDisabled ? morphBlockers.join(' ') : runLabel}
+          onClick={() => void runMorphDualPart()}
+        >
+          {runLabel}
         </button>
         <pre data-testid="develop-m1-lineage">{harmonicLineage}</pre>
         {harmonicOutNote ? <p data-testid="develop-m1-note">{harmonicOutNote}</p> : null}
+        {identityReceiptText ? (
+          <pre data-testid="develop-morph-identity-receipts">{identityReceiptText}</pre>
+        ) : null}
         <ScorePreview musicXml={harmonicOutXml || null} />
-        <ScoreAudition musicXml={harmonicOutXml || null} label="M1 harmonic candidate" />
+        <ScoreAudition
+          musicXml={harmonicOutXml || null}
+          label={
+            morphMode === 'M1'
+              ? 'M1 harmonic candidate'
+              : morphMode === 'M2'
+                ? 'M2 reshape candidate'
+                : 'M3 reimagine candidate'
+          }
+        />
         <button
           type="button"
           data-testid="develop-m1-export"
           disabled={!harmonicOutXml}
           onClick={() =>
             harmonicOutXml &&
-            exportXml(harmonicOutXml, m1HarmonicExportFilename(label, selectedId))
+            exportXml(harmonicOutXml, morphExportFilename(label, selectedId, morphMode))
           }
         >
-          Export M1 harmonic MusicXML
+          Export {morphMode} MusicXML
         </button>
       </section>
 
