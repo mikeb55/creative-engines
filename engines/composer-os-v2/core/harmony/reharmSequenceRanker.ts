@@ -20,6 +20,15 @@ import type {
 
 const SCORE_EPS = 1e-9;
 
+/**
+ * Approach-path near-best band: keep candidates within this absolute gap of the top
+ * effective score (and within {@link NEAR_BEST_RELATIVE} of the top). Seeded pick
+ * among that band only — never drops to distant/poor scores for novelty.
+ */
+const NEAR_BEST_ABS = 0.045;
+/** Relative slack vs top effective score for approach-path near-best eligibility. */
+const NEAR_BEST_RELATIVE = 0.07;
+
 /** Minimum mean chordHarmonicDistance vs source for a progression to count as contrasting. */
 const MIN_SOURCE_DISTANCE = 0.28;
 /** Minimum mean pairwise distance between selected contrasting progressions. */
@@ -87,6 +96,23 @@ function candidateTieSalt(c: ReharmCandidate): number {
   return h & 0xffff;
 }
 
+function compareScoredCandidates(
+  a: { c: ReharmCandidate; effective: number; idx: number },
+  b: { c: ReharmCandidate; effective: number; idx: number },
+  seed: number,
+  barIndex: number
+): number {
+  if (Math.abs(b.effective - a.effective) > SCORE_EPS) return b.effective - a.effective;
+  const ua = seededUnit(seed, barIndex, a.idx + candidateTieSalt(a.c));
+  const ub = seededUnit(seed, barIndex, b.idx + candidateTieSalt(b.c));
+  return ua - ub;
+}
+
+/**
+ * Score-sorted pick. Lens path: strict top score (seeded tie-break only).
+ * Approach path (contrasting): seeded choice among near-best eligible scores so
+ * regeneration can vary without picking musically poor substitutes.
+ */
 function pickBestCandidate(
   candidates: ReharmCandidate[],
   drift: EmotionalDrift,
@@ -115,14 +141,20 @@ function pickBestCandidate(
     return { c, effective, idx };
   });
 
-  scored.sort((a, b) => {
-    if (Math.abs(b.effective - a.effective) > SCORE_EPS) return b.effective - a.effective;
-    const ua = seededUnit(seed, barIndex, a.idx + candidateTieSalt(a.c));
-    const ub = seededUnit(seed, barIndex, b.idx + candidateTieSalt(b.c));
-    return ua - ub;
-  });
+  scored.sort((a, b) => compareScoredCandidates(a, b, seed, barIndex));
 
-  return scored[0]!.c;
+  const useNearBest = sourceRootPc !== undefined;
+  if (!useNearBest) return scored[0]!.c;
+
+  const top = scored[0]!.effective;
+  const floor = Math.max(top - NEAR_BEST_ABS, top * (1 - NEAR_BEST_RELATIVE));
+  const near = scored.filter((s) => s.effective + SCORE_EPS >= floor);
+  if (near.length <= 1) return scored[0]!.c;
+
+  // Deterministic index into the near-best band (already score-ordered).
+  const u = seededUnit(seed, barIndex, 0x9e3779b9);
+  const pickIdx = Math.floor(u * near.length) % near.length;
+  return near[pickIdx]!.c;
 }
 
 function melodyPcForBar(request: ReharmSequenceRequest, barIndex: number): number | null {
