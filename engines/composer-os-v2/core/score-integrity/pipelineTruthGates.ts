@@ -424,10 +424,21 @@ function validateScoreStage(
   return { ok: errors.length === 0, errors, scoreBars };
 }
 
+/** Mirrors musicxmlExporter `formatSectionRehearsalLabel` for plan ↔ XML agreement. */
+function formatRehearsalLabelForExportTruth(raw: string): string {
+  const t = raw.trim().replace(/_/g, ' ');
+  if (!t) return '';
+  return t
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 function validateExportStage(
   score: ScoreModel,
   xml: string,
   expected: string[],
+  context: CompositionContext,
   barMeterMap?: BarMeterMap
 ): { ok: boolean; errors: string[]; writtenXmlBars: string[] } {
   const errors: string[] = [];
@@ -459,12 +470,21 @@ function validateExportStage(
     errors.push(`Export truth: expected measures 1–8 with harmony; found max measure ${maxMeasure}.`);
   }
 
+  /** Classic duo plans use A@1 / B@5; mosaic full-song plans use "Intro 0: Beatles" etc. */
   const rehearsal = extractRehearsalMarksFromFirstPartXml(xml);
-  if (rehearsal.get(1) !== 'A') {
-    errors.push(`Export truth: rehearsal mark on bar 1 must be "A" (got ${JSON.stringify(rehearsal.get(1))}).`);
-  }
-  if (rehearsal.get(5) !== 'B') {
-    errors.push(`Export truth: rehearsal mark on bar 5 must be "B" (got ${JSON.stringify(rehearsal.get(5))}).`);
+  const planMarks = context.rehearsalMarkPlan?.marks ?? [];
+  if (planMarks.length === 0) {
+    errors.push('Export truth: rehearsalMarkPlan is empty — expected section rehearsal marks.');
+  } else {
+    for (const mark of planMarks) {
+      const want = formatRehearsalLabelForExportTruth(mark.label);
+      const got = rehearsal.get(mark.bar);
+      if (got !== want) {
+        errors.push(
+          `Export truth: rehearsal mark on bar ${mark.bar} must be ${JSON.stringify(want)} (got ${JSON.stringify(got)}).`
+        );
+      }
+    }
   }
 
   return { ok: errors.length === 0, errors, writtenXmlBars };
@@ -589,7 +609,7 @@ export function runPipelineTruthGates(params: {
   if (!xml) {
     exportErrors.push('Export truth: no MusicXML string to verify.');
   } else {
-    const ex = validateExportStage(score, xml, expected, barMeter);
+    const ex = validateExportStage(score, xml, expected, context, barMeter);
     writtenXmlBars = ex.writtenXmlBars;
     exportErrors.push(...ex.errors);
     exportStage = ex.ok ? 'pass' : 'fail';

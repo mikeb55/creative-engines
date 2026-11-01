@@ -1845,16 +1845,18 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
 
         /** Section rehearsal marks once on top staff (part 0); after beat-1 harmony, before notes. */
         if (partIndex === 0) {
-          const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
-          if (formRehearsalLabel) {
-            xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
-              formRehearsalLabel
-            )}</rehearsal></direction-type></direction>\n`;
-          }
+          /** Measure plan mark wins when present (mosaic "Label: Composer"); avoid double marks. */
           if (m.rehearsalMark) {
             xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
               formatSectionRehearsalLabel(m.rehearsalMark)
             )}</rehearsal></direction-type></direction>\n`;
+          } else {
+            const formRehearsalLabel = rehearsalLabelFromScoreForm(score, measureNumber);
+            if (formRehearsalLabel) {
+              xml += `    <direction placement="above"><direction-type><rehearsal enclosure="rectangle">${escapeXml(
+                formRehearsalLabel
+              )}</rehearsal></direction-type></direction>\n`;
+            }
           }
         }
 
