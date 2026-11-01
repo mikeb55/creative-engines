@@ -3,6 +3,8 @@
  * Display text stays verbatim in `originalText`; structured fields support MusicXML / analysis.
  */
 
+import { normalizeLeadSheetChordSpelling } from '../../../core/leadSheetChordNormalize';
+
 export interface LockedChordDegreeToken {
   raw: string;
 }
@@ -22,6 +24,7 @@ export interface LockedChordSemantics {
 }
 
 const ROOT_RE = /^([A-Ga-g])([#b]?)/;
+const VALID_SLASH_BASS = /^[A-G][#b]?$/i;
 
 function parseBassStepAlter(bassPart: string): { letter: string; alter: number } | undefined {
   const m = bassPart.trim().match(/^([A-Ga-g])([#b]?)$/);
@@ -36,12 +39,23 @@ function parseBassStepAlter(bassPart: string): { letter: string; alter: number }
 /**
  * Best-effort structural parse. On failure, `parseWarning` is set and roots default conservatively;
  * callers must still prefer `originalText` for display when harmony is locked.
+ *
+ * Slash split matches lead-sheet spelling: stacked extensions (F6/9 → F69) are not bass notes.
  */
 export function parseLockedChordSemantics(raw: string): LockedChordSemantics {
   const originalText = raw.trim().replace(/\s+/g, ' ');
-  const slash = originalText.indexOf('/');
-  const harmonyPart = slash >= 0 ? originalText.slice(0, slash).trim() : originalText;
-  const bassPart = slash >= 0 ? originalText.slice(slash + 1).trim() : undefined;
+  // Same stacked-extension rewrite as parseChordSymbol / MusicXML path (6/9 → 69).
+  const normalized = normalizeLeadSheetChordSpelling(originalText);
+  const slash = normalized.lastIndexOf('/');
+  let harmonyPart = normalized;
+  let bassPart: string | undefined;
+  if (slash >= 0) {
+    const possibleBass = normalized.slice(slash + 1).trim();
+    if (VALID_SLASH_BASS.test(possibleBass)) {
+      harmonyPart = normalized.slice(0, slash).trim();
+      bassPart = possibleBass;
+    }
+  }
 
   const hm = harmonyPart.match(ROOT_RE);
   if (!hm) {

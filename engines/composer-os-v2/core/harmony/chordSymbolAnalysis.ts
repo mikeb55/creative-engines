@@ -168,16 +168,21 @@ export function chordTonesFromSymbol(harmonyPart: string, opts?: ChordTonesOptio
     return { root: 40, third: 44, fifth: 47, seventh: 46 };
   }
   const rest = h.slice(rm[1].length).toLowerCase();
+  // 6/9 · 69 · 6add9 are sixth+ninth colours — the trailing 9 must not flip dominant-7th.
+  const sixthNine =
+    /^(m|min)?6\/?9/.test(rest) || /^(m|min)?69/.test(rest) || /6add9/.test(rest);
   const minorThird = /^(m|min|dim|ø|°)/.test(rest) || /m7|m9|m11|m13/.test(rest);
   const maj7 = /maj|Δ|ma7|M7/.test(rest);
-  const dom = /^(7|9|11|13)/.test(rest) || /7alt|7#|7b|sus/.test(rest) || /13|11|9/.test(rest);
+  const dom =
+    !sixthNine &&
+    (/^(7|9|11|13)/.test(rest) || /7alt|7#|7b|sus/.test(rest) || /13|11|9/.test(rest));
   const halfDim = /ø|m7b5|half/.test(rest);
 
   const thirdPc = (rootPc + (minorThird || halfDim ? 3 : 4)) % 12;
   const fifthPc = (rootPc + (halfDim ? 6 : 7)) % 12;
   let seventhPc: number;
   if (maj7) seventhPc = (rootPc + 11) % 12;
-  else if (/6/.test(rest) && !dom) seventhPc = (rootPc + 9) % 12;
+  else if ((/6/.test(rest) || sixthNine) && !dom) seventhPc = (rootPc + 9) % 12;
   else seventhPc = (rootPc + 10) % 12;
 
   const oct = (pc: number) => 36 + pc;

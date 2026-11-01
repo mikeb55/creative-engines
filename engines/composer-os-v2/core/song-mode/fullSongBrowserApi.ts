@@ -27,7 +27,10 @@ import {
   applyReharmAlternative,
   executeReharm,
 } from '../harmony/reharmController';
-import type { EmotionalDrift } from '../harmony/reharmCandidateEngine';
+import type { EmotionalDrift, ReharmApproach } from '../harmony/reharmCandidateEngine';
+import type { ReharmLockedEvent } from '../harmony/reharmSequenceTypes';
+
+export type { ReharmLockedEvent };
 
 export { generateMelodicVariations, scoreMelodicVariationsForPack };
 
@@ -159,6 +162,11 @@ export type BrowserPassageReharmRequest = {
   songwriterId: string;
   /** Optional per-bar melody pitch classes aligned to startBar…endBar. */
   melodyPcs?: (number | null)[];
+  /**
+   * Optional timed locked melody/bass events (quarter notes, passage-relative).
+   * Forwarded to {@link executeReharm}; not yet used by compatibility filters.
+   */
+  lockedEvents?: ReharmLockedEvent[];
   drift?: EmotionalDrift;
   seed?: number;
   /** 1–3 composer lens ids (defaults: songwriter + complementary lenses). */
@@ -172,6 +180,8 @@ export type BrowserPassageReharmCandidate = {
   chords: string[];
   /** Full strip after splicing the alternative (same length as input chords). */
   fullChords: string[];
+  /** Contrasting harmonic approach label. */
+  approach?: ReharmApproach;
 };
 
 export type BrowserPassageReharmResult =
@@ -182,13 +192,18 @@ export type BrowserPassageReharmResult =
       endBar: number;
       seed: number;
       candidates: BrowserPassageReharmCandidate[];
+      /**
+       * Present when fewer than three valid contrasting alternatives were available.
+       * MelodyPcs remain first-note-per-bar samples — not all-event melody/bass proof.
+       */
+      shortfall?: string;
     }
   | { success: false; error: string };
 
 /**
  * Selective passage reharm for TunePainter full-song scores.
- * Reuses {@link generateReharmCandidates} / {@link scoreReharmCandidate} via {@link executeReharm},
- * ranks up to 3 lens alternatives by Composer OS GCE overall.
+ * Contrasting mode: up to 3 approach-tagged progressions with source/pairwise distance gates via
+ * {@link executeReharm}; ranks by Composer OS GCE overall. Exact-symbol dedupe retained as safety net.
  */
 export function packPassageReharmBrowser(
   body: Partial<BrowserPassageReharmRequest>
@@ -238,6 +253,11 @@ export function packPassageReharmBrowser(
     }
   }
 
+  const lockedEvents = body.lockedEvents;
+  if (lockedEvents !== undefined && !Array.isArray(lockedEvents)) {
+    return { success: false, error: 'lockedEvents must be an array or omitted.' };
+  }
+
   try {
     const context = buildReharmPostGenPreviewContext(seed, [...chords], {
       songwriterStyleId: songwriterId,
@@ -249,7 +269,9 @@ export function packPassageReharmBrowser(
       lensIds,
       drift,
       seed,
+      selectionMode: 'contrasting',
       ...(melodyPcs ? { melodyPcs } : {}),
+      ...(lockedEvents ? { lockedEvents } : {}),
     });
 
     const scored = result.alternatives
@@ -261,6 +283,7 @@ export function packPassageReharmBrowser(
           gceScore: typeof alt.gceScore === 'number' ? alt.gceScore : 0,
           chords: passage,
           fullChords,
+          ...(alt.approach ? { approach: alt.approach } : {}),
         } satisfies BrowserPassageReharmCandidate;
       })
       .sort((a, b) => {
@@ -282,6 +305,12 @@ export function packPassageReharmBrowser(
       return { success: false, error: 'No reharmonisation candidates for this passage.' };
     }
 
+    const shortfall =
+      result.shortfall ??
+      (candidates.length < 3
+        ? `Only ${candidates.length} contrasting reharm alternative(s) available after dedupe (need 3).`
+        : undefined);
+
     return {
       success: true,
       scoringMode: 'reharm-gce',
@@ -289,6 +318,7 @@ export function packPassageReharmBrowser(
       endBar: result.endBar,
       seed: result.seed,
       candidates,
+      ...(shortfall ? { shortfall } : {}),
     };
   } catch (e) {
     return {

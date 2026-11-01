@@ -17,14 +17,21 @@ export function shouldUseUserChordSemanticsForTones(context: CompositionContext)
 /**
  * Chord tones for generation / analysis — one entry point for duo + locked paths.
  * User custom harmony: same string as score/export; builtin: legacy golden canonical where applicable.
+ *
+ * `shorterMode` remaps ChordToneSet field roles onto upper extensions (7→root slot, 9→third, …).
+ * That bias is for Wayne Shorter / Andrew Hill language only. Locked/custom symbols must keep
+ * true root/3rd/5th/7th (or 6th) roles so bass melodic motion tracks the sounding chord —
+ * otherwise e.g. Bb6/9 feeds C (9th) as “third” and the line camps on one PC.
  */
 export function chordTonesForChordSymbolWithContext(chord: string, context: CompositionContext): ChordToneSet {
   const locked = shouldUseUserChordSemanticsForTones(context);
   const primaryStyle = (context.generationMetadata as any)?.songwriterStyleId ?? '';
   const styleProfile = (context.generationMetadata as any)?.styleProfile ?? '';
-  const shorterMode = primaryStyle === 'wayne_shorter' 
-    || primaryStyle === 'andrew_hill'
-    || styleProfile === 'STYLE_MODERN_JAZZ'
-    || styleProfile === 'STYLE_SHORTER_POST_BOP';
+  /** Never remap tone roles under locked/custom harmony — bass + LOCK need sounding chord tones. */
+  const shorterMode =
+    !locked &&
+    (primaryStyle === 'wayne_shorter' ||
+      primaryStyle === 'andrew_hill' ||
+      styleProfile === 'STYLE_SHORTER_POST_BOP');
   return chordTonesForChordSymbol(chord, { lockedHarmony: locked, shorterMode });
 }

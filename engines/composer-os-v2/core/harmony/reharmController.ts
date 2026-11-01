@@ -5,7 +5,10 @@ import {
   type EmotionalDrift,
 } from './reharmCandidateEngine';
 import { getChordRangeForBars, type BarChordEntry } from './harmonyRangeResolver';
-import { generateReharmSequence } from './reharmSequenceRanker';
+import {
+  generateContrastingReharmSequences,
+  generateReharmSequence,
+} from './reharmSequenceRanker';
 import type {
   AlternativeProgression,
   ReharmResult,
@@ -173,14 +176,28 @@ function resolveSeed(requested: number | undefined): number {
 
 /**
  * Runs sequence generation + per-progression GCE overall scores (same pipeline as melodic variation pack).
+ * `selectionMode: 'contrasting'` returns approach-tagged alts + optional shortfall; default remains lens mode.
+ * Optional `lockedEvents`: contrasting mode applies sustained locked-bass membership
+ * ({@link progressionPassesSustainedLockedBass}); lens mode ignores them.
  */
 export function executeReharm(request: ReharmSequenceRequest): ReharmResult {
   const { startBar, endBar, lensIds } = request;
   const seed = resolveSeed(request.seed);
   const drift: EmotionalDrift = request.drift ?? 'neutral';
+  const selectionMode = request.selectionMode ?? 'lens';
 
-  const seqRequest: ReharmSequenceRequest = { ...request, seed };
-  const alternatives = generateReharmSequence(seqRequest).map((p) => ({ ...p }));
+  const seqRequest: ReharmSequenceRequest = { ...request, seed, selectionMode };
+  let alternatives: AlternativeProgression[];
+  let shortfall: string | undefined;
+
+  if (selectionMode === 'contrasting') {
+    const contrasting = generateContrastingReharmSequences(seqRequest);
+    alternatives = contrasting.alternatives.map((p) => ({ ...p }));
+    shortfall = contrasting.shortfall;
+  } else {
+    alternatives = generateReharmSequence(seqRequest).map((p) => ({ ...p }));
+  }
+
   const entries = getChordRangeForBars(startBar, endBar, request.context);
 
   for (const alt of alternatives) {
@@ -193,5 +210,6 @@ export function executeReharm(request: ReharmSequenceRequest): ReharmResult {
     startBar,
     endBar,
     seed,
+    ...(shortfall ? { shortfall } : {}),
   };
 }
