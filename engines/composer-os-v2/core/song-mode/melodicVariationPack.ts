@@ -37,15 +37,24 @@ export interface ScoredVariation {
   gceScore: number;
 }
 
-/** Same transform priority as build spec (subset of {@link MotifTransform}). */
+/**
+ * Pitch-only transforms for TunePainter passage splice.
+ * Rhythm-changing mutations (augmentation / diminution / fragmentation /
+ * rhythmic_displacement) are excluded — callers keep source onsets/rests.
+ */
 export const VARIATION_TRANSFORM_PRIORITY: readonly MotifTransform[] = [
-  'rhythmic_displacement',
   'contour_inversion',
   'registral_displacement',
-  'augmentation',
-  'diminution',
-  'fragmentation',
+  'sequence',
 ] as const;
+
+function sameDurationSequence(a: MotifNoteLite[], b: MotifNoteLite[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i]!.duration - b[i]!.duration) > 1e-6) return false;
+  }
+  return true;
+}
 
 const SIMILARITY_DEDUP = 0.92;
 
@@ -179,6 +188,8 @@ export function generateMelodicVariations(melody: Melody, count: number): Variat
 
     const notes = mutationCellToMotifNotes(melody, mutated);
     if (notes.length === 0) continue;
+    // Reject anything that cannot map pitch-for-pitch onto the source timing.
+    if (!sameDurationSequence(melody, notes)) continue;
 
     candidates.push({ transform: tr, cell: mutated, notes });
     if (candidates.length >= target) break;
