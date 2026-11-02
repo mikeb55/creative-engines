@@ -393,7 +393,8 @@ interface BuildGoldenPathContextExtras {
   /** Caller preset (standard duo vs single-line) */
   resolvedPresetId?: string;
   /**
-   * When 8, eight parsed chords stay an 8-bar score (no 8→32 tiling). When absent/≠8, 8 chords still tile ×4 to 32.
+   * When 4 or 8, that many parsed chords stay a native short score (no 8→32 tiling).
+   * When absent/≠8, 8 chords still tile ×4 to 32.
    */
   totalBarsForForm?: number;
   /** Phase 19 template — resolved after harmony span when compatible */
@@ -431,15 +432,19 @@ function buildGoldenPathContext(
     { label: 'B', startBar: 5, length: 4 },
   ];
   const parseFailed = !!extras?.chordProgressionParseFailed;
+  const wantsFourBarScore = extras?.totalBarsForForm === 4;
   const wantsEightBarScore = extras?.totalBarsForForm === 8;
   const expandedChordBars =
     parsedChordBars && parsedChordBars.length === 8 && !wantsEightBarScore
       ? [...parsedChordBars, ...parsedChordBars, ...parsedChordBars, ...parsedChordBars]
       : parsedChordBars;
   const useCustom32 = !parseFailed && expandedChordBars && expandedChordBars.length === 32;
+  const useCustom4Native =
+    !parseFailed && wantsFourBarScore && parsedChordBars && parsedChordBars.length === 4;
   const useCustom8Native =
     !parseFailed && wantsEightBarScore && parsedChordBars && parsedChordBars.length === 8;
-  const useCustom = useCustom32 || useCustom8Native;
+  const useCustom = useCustom32 || useCustom8Native || useCustom4Native;
+  const sections4 = [{ label: 'A', startBar: 1, length: 4 }];
   const sections32 = [
     { label: 'A', startBar: 1, length: 8 },
     { label: 'B', startBar: 9, length: 8 },
@@ -448,7 +453,7 @@ function buildGoldenPathContext(
   ];
   const harmony = useCustom32
     ? buildHarmonyPlanFromBars(expandedChordBars)
-    : useCustom8Native
+    : useCustom8Native || useCustom4Native
       ? buildHarmonyPlanFromBars(parsedChordBars!)
       : BUILTIN_HARMONY;
   const builtDefaultForm: FormMap = useCustom32
@@ -456,9 +461,18 @@ function buildGoldenPathContext(
         sections: sections32.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
         totalBars: 32,
       }
-    : { sections, totalBars: 8 };
+    : useCustom4Native
+      ? {
+          sections: sections4.map((s) => ({ label: s.label, startBar: s.startBar, length: s.length })),
+          totalBars: 4,
+        }
+      : { sections, totalBars: 8 };
   const barsForLock =
-    useCustom32 && expandedChordBars ? expandedChordBars : useCustom8Native && parsedChordBars ? parsedChordBars : undefined;
+    useCustom32 && expandedChordBars
+      ? expandedChordBars
+      : (useCustom8Native || useCustom4Native) && parsedChordBars
+        ? parsedChordBars
+        : undefined;
   const form = resolveFormPrecedence({
     formId: extras?.formId,
     compiledSections: extras?.compiledSections,
@@ -478,7 +492,7 @@ function buildGoldenPathContext(
   };
   const chordSymbolPlan = useCustom32
     ? buildChordSymbolPlanFromBars(expandedChordBars)
-    : useCustom8Native
+    : useCustom8Native || useCustom4Native
       ? buildChordSymbolPlanFromBars(parsedChordBars!)
       : BUILTIN_CHORD_SYMBOL_PLAN;
   const rehearsalMarkPlan = {
@@ -826,7 +840,8 @@ function buildContextForGoldenPath(seed: number, options?: RunGoldenPathOptions)
       progressionMode: 'custom',
       harmonyModeRequested: 'custom_locked',
       resolvedPresetId: presetId,
-      totalBarsForForm: 8,
+      /** Native short scores: 4 or 8 locked bars (no 8→32 tile). */
+      totalBarsForForm: n === 4 ? 4 : 8,
       ...(options?.formId ? { formId: options.formId } : {}),
       ...(options?.songModeCompiledSectionForm?.length
         ? { compiledSections: options.songModeCompiledSectionForm }
@@ -1151,10 +1166,23 @@ function buildGoldenPathPlans(
   }
 
   const [guitarReg] = guitarMap.sections[0]?.preferredZone ?? [55, 79];
+  /**
+   * Bacharach songwriter must not inherit DEFAULT_STYLE_STACK's Metheny secondary:
+   * that wrongly sets metheny motifHints + Metheny density gates on theatre-pop paths
+   * (named preset `bacharach_song` is already stack('bacharach') alone).
+   */
+  const songwriterForStack =
+    normalizeSongwriterStyleKey(options?.primarySongwriterStyle ?? '') ??
+    normalizeSongwriterStyleKey(context.generationMetadata?.songwriterStyleId ?? '') ??
+    null;
   const styleStack: StyleStack =
     context.presetId === 'ecm_chamber'
       ? (options?.styleStack ?? ECM_CHAMBER_STYLE_STACK)
-      : options?.styleStack ?? DEFAULT_STYLE_STACK;
+      : options?.styleStack
+        ? options.styleStack
+        : songwriterForStack === 'bacharach'
+          ? BACHARACH_STYLE_STACK
+          : DEFAULT_STYLE_STACK;
   const manifestPresetId = options?.presetId ?? 'guitar_bass_duo';
   const scoreTitle = resolveScoreTitleForPreset(manifestPresetId, options?.scoreTitle, options?.ecmMode);
   const stackIds = styleStackToModuleIds(styleStack);
@@ -1251,6 +1279,12 @@ const DEFAULT_STYLE_STACK: StyleStack = {
   secondary: 'metheny',
   colour: 'triad_pairs',
   weights: { primary: 0.6, secondary: 0.25, colour: 0.15 },
+};
+
+/** Matches named preset `bacharach_song` — Bacharach module only, no Metheny secondary. */
+const BACHARACH_STYLE_STACK: StyleStack = {
+  primary: 'bacharach',
+  weights: { primary: 1 },
 };
 
 /** ECM chamber: avoid Barry Harris / triad-pair conformance that assumes the duo ii–V cycle. */

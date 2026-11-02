@@ -49,11 +49,15 @@ function allocateWeightedBars(totalBars: number, weights: readonly number[]): nu
 export function planFromTemplate(id: SongFormTemplateId, totalBars: number): SongSectionPlan[] {
   if (id === 'full_song') {
     const barTargets = allocateWeightedBars(totalBars, FULL_SONG_WEIGHTS);
+    // Drop zero-budget slots so short forms (e.g. 4 bars) never keep phantom
+    // sections that would otherwise retain full pool rows (4 chords each).
     return FULL_SONG_KINDS.map((kind, order) => ({
       order,
       kind,
       bars: barTargets[order]!,
-    }));
+    }))
+      .filter((section) => section.bars > 0)
+      .map((section, order) => ({ ...section, order }));
   }
   const _exhaustive: never = id;
   throw new Error(`Unknown song form template: ${String(_exhaustive)}`);

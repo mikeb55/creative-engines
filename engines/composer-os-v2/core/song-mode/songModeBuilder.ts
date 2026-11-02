@@ -3683,7 +3683,8 @@ export function buildSongHook(seed: number): SongHook {
 }
 
 function expandChordSymbolsToBarLength(symbols: string[], targetBars: number): string[] {
-  if (symbols.length === 0 || targetBars <= 0) return symbols;
+  if (targetBars <= 0) return [];
+  if (symbols.length === 0) return symbols;
   const out: string[] = [];
   let i = 0;
   while (out.length < targetBars) {
@@ -3745,8 +3746,8 @@ export function buildSectionChordPlans(
 
     let chordSymbols = row.chordSymbols;
     let chosenRowTags = row.chosenRowTags;
-    if (typeof s.bars === 'number' && s.bars > 0) {
-      /** Template planners (`planFromTemplate`) attach per-section bar budgets. */
+    if (typeof s.bars === 'number') {
+      /** Template planners (`planFromTemplate`) attach per-section bar budgets (incl. 0). */
       chordSymbols = expandChordSymbolsToBarLength(chordSymbols, s.bars);
       chosenRowTags = [...chosenRowTags, `template_tile:${s.bars}b`];
     } else if (songwriterId === 'beatles' && beatlesExpand && beatlesExpand.template !== 'legacy_vc') {

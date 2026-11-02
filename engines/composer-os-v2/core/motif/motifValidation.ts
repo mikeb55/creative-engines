@@ -2,7 +2,7 @@
  * Composer OS V2 — Motif validation
  */
 
-import type { MotifTrackerState, PlacedMotif } from './motifTypes';
+import type { MotifTrackerState } from './motifTypes';
 import type { ScoreModel } from '../score-model/scoreModelTypes';
 
 export interface MotifValidationResult {
@@ -21,6 +21,27 @@ function extractGuitarPitchesByBar(score: ScoreModel): Map<number, number[]> {
     if (pitches.length) byBar.set(m.index, pitches);
   }
   return byBar;
+}
+
+/**
+ * Guitar note count for motif-content ratio.
+ * 8-bar étude: all guitar notes (unchanged).
+ * Long-form (>8 bars): only bars with planned motif/LOCK placements — development
+ * bars outside those windows must not dilute the ratio.
+ */
+function guitarNoteCountForMotifRatio(
+  guitarPitches: Map<number, number[]>,
+  guitarBarCount: number,
+  placementBars: ReadonlySet<number>
+): number {
+  if (guitarBarCount <= 8 || placementBars.size === 0) {
+    return [...guitarPitches.values()].reduce((s, arr) => s + arr.length, 0);
+  }
+  let n = 0;
+  for (const bar of placementBars) {
+    n += guitarPitches.get(bar)?.length ?? 0;
+  }
+  return n;
 }
 
 export function validateMotifIntegrity(
@@ -45,8 +66,14 @@ export function validateMotifIntegrity(
 
   const totalNotes = state.placements.reduce((s, p) => s + p.notes.length, 0);
   const guitarPitches = extractGuitarPitchesByBar(score);
-  const scoreNoteCount = [...guitarPitches.values()].reduce((s, arr) => s + arr.length, 0);
-  const guitarBarCount = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
+  const guitarBarCount =
+    score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar')?.measures.length ?? 0;
+  const placementBars = new Set(state.placements.map((p) => p.startBar));
+  const scoreNoteCount = guitarNoteCountForMotifRatio(
+    guitarPitches,
+    guitarBarCount,
+    placementBars
+  );
   if (scoreNoteCount > 0 && totalNotes > 0) {
     const motifRatio = totalNotes / scoreNoteCount;
     /** 8-bar etude: tight motif/note ratio. Long-form allows more through-composed line vs motif footprint. */

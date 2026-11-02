@@ -129,9 +129,11 @@ export function validateBassIdentity(
   }
 
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  /** Classic duo head window is 8 bars; shorter locked forms only count bars that exist. */
+  const head = Math.min(8, Math.max(1, nBassBars));
   let answerBars = 0;
   if (guitar) {
-    for (let bar = 1; bar <= 8; bar++) {
+    for (let bar = 1; bar <= head; bar++) {
       const gm = guitar.measures.find((x) => x.index === bar);
       const bm = bass.measures.find((x) => x.index === bar);
       if (!gm || !bm) continue;
@@ -140,14 +142,15 @@ export function validateBassIdentity(
       if (g1 && b1 && g1.startBeat !== b1.startBeat) answerBars++;
     }
   }
-  const minAnswer = longForm ? 2 : 3;
+  /** 8-bar étude keeps minAnswer=3; sub-8 heads scale down without touching long-form. */
+  const minAnswer = longForm ? 2 : head < 8 ? 1 : 3;
   if (answerBars < minAnswer) {
     errors.push('Bass identity: insufficient conversational onset contrast with guitar');
   }
 
   let echoHits = 0;
   if (guitar) {
-    for (let bar = 1; bar <= 8; bar++) {
+    for (let bar = 1; bar <= head; bar++) {
       const gm = guitar.measures.find((x) => x.index === bar);
       const bm = bass.measures.find((x) => x.index === bar);
       if (!gm || !bm) continue;
@@ -166,7 +169,8 @@ export function validateBassIdentity(
       }
     }
   }
-  const minEcho = longForm ? 1 : 2;
+  /** 8-bar étude keeps minEcho=2; sub-8 heads require ≥1 (8-bar echo often lands in B). */
+  const minEcho = longForm ? 1 : head < 8 ? 1 : 2;
   if (echoHits < minEcho) {
     errors.push('Bass identity: motif echo / shared pitch-class with guitar too weak');
   }

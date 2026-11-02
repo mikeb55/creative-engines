@@ -3,11 +3,12 @@
  */
 
 /** Guitar–Bass Duo / Song Mode: chord progression length options (matches score measure count for custom harmony). */
-export const SONG_FORM_BAR_OPTIONS = [8, 16, 24, 32, 40, 48, 56, 64] as const;
+export const SONG_FORM_BAR_OPTIONS = [4, 8, 16, 24, 32, 40, 48, 56, 64] as const;
 export type SongFormBarCount = (typeof SONG_FORM_BAR_OPTIONS)[number];
 
 export function isAllowedSongFormBarCount(n: number | undefined): n is SongFormBarCount {
   return (
+    n === 4 ||
     n === 8 ||
     n === 16 ||
     n === 24 ||

@@ -12,6 +12,7 @@ import {
   resolveFullSongMood,
   type FullSongMood,
 } from './fullSongMood';
+import { assertFullSongStyleEligible } from './fullSongStyleEligibility';
 import { runSongMode } from './runSongMode';
 import { mapSongModeToMosaicSectionPlan } from './songModeToMosaicMapper';
 import { createDefaultSongwritingResearch } from './songwritingResearchParser';
@@ -55,10 +56,12 @@ export function generateFullSongMusicXml(
     throw new Error('generateFullSongMusicXml: totalBars must be positive integer');
   }
 
-  const style =
+  const styleRaw =
     typeof options.primarySongwriterStyle === 'string' && options.primarySongwriterStyle.trim() !== ''
       ? options.primarySongwriterStyle.trim()
       : DEFAULT_STYLE;
+  /** Reject stand-in / library-only styles before Song Mode or golden-path work. */
+  const style = assertFullSongStyleEligible(styleRaw);
   const title =
     typeof options.title === 'string' && options.title.trim() !== ''
       ? options.title.trim()

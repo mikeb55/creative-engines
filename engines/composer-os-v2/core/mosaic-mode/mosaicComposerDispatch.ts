@@ -18,7 +18,10 @@ import {
   createFrankZappaHarmonyAccumulator,
 } from '../goldenPath/frankZappaSlice';
 import { COMPOSER_ID_ALIASES } from '../groups/composerGroupDefinitions';
+import { DISPATCH_STUB_ALIASES } from './mosaicDispatchStubAliases';
 import { SLICE_ROWS, type MosaicComposerSliceRow } from './mosaicComposerSliceRows';
+
+export { DISPATCH_STUB_ALIASES, DISPATCH_STUB_ALIAS_IDS } from './mosaicDispatchStubAliases';
 
 export type ComposerDispatchEntry = {
   composerId: string;
@@ -95,28 +98,6 @@ function applyZappaOutputRegisterForBar(
  */
 const SLICE_ROW_ALIAS_IDS: Readonly<Record<string, string>> = {
   holdsworth: 'allan_holdsworth',
-};
-
-/**
- * Stub aliases for composer ids without a dedicated mosaic slice yet.
- * Values must resolve to an existing SLICE_ROWS composerId (directly or via COMPOSER_ID_ALIASES).
- */
-const DISPATCH_STUB_ALIASES: Readonly<Record<string, string>> = {
-  // rc19 — ornette_coleman remapped from andrew_hill stub to wayne_shorter; full ornette profile planned
-  ornette_coleman: 'wayne_shorter',
-  ornette: 'wayne_shorter',
-  harmolodics: 'wayne_shorter',
-  free_jazz: 'wayne_shorter',
-  lonely_woman: 'wayne_shorter',
-  /** Guitar ids with VRB/stub only — nearest ROCK_FUSION / ART_ROCK / JAZZ_GUITAR dispatch fit. */
-  morello: 'fripp',
-  eddie_van_halen: 'allan_holdsworth',
-  jimmy_herring: 'allan_holdsworth',
-  wes_montgomery: 'jim_hall',
-  joe_pass: 'jim_hall',
-  scott_henderson: 'allan_holdsworth',
-  /** Leadsheet-input art-rock contrast voice — harmony via Verlaine field slice; texture via PopArtRock pass. */
-  art_rock: 'verlaine',
 };
 
 const modCache = new Map<string, Record<string, unknown>>();

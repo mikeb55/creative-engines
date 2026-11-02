@@ -44,11 +44,27 @@ export function isAuthoritativeEnding(m: MeasureModel): boolean {
   return barHasPhraseBoundary(m);
 }
 
+/** Highest measure index present on any part (falls back to classic 8-bar head). */
+function duoGateBarCount(score: ScoreModel): number {
+  let max = 0;
+  for (const part of score.parts) {
+    for (const m of part.measures) {
+      if (typeof m.index === 'number') max = Math.max(max, m.index);
+    }
+  }
+  return max > 0 ? max : 8;
+}
+
 /** At least one phrase boundary in [startBar, endBar] across guitar or bass. */
-export function hasPhraseEndWithin(score: ScoreModel, window: number, startBar = 1): boolean {
+export function hasPhraseEndWithin(
+  score: ScoreModel,
+  window: number,
+  startBar = 1,
+  maxBar = 8
+): boolean {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
-  for (let bar = startBar; bar < startBar + window && bar <= 8; bar++) {
+  for (let bar = startBar; bar < startBar + window && bar <= maxBar; bar++) {
     const gm = g?.measures.find((m) => m.index === bar);
     const bm = b?.measures.find((m) => m.index === bar);
     if (gm && barHasPhraseBoundary(gm)) return true;
@@ -58,12 +74,12 @@ export function hasPhraseEndWithin(score: ScoreModel, window: number, startBar =
 }
 
 /** Max consecutive bars (guitar) without phrase boundary — anti-stream. */
-function maxGuitarStreamWithoutBoundary(score: ScoreModel): number {
+function maxGuitarStreamWithoutBoundary(score: ScoreModel, maxBar = 8): number {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   if (!g) return 0;
   let run = 0;
   let maxRun = 0;
-  for (let bar = 1; bar <= 8; bar++) {
+  for (let bar = 1; bar <= maxBar; bar++) {
     const m = g.measures.find((x) => x.index === bar);
     if (m && barHasPhraseBoundary(m)) {
       run = 0;
@@ -76,12 +92,12 @@ function maxGuitarStreamWithoutBoundary(score: ScoreModel): number {
 }
 
 /** Non-climax bars where both parts are in high activity simultaneously. */
-export function violatesOverlap(score: ScoreModel): boolean {
+export function violatesOverlap(score: ScoreModel, maxBar = 8): boolean {
   const g = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   const b = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!g || !b) return false;
-  const climax = new Set([4, 8]);
-  for (let bar = 1; bar <= 8; bar++) {
+  const climax = new Set([4, 8].filter((bar) => bar <= maxBar));
+  for (let bar = 1; bar <= maxBar; bar++) {
     if (climax.has(bar)) continue;
     const ga = activityScoreForBar(g, bar);
     const ba = activityScoreForBar(b, bar);
@@ -298,26 +314,37 @@ export function scoreJazzDuoBehaviourSoft(score: ScoreModel): number {
 
 export function validateJazzDuoBehaviourRules(score: ScoreModel): JazzDuoBehaviourResult {
   const errors: string[] = [];
+  /** Classic duo head is 8 bars; shorter locked forms only gate windows that exist. */
+  const head = Math.min(8, duoGateBarCount(score));
+  const firstWindow = Math.min(4, head);
 
-  if (!hasPhraseEndWithin(score, 4, 1)) {
-    errors.push('Jazz duo: no phrase boundary in bars 1–4');
+  if (!hasPhraseEndWithin(score, firstWindow, 1, head)) {
+    errors.push(
+      head >= 4
+        ? 'Jazz duo: no phrase boundary in bars 1–4'
+        : `Jazz duo: no phrase boundary in bars 1–${head}`
+    );
   }
-  if (!hasPhraseEndWithin(score, 4, 5)) {
+  if (head >= 8 && !hasPhraseEndWithin(score, 4, 5, head)) {
     errors.push('Jazz duo: no phrase boundary in bars 5–8');
   }
 
-  if (maxGuitarStreamWithoutBoundary(score) > 5) {
+  if (maxGuitarStreamWithoutBoundary(score, head) > 5) {
     errors.push('Jazz duo: guitar streams without phrase boundary for more than 5 bars');
   }
 
-  if (violatesOverlap(score)) {
+  if (violatesOverlap(score, head)) {
     errors.push('Jazz duo: excessive simultaneous high activity (guitar and bass both hot)');
   }
 
-  if (!hasCallResponseInWindow(score, 4, 1)) {
-    errors.push('Jazz duo: insufficient call/response character in section A (bars 1–4)');
+  if (!hasCallResponseInWindow(score, firstWindow, 1)) {
+    errors.push(
+      head >= 4
+        ? 'Jazz duo: insufficient call/response character in section A (bars 1–4)'
+        : `Jazz duo: insufficient call/response character in bars 1–${head}`
+    );
   }
-  if (!hasCallResponseInWindow(score, 4, 5)) {
+  if (head >= 8 && !hasCallResponseInWindow(score, 4, 5)) {
     errors.push('Jazz duo: insufficient call/response character in section B (bars 5–8)');
   }
 
