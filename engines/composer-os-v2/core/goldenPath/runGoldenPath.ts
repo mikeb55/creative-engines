@@ -114,6 +114,7 @@ import { appendArtRockBandDrumsToScore } from '../export/appendArtRockBandDrumsT
 import { validateIndieArtPopDualGuitarIdentityInMusicXml } from '../export/validateIndieArtPopDualGuitarIdentityInMusicXml';
 import {
   assertDuoEightBarInputTruthEarly,
+  expandChordSymbolPlanToBars,
   runPipelineTruthGates,
   pipelineTruthAllPassed,
   type PipelineTruthReport,
@@ -532,6 +533,12 @@ function buildGoldenPathContext(
         )
       : undefined;
 
+  /** Freeze 8-bar builtin ingest before Song Mode surfaces dress `chordSymbolPlan`. */
+  const duoEightBarIngestBars =
+    !useCustom && !parseFailed && tb === 8
+      ? expandChordSymbolPlanToBars(chordSymbolPlan)
+      : undefined;
+
   return {
     systemVersion: '2.0.0',
     presetId: resolvedPresetId,
@@ -559,6 +566,7 @@ function buildGoldenPathContext(
       builtInHarmonyFallbackOccurred: false,
       customHarmonyLocked: useCustom && extras?.harmonyModeRequested === 'custom_locked',
       wybleVoiceLayout: wybleVoiceLayoutForPreset(resolvedPresetId),
+      ...(duoEightBarIngestBars ? { duoEightBarIngestBars: [...duoEightBarIngestBars] } : {}),
       ...(macroFormPlanEarly ? { macroFormPlan: macroFormPlanEarly } : {}),
     },
     validation: { gates: [], passed: true },

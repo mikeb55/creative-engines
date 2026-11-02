@@ -27,7 +27,11 @@ import type {
   HookContourDirs,
   SongModeHookIdentityCell,
 } from './motifEngineTypes';
-import { SONG_MODE_HOOK_RETURN_BAR } from './motifEngineTypes';
+import {
+  SONG_MODE_HOOK_RETURN_BAR,
+  SONG_MODE_MOTIF_BAR_9,
+  SONG_MODE_MOTIF_BAR_17,
+} from './motifEngineTypes';
 import {
   type MotifShape,
   extractMotifShapeFromGuitarBarContext,
@@ -537,9 +541,23 @@ export interface ScheduledBar {
   targetSim: number;
 }
 
-/** Structural placement: bar 1 statement; 2–4 reinforce; 25 return; all other bars develop from material (scheduling, not echo injection). */
+/**
+ * Structural return bar — same fold as `resolvedSongModeHookReturnBar` in songModeMotifEngine:
+ * prefer 25 → 17 → 9 → 5 when in range; else last bar. 32-bar stays at 25.
+ */
+export function foldedSongModeHookReturnBar(totalBars: number): number | null {
+  if (totalBars < 2) return null;
+  const candidates = [SONG_MODE_HOOK_RETURN_BAR, SONG_MODE_MOTIF_BAR_17, SONG_MODE_MOTIF_BAR_9, 5];
+  for (const b of candidates) {
+    if (b <= totalBars && b > 1) return b;
+  }
+  return totalBars > 1 ? totalBars : null;
+}
+
+/** Structural placement: bar 1 statement; 2–4 reinforce; folded return (25 on 32-bar, 5 on 8-bar); else develop. */
 export function buildMotifSchedule32(seed: number, totalBars: number): ScheduledBar[] {
   const out: ScheduledBar[] = [];
+  const returnBar = foldedSongModeHookReturnBar(totalBars);
   for (let b = 1; b <= totalBars; b++) {
     if (b === 1) {
       out.push({
@@ -548,6 +566,13 @@ export function buildMotifSchedule32(seed: number, totalBars: number): Scheduled
         variant: { baseId: 'primary_motif', transformType: 'interval', similarity: 1 },
         targetSim: 1,
       });
+    } else if (returnBar != null && b === returnBar) {
+      out.push({
+        bar: b,
+        role: 'return',
+        variant: { baseId: 'primary_motif', transformType: 'interval', similarity: 0.72 },
+        targetSim: 0.7,
+      });
     } else if (b >= 2 && b <= 4) {
       const t = seededUnit(seed, b, 1) < 0.5 ? 'rhythm' : 'transpose';
       out.push({
@@ -555,13 +580,6 @@ export function buildMotifSchedule32(seed: number, totalBars: number): Scheduled
         role: 'reinforce',
         variant: { baseId: 'primary_motif', transformType: t, similarity: 0.82 },
         targetSim: 0.8,
-      });
-    } else if (b === SONG_MODE_HOOK_RETURN_BAR) {
-      out.push({
-        bar: b,
-        role: 'return',
-        variant: { baseId: 'primary_motif', transformType: 'interval', similarity: 0.72 },
-        targetSim: 0.7,
       });
     } else {
       const modes: MotifVariant['transformType'][] = ['truncate', 'rhythm', 'transpose', 'interval', 'register', 'extend'];
@@ -1002,7 +1020,7 @@ export function buildSongModeMotifV2Runtime(params: {
         ? (() => {
             const guitar = getHookGuitarPart?.();
             if (!guitar) {
-              throw new Error('songModeHookFirstIdentity requires getHookGuitarPart() for bar 25');
+              throw new Error('songModeHookFirstIdentity requires getHookGuitarPart() for motif return bar');
             }
             const bar1 = hookFirstBar1MergedPitches(guitar, 1);
             if (!bar1) {
@@ -1068,6 +1086,49 @@ export function buildSongModeMotifV2Runtime(params: {
 
 export function songModeMotifCount(_seed: number): 1 {
   return 1;
+}
+
+/**
+ * Re-emit statement + folded return bars after post-passes that strip/reshape motif notes.
+ * Preserves voice-2 events; restores real `song_motif` voice-1 from the same hook runtime.
+ */
+export function reassertSongModeHookStatementAndReturnBars(params: {
+  guitar: PartModel;
+  seed: number;
+  context: CompositionContext;
+  registerForBar: (bar: number) => [number, number];
+  statementLow: number;
+  statementHigh: number;
+  returnLow: number;
+  returnHigh: number;
+  bar9Low: number;
+  bar9High: number;
+  bar17Low: number;
+  bar17High: number;
+  chordToneOpts?: ChordTonesOptions;
+}): void {
+  const { guitar, context } = params;
+  if (context.generationMetadata?.songModeHookFirstIdentity !== true) return;
+  const tb = context.form?.totalBars ?? 0;
+  if (tb < 8) return;
+  const returnBar = foldedSongModeHookReturnBar(tb);
+  if (returnBar == null) return;
+
+  const runtime = buildSongModeMotifV2Runtime({
+    ...params,
+    getHookGuitarPart: () => guitar,
+  });
+
+  const m1 = guitar.measures.find((x) => x.index === 1);
+  const mRet = guitar.measures.find((x) => x.index === returnBar);
+  if (!m1 || !mRet) return;
+
+  /**
+   * Keep statement/return voice-1-only so MotifShape extract (all voices) and hook-first return
+   * stay recognisable. Voice 2 remains on develop/reinforce bars.
+   */
+  runtime.emitScheduledBar(1, m1);
+  runtime.emitScheduledBar(returnBar, mRet);
 }
 
 /**

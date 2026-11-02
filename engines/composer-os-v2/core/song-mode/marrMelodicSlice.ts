@@ -10,6 +10,7 @@ import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+import type { NoteEvent, PartModel } from '../score-model/scoreModelTypes';
 
 const ROOT_AT_START = /^([A-G](?:#|b)?)/;
 const PC_TO_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
@@ -541,6 +542,59 @@ export function rateFromReceipts(receipts: readonly string[], prefix: string, ba
 }
 
 export const MARR_HARMONIC_VOICE_IDS = ['marr', 'johnny_marr', 'marr_melodic_rhythm'] as const;
+
+/** Barry Harris duo bass leap cap — octave-fold only; rhythm/PC unchanged. */
+export const MARR_BASS_MAX_VOICE_LEAD_SEMITONES = 14;
+
+/**
+ * Marr-only: fold each bass note into the nearest in-range octave of its PC
+ * that keeps the leap from the previous note ≤ maxLeap (rhythm/PC unchanged).
+ */
+export function applyMarrBassLeapOctaveRepair(
+  bass: PartModel,
+  maxLeap: number = MARR_BASS_MAX_VOICE_LEAD_SEMITONES,
+  low = 28,
+  high = 55
+): number {
+  let repairs = 0;
+  let prevMidi: number | null = null;
+  for (const m of [...bass.measures].sort((a, b) => a.index - b.index)) {
+    for (let ei = 0; ei < m.events.length; ei++) {
+      const e = m.events[ei]!;
+      if (e.kind !== 'note') continue;
+      const n = e as NoteEvent;
+      let pitch = n.pitch;
+      if (prevMidi != null) {
+        const pc = ((n.pitch % 12) + 12) % 12;
+        const candidates: number[] = [];
+        for (let p = pc; p <= high; p += 12) {
+          if (p >= low) candidates.push(p);
+        }
+        if (candidates.length > 0) {
+          const within = candidates.filter((c) => Math.abs(c - prevMidi!) <= maxLeap);
+          const pool = within.length > 0 ? within : candidates;
+          let best = pool[0]!;
+          let bestScore = Math.abs(best - prevMidi!) * 1000 + Math.abs(best - n.pitch);
+          for (const c of pool) {
+            const score = Math.abs(c - prevMidi!) * 1000 + Math.abs(c - n.pitch);
+            if (score < bestScore) {
+              best = c;
+              bestScore = score;
+            }
+          }
+          if (best !== n.pitch) {
+            /** Immutable replace — sealed/frozen note objects reject in-place `pitch` writes. */
+            m.events[ei] = { ...n, pitch: best };
+            pitch = best;
+            repairs++;
+          }
+        }
+      }
+      prevMidi = pitch;
+    }
+  }
+  return repairs;
+}
 
 export function isMarrHarmonicVoiceId(raw: string | null | undefined): boolean {
   const id = normalizeHarmonicVoiceId(String(raw ?? ''));

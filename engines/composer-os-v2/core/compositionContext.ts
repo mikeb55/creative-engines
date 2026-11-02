@@ -334,6 +334,12 @@ export interface GenerationMetadata {
   steps?: string[];
   /** Guitar–Bass Duo: built-in cycle vs user progression text */
   harmonySource?: 'builtin' | 'custom';
+  /**
+   * Duo 8-bar builtin ingest snapshot (pre Song Mode surface / ECM / era dressing).
+   * Pipeline input-truth compares this to the canonical duo cycle so intentional
+   * post-ingest plan colouring does not false-fail as a plan mismatch.
+   */
+  duoEightBarIngestBars?: string[];
   /** User pasted progression: do not normalize or substitute harmony (Song Mode / locked long-form). */
   customHarmonyLocked?: boolean;
   /** Resolved request harmony mode (duo slice vs Gate B `custom_locked`). */

@@ -432,6 +432,7 @@ import {
 } from './frippSystemsSlice';
 import {
   accumulateMarrHarmonyDiagnostics,
+  applyMarrBassLeapOctaveRepair,
   createMarrHarmonyAccumulator,
   finalizeMarrMetadata,
   isMarrHarmonicPath,
@@ -792,7 +793,11 @@ import {
   SONG_MODE_MOTIF_BAR_9,
   SONG_MODE_MOTIF_BAR_17,
 } from './songModeHookIdentity';
-import { recomputeSongModeHookMotifShapesFromScore } from '../motif/songModeMotifEngineV2';
+import {
+  foldedSongModeHookReturnBar,
+  reassertSongModeHookStatementAndReturnBars,
+  recomputeSongModeHookMotifShapesFromScore,
+} from '../motif/songModeMotifEngineV2';
 import { applyReichGlassSongModeProcessCell } from './reichGlassProcessCell';
 import { applyE1Checkpoint3bPitchMembership } from '../song-mode/e1Checkpoint3bPitchMembership';
 import { extractMotifAssetsFromCoreMotifs } from '../motif-plus/motifExtractor';
@@ -4670,10 +4675,11 @@ function buildGuitarPart(
   let consecutiveBusyGuitarBars = 0;
   let currentPhraseIntent: PhraseIntent | undefined;
 
+  /** Motif emit must match validators: hook-first duo runs for short form (≥8) and 32-bar long form. */
   const songModeHook =
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    tb === 32;
+    tb >= 8;
   /** Indie dual-electric remap has tight chord-density smoke gates; Stage 3 anticipation would skew comp metrics. */
   const skipPhraseEngineStage3Anticipation = shouldUseIndieArtPopDualGuitarRoute(context);
   const zappaSectionBehaviorForBar = (bar: number) =>
@@ -6460,7 +6466,58 @@ function buildGuitarPart(
       duoVaultContourNullReturns,
     };
   }
+  if (hookRuntime) {
+    syncMotifTrackerStateFromHookGuitar(guitarPartDraft, motifState, tb);
+  }
   return guitarPartDraft;
+}
+
+/** Align MotifTracker placements with hook-emitted `song_motif` notes so 8-bar content-ratio gates stay honest. */
+function syncMotifTrackerStateFromHookGuitar(
+  guitar: PartModel,
+  motifState: MotifTrackerState,
+  totalBars: number
+): void {
+  const returnBar = foldedSongModeHookReturnBar(totalBars) ?? SONG_MODE_HOOK_RETURN_BAR;
+  const variants: Array<'original' | 'transposed' | 'rhythm_shift' | 'inversion_lite'> = [
+    'original',
+    'rhythm_shift',
+    'transposed',
+    'inversion_lite',
+  ];
+  const placements: PlacedMotif[] = [];
+  let baseNotes: { pitch: number; startBeat: number; duration: number }[] = [];
+  for (const m of [...guitar.measures].sort((a, b) => a.index - b.index)) {
+    const notes = m.events
+      .filter(
+        (e): e is NoteEvent =>
+          e.kind === 'note' &&
+          ((e as NoteEvent).voice ?? 1) === 1 &&
+          !!(e as NoteEvent).motifRef?.startsWith('song_motif')
+      )
+      .map((e) => ({
+        pitch: e.pitch,
+        startBeat: e.startBeat,
+        duration: e.duration,
+      }));
+    if (notes.length === 0) continue;
+    if (m.index === 1) baseNotes = notes;
+    const variant =
+      m.index === 1
+        ? 'original'
+        : m.index === returnBar
+          ? 'transposed'
+          : variants[((m.index - 1) % (variants.length - 1)) + 1]!;
+    placements.push({
+      motifId: 'song_motif',
+      startBar: m.index,
+      variant,
+      notes,
+    });
+  }
+  if (placements.length < 2 || baseNotes.length === 0) return;
+  motifState.baseMotifs = [{ id: 'song_motif', notes: baseNotes, barCount: 1 }];
+  motifState.placements = placements;
 }
 
 function firstGuitarPitchInBar(guitar: PartModel, bar: number): number | undefined {
@@ -7924,6 +7981,14 @@ function applyLateClosingGuitarContourNudge(guitar: PartModel, context: Composit
 /** If phrase-ending pitch classes are too uniform, retarget bar 5 last note (phrase authority gate). */
 function nudgeDuoGuitarPhraseEndsForVariety(guitar: PartModel, context: CompositionContext): void {
   const tb = totalBarsFromContext(context);
+  /** Never rewrite folded hook return (bar 5 on 8-bar; bar 25 on 32-bar). */
+  const hookReturn = foldedSongModeHookReturnBar(tb);
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    hookReturn === 5
+  ) {
+    return;
+  }
   const lastPcs: number[] = [];
   for (let bar = 1; bar <= tb; bar++) {
     const m = guitar.measures.find((x) => x.index === bar);
@@ -8751,6 +8816,9 @@ export function generateGoldenPathDuoScore(
       context.generationMetadata?.contrapuntalLineSet ?? null
     );
     logEcmInternalPhaseProbe(probeEcm, 'after_buildBassPart');
+    if (isMarrHarmonicPath(context.generationMetadata)) {
+      applyMarrBassLeapOctaveRepair(bassPart);
+    }
     if (context.presetId === 'ecm_chamber' || (isGuitarBassDuoFamily(context.presetId) && isEcmStyle)) {
       applyEcmChamberPhraseEdgeSpaceToParts(guitarPart, bassPart, tb, context.seed);
       if (context.presetId === 'ecm_chamber') {
@@ -9065,6 +9133,12 @@ export function generateGoldenPathDuoScore(
       }
     }
   }
+  if (isMarrHarmonicPath(context.generationMetadata)) {
+    const bassMarr = afterExpressive.parts.find(
+      (p) => p.instrumentIdentity === 'acoustic_upright_bass'
+    );
+    if (bassMarr) applyMarrBassLeapOctaveRepair(bassMarr);
+  }
   if (
     isStandardGuitarBassDuo(context.presetId) &&
     context.generationMetadata &&
@@ -9239,11 +9313,11 @@ export function generateGoldenPathDuoScore(
     applyVoiceBundleParallelRepairPass(afterExpressive, context);
     applyVoiceBundleOverlapMitigation(afterExpressive, context);
   }
-  /** Last pitch pass before seal — GCE melodicIdentity reads final guitar MIDI. */
+  /** Last pitch pass before seal — GCE melodicIdentity reads final guitar MIDI. Align with songModeHook (≥8). */
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    tb === 32
+    tb >= 8
   ) {
     const gPhraseV2 =
       afterExpressive.parts.find((p) => p.id === 'guitar') ??
@@ -9303,6 +9377,67 @@ export function generateGoldenPathDuoScore(
         }
       }
     }
+  }
+  if (
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    isGuitarBassDuoFamily(context.presetId) &&
+    tb >= 8 &&
+    !isLineFirstDuoAbstractContext(context)
+  ) {
+    const guitarHook = afterExpressive.parts.find(
+      (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar'
+    );
+    if (guitarHook) {
+      const chordToneOptsReassert: ChordTonesOptions | undefined = shouldUseUserChordSemanticsForTones(
+        context
+      )
+        ? { lockedHarmony: true }
+        : undefined;
+      const registerForBarReassert = (bar: number): [number, number] => {
+        const [zL, zH] = getRegisterForBar(plans.guitarMap, bar, context);
+        return [Math.max(zL, 55), Math.min(79, zH)];
+      };
+      const [stLo, stHi] = registerForBarReassert(1);
+      const retBar = foldedSongModeHookReturnBar(tb) ?? SONG_MODE_HOOK_RETURN_BAR;
+      const [retLo, retHi] = registerForBarReassert(retBar);
+      const [b9Lo, b9Hi] = registerForBarReassert(Math.min(SONG_MODE_MOTIF_BAR_9, tb));
+      const [b17Lo, b17Hi] = registerForBarReassert(Math.min(SONG_MODE_MOTIF_BAR_17, tb));
+      const prevHookRep =
+        (context.generationMetadata as { songwriterHookRepetitionBias?: number })
+          .songwriterHookRepetitionBias;
+      (context.generationMetadata as { songwriterHookRepetitionBias?: number }).songwriterHookRepetitionBias =
+        Math.max(prevHookRep ?? 0.5, 0.8);
+      reassertSongModeHookStatementAndReturnBars({
+        guitar: guitarHook,
+        seed: context.seed,
+        context,
+        registerForBar: registerForBarReassert,
+        statementLow: stLo,
+        statementHigh: stHi,
+        returnLow: retLo,
+        returnHigh: retHi,
+        bar9Low: b9Lo,
+        bar9High: b9Hi,
+        bar17Low: b17Lo,
+        bar17High: b17Hi,
+        chordToneOpts: chordToneOptsReassert,
+      });
+      if (prevHookRep === undefined) {
+        delete (context.generationMetadata as { songwriterHookRepetitionBias?: number })
+          .songwriterHookRepetitionBias;
+      } else {
+        (context.generationMetadata as { songwriterHookRepetitionBias?: number }).songwriterHookRepetitionBias =
+          prevHookRep;
+      }
+      syncMotifTrackerStateFromHookGuitar(guitarHook, plans.motifState, tb);
+    }
+  }
+  /** Last mutable Marr bass fold — must run before `finalizeAndSealDuoScoreBarMath` freezes events. */
+  if (isMarrHarmonicPath(context.generationMetadata)) {
+    const bassPreSeal = afterExpressive.parts.find(
+      (p) => p.instrumentIdentity === 'acoustic_upright_bass'
+    );
+    if (bassPreSeal) applyMarrBassLeapOctaveRepair(bassPreSeal);
   }
   grooveScaffoldPass(afterExpressive, context, context.song);
   const wantVaultResnap =
@@ -9418,7 +9553,7 @@ export function generateGoldenPathDuoScore(
   if (
     context.generationMetadata?.songModeHookFirstIdentity === true &&
     isGuitarBassDuoFamily(context.presetId) &&
-    tb === 32
+    tb >= 8
   ) {
     const guitar = afterExpressive.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
     if (guitar && context.generationMetadata) {

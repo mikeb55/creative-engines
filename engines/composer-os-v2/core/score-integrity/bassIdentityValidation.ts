@@ -7,12 +7,47 @@ import { chordTonesForGoldenChord } from '../goldenPath/guitarBassDuoHarmony';
 import { contourFingerprint, rhythmFingerprint } from '../goldenPath/bassLineFingerprints';
 import { GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID } from '../presets/guitarBassDuoPresetIds';
 import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
+import { noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
+import { chordSymbolRootPc } from '../voicing/ensembleHarmonyUtils';
 
-function chordForBar(barIndex: number): string {
+/** Builtin golden-path fallback when a measure has no stamped chord symbol. */
+function fallbackGoldenChordForBar(barIndex: number): string {
   if (barIndex <= 2) return 'Dmin9';
   if (barIndex <= 4) return 'G13';
   if (barIndex <= 6) return 'Cmaj9';
   return 'A7alt';
+}
+
+/** Live harmony for bar: bass measure chord → guitar measure chord → golden fallback. */
+function liveChordSymbolForBar(score: ScoreModel, barIndex: number): string {
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  const fromBass = bass?.measures.find((m) => m.index === barIndex)?.chord?.trim();
+  if (fromBass) return fromBass;
+  const fromGuitar = guitar?.measures.find((m) => m.index === barIndex)?.chord?.trim();
+  if (fromGuitar) return fromGuitar;
+  return fallbackGoldenChordForBar(barIndex);
+}
+
+/**
+ * Bass "root" PC for identity gates = chord-symbol root (not slash bass).
+ * Matches prior golden-map semantics; live Marr/ECM symbols use parsed harmony root.
+ */
+function rootPcForBassIdentityChord(chord: string): number {
+  switch (chord) {
+    case 'Dmin9':
+    case 'G13':
+    case 'Cmaj9':
+    case 'A7alt':
+      return chordTonesForGoldenChord(chord).root % 12;
+    default: {
+      const root = chordSymbolRootPc(chord);
+      if (root !== undefined) return ((root % 12) + 12) % 12;
+      const m = chord.trim().match(/^([A-G](?:#|b)?)/i);
+      const pc = m ? noteNameToPitchClass(m[1]!) : undefined;
+      return pc !== undefined ? ((pc % 12) + 12) % 12 : chordTonesForGoldenChord(chord).root % 12;
+    }
+  }
 }
 
 export interface BassIdentityResult {
@@ -60,8 +95,8 @@ export function validateBassIdentity(
   let rootRun = 0;
   let maxRootRun = 0;
   for (const n of notes) {
-    const chord = chordForBar(n.bar);
-    const rootPc = chordTonesForGoldenChord(chord).root % 12;
+    const chord = liveChordSymbolForBar(score, n.bar);
+    const rootPc = rootPcForBassIdentityChord(chord);
     if (n.pitch % 12 === rootPc) {
       rootRun++;
       maxRootRun = Math.max(maxRootRun, rootRun);
@@ -120,7 +155,7 @@ export function validateBassIdentity(
   for (const m of bass.measures) {
     const first = m.events.find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (!first) continue;
-    const rootPc = chordTonesForGoldenChord(chordForBar(m.index)).root % 12;
+    const rootPc = rootPcForBassIdentityChord(liveChordSymbolForBar(score, m.index));
     if (first.pitch % 12 !== rootPc) nonRootFirstBars++;
   }
   const minNonRoot = longForm ? Math.min(4, Math.max(2, Math.floor(nBassBars / 10))) : 2;

@@ -367,7 +367,16 @@ function validateInputStage(
     if (meta.harmonySource !== 'builtin') {
       errors.push('Input truth: builtin harmony mode but harmonySource is not "builtin".');
     }
-    const fromPlan = expandChordSymbolPlanToBars(context.chordSymbolPlan);
+    /**
+     * Prefer ingest snapshot: Song Mode STYLE_ECM / era / Joni surfaces may dress
+     * `chordSymbolPlan` after context build. Input truth is ingest identity vs the
+     * canonical duo cycle — not the post-surface working plan.
+     */
+    const ingest = meta.duoEightBarIngestBars;
+    const fromPlan =
+      Array.isArray(ingest) && ingest.length === 8
+        ? ingest
+        : expandChordSymbolPlanToBars(context.chordSymbolPlan);
     if (fromPlan.length !== 8) {
       errors.push(`Input truth: builtin plan must expand to 8 bars (got ${fromPlan.length}).`);
     } else {
