@@ -53,6 +53,7 @@ import {
 } from '../import/mosaicStyleTransfer';
 import { isBeMusicianPremiumMelodyBridgeActive } from '../bill-evans/beMusicianPremiumMelodyBridge';
 import { riffFamilyForSongwriterId } from '../song-mode/songwriterStyleProfiles';
+import { isMarrHarmonicPath } from '../song-mode/marrMelodicSlice';
 
 /** Art Rock mosaic / riff VRB composers — skip Metheny secondary gate only (not primary Metheny paths). */
 const ART_ROCK_METHENY_GATE_BYPASS_COMPOSER_IDS = new Set(['verlaine', 'marr', 'fripp', 'morello']);
@@ -376,6 +377,8 @@ export function runBehaviourGates(
   const bassIdentity = validateBassIdentity(score, {
     presetId: opts?.presetId,
     zappaStructuralRelax: bassStructuralRelax,
+    /** Marr short-form live symbols; all other styles keep golden-map root-only semantics. */
+    useLiveChordRoots: isMarrHarmonicPath(opts?.compositionContext?.generationMetadata),
   });
   /**
    * Reich/Glass pattern-bass repeats a cell on purpose (`patternIntegrityMinRepeats`).

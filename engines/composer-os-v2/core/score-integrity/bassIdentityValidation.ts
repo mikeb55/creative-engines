@@ -10,8 +10,8 @@ import { isGuitarMelodyVoiceNote } from './guitarVoiceMelody';
 import { noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
 import { chordSymbolRootPc } from '../voicing/ensembleHarmonyUtils';
 
-/** Builtin golden-path fallback when a measure has no stamped chord symbol. */
-function fallbackGoldenChordForBar(barIndex: number): string {
+/** Builtin golden-path root map (default for all non-Marr styles). */
+function goldenChordForBar(barIndex: number): string {
   if (barIndex <= 2) return 'Dmin9';
   if (barIndex <= 4) return 'G13';
   if (barIndex <= 6) return 'Cmaj9';
@@ -26,12 +26,12 @@ function liveChordSymbolForBar(score: ScoreModel, barIndex: number): string {
   if (fromBass) return fromBass;
   const fromGuitar = guitar?.measures.find((m) => m.index === barIndex)?.chord?.trim();
   if (fromGuitar) return fromGuitar;
-  return fallbackGoldenChordForBar(barIndex);
+  return goldenChordForBar(barIndex);
 }
 
 /**
  * Bass "root" PC for identity gates = chord-symbol root (not slash bass).
- * Matches prior golden-map semantics; live Marr/ECM symbols use parsed harmony root.
+ * Golden builtins keep prior map semantics; live Marr symbols use parsed harmony root.
  */
 function rootPcForBassIdentityChord(chord: string): number {
   switch (chord) {
@@ -50,6 +50,18 @@ function rootPcForBassIdentityChord(chord: string): number {
   }
 }
 
+/** Root PC for root-only / phrase-start gates. Live chords are Marr-only. */
+function rootPcForBar(
+  score: ScoreModel,
+  barIndex: number,
+  useLiveChordRoots: boolean
+): number {
+  if (useLiveChordRoots) {
+    return rootPcForBassIdentityChord(liveChordSymbolForBar(score, barIndex));
+  }
+  return chordTonesForGoldenChord(goldenChordForBar(barIndex)).root % 12;
+}
+
 export interface BassIdentityResult {
   valid: boolean;
   errors: string[];
@@ -57,16 +69,18 @@ export interface BassIdentityResult {
 
 /**
  * Golden-path bass must read as a melodic voice: contour, rhythm, targets, anti-loop.
+ * `useLiveChordRoots` — Marr only; all other styles keep the golden-map root checker.
  */
 export function validateBassIdentity(
   score: ScoreModel,
-  opts?: { presetId?: string; zappaStructuralRelax?: boolean }
+  opts?: { presetId?: string; zappaStructuralRelax?: boolean; useLiveChordRoots?: boolean }
 ): BassIdentityResult {
   if (opts?.presetId === 'ecm_chamber') return { valid: true, errors: [] };
   /** Walking-bass / LOCK gates target full duo texture; single-line mode enforces monophony elsewhere. */
   if (opts?.presetId === GUITAR_BASS_DUO_SINGLE_LINE_PRESET_ID) return { valid: true, errors: [] };
   /** Frank Zappa duo: guide-tone / root-forward bass is intentional; jazz-pop bass-identity heuristics are non-blocking. */
   if (opts?.zappaStructuralRelax) return { valid: true, errors: [] };
+  const useLiveChordRoots = opts?.useLiveChordRoots === true;
   const errors: string[] = [];
   const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
   if (!bass) return { valid: true, errors: [] };
@@ -95,8 +109,7 @@ export function validateBassIdentity(
   let rootRun = 0;
   let maxRootRun = 0;
   for (const n of notes) {
-    const chord = liveChordSymbolForBar(score, n.bar);
-    const rootPc = rootPcForBassIdentityChord(chord);
+    const rootPc = rootPcForBar(score, n.bar, useLiveChordRoots);
     if (n.pitch % 12 === rootPc) {
       rootRun++;
       maxRootRun = Math.max(maxRootRun, rootRun);
@@ -155,7 +168,7 @@ export function validateBassIdentity(
   for (const m of bass.measures) {
     const first = m.events.find((e) => e.kind === 'note') as { pitch: number } | undefined;
     if (!first) continue;
-    const rootPc = rootPcForBassIdentityChord(liveChordSymbolForBar(score, m.index));
+    const rootPc = rootPcForBar(score, m.index, useLiveChordRoots);
     if (first.pitch % 12 !== rootPc) nonRootFirstBars++;
   }
   const minNonRoot = longForm ? Math.min(4, Math.max(2, Math.floor(nBassBars / 10))) : 2;
