@@ -5,10 +5,82 @@
 
 import type { CompositionContext, GenerationMetadata } from '../compositionContext';
 import { normalizeHarmonicVoiceId } from '../composer/voiceRuleBundles';
+import { clampPitch } from '../goldenPath/guitarBassDuoHarmony';
 import { resolveBarSymbol } from '../harmony/harmonySpineProvider';
 import { noteNameToPitchClass, parseChordSymbol } from '../harmony/chordSymbolAnalysis';
+import type { PartModel } from '../score-model/scoreModelTypes';
 import { inferTonicPitchClassFromBar1 } from './brianWilsonPetSoundsSlice';
 import { isProtectedBar } from '../score-integrity/identityLock';
+
+/** Shared BH duo bass leap cap — Wheeler octave choice must stay inside it (no gate exemption). */
+export const KENNY_WHEELER_MAX_BASS_LEAP_ST = 14;
+
+/**
+ * Place slash / bass-path pitch class in walking range nearest to `prevMidi`.
+ * Reuses the same register idea as bassMelodicLines `nearestRegisterToPrev`, with BH max leap.
+ */
+export function chooseKennyWheelerBassMidiNearPrev(
+  pcOrMidi: number,
+  prevMidi: number | undefined,
+  walkLow: number,
+  high: number,
+  maxLeapSt: number = KENNY_WHEELER_MAX_BASS_LEAP_ST
+): number {
+  const targetPc = ((pcOrMidi % 12) + 12) % 12;
+  const candidates: number[] = [];
+  for (let oct = 0; oct <= 8; oct++) {
+    const m = oct * 12 + targetPc;
+    if (m >= walkLow && m <= high) candidates.push(m);
+  }
+  if (candidates.length === 0) {
+    let m = Math.floor(walkLow / 12) * 12 + targetPc;
+    while (m < walkLow) m += 12;
+    while (m > high) m -= 12;
+    return clampPitch(m, walkLow, high);
+  }
+  if (prevMidi === undefined) {
+    return candidates.reduce((a, b) =>
+      Math.abs(a - pcOrMidi) <= Math.abs(b - pcOrMidi) ? a : b
+    );
+  }
+  const within = candidates.filter((c) => Math.abs(c - prevMidi) <= maxLeapSt);
+  const pool = within.length > 0 ? within : candidates;
+  return pool.reduce((a, b) => (Math.abs(a - prevMidi) <= Math.abs(b - prevMidi) ? a : b));
+}
+
+/**
+ * After slash-bass honour / kw:bass_path realisation, re-octave consecutive bass notes
+ * so leaps stay ≤ maxBassJump without changing pitch class, rhythm, or slash roles.
+ */
+export function smoothKennyWheelerBassOctaves(
+  bassPart: PartModel,
+  walkLow: number,
+  high: number,
+  maxLeapSt: number = KENNY_WHEELER_MAX_BASS_LEAP_ST
+): void {
+  let prev: number | undefined;
+  const measures = [...bassPart.measures].sort((a, b) => a.index - b.index);
+  for (const m of measures) {
+    const noteSlots = m.events
+      .map((e, i) => ({ e, i }))
+      .filter(({ e }) => e.kind === 'note')
+      .sort(
+        (a, b) =>
+          (a.e as { startBeat: number }).startBeat - (b.e as { startBeat: number }).startBeat
+      );
+    for (const { e, i } of noteSlots) {
+      const n = e as { pitch: number; kind: 'note'; startBeat: number; duration: number };
+      const next =
+        prev === undefined
+          ? clampPitch(n.pitch, walkLow, high)
+          : chooseKennyWheelerBassMidiNearPrev(n.pitch, prev, walkLow, high, maxLeapSt);
+      if (next !== n.pitch) {
+        m.events[i] = { ...n, pitch: next };
+      }
+      prev = next;
+    }
+  }
+}
 
 export const KENNY_WHEELER_HARMONIC_VOICE_IDS = ['kenny_wheeler', 'wheeler', 'kw'] as const;
 

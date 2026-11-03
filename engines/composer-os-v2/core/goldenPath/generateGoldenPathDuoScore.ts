@@ -370,6 +370,7 @@ import {
   isKennyWheelerHarmonicPath,
   isKennyWheelerHarmonicVoiceId,
   precomputeKennyWheelerEffectiveHarmonyBars,
+  smoothKennyWheelerBassOctaves,
 } from './wheelerLyricSlice';
 import {
   accumulateJanGarbarekHarmonyDiagnostics,
@@ -9273,6 +9274,13 @@ export function generateGoldenPathDuoScore(
     assertGuitarScoreMatchesHarmonyContext(afterExpressive, context, 'after_repairSlashBassHonourInDuoScore');
   }
   applyDuoWybleBassAnchorBar1Nudge(afterExpressive, context);
+  /** Wheeler kw:bass_path slash inserts: re-octave only (PC/rhythm kept) so BH maxBassJump=14 holds. */
+  if (context.generationMetadata?.songwriterStyleId === 'kenny_wheeler') {
+    const bassKw = afterExpressive.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+    if (bassKw) {
+      smoothKennyWheelerBassOctaves(bassKw, walkLow, bassCeiling);
+    }
+  }
   if (shouldUseIndieArtPopDualGuitarRoute(context)) {
     const gIndie = afterExpressive.parts.find((p) => p.id === 'guitar');
     if (gIndie) {
