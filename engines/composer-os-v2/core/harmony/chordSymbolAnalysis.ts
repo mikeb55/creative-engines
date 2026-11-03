@@ -171,8 +171,10 @@ export function chordTonesFromSymbol(harmonyPart: string, opts?: ChordTonesOptio
   // 6/9 · 69 · 6add9 are sixth+ninth colours — the trailing 9 must not flip dominant-7th.
   const sixthNine =
     /^(m|min)?6\/?9/.test(rest) || /^(m|min)?69/.test(rest) || /6add9/.test(rest);
-  const minorThird = /^(m|min|dim|ø|°)/.test(rest) || /m7|m9|m11|m13/.test(rest);
-  const maj7 = /maj|Δ|ma7|M7/.test(rest);
+  /** Detect maj7 before /m7/ — otherwise "maj7" falsely matches minor via embedded "m7". */
+  const maj7 = /maj|Δ|ma7/.test(rest);
+  const minorThird =
+    !maj7 && (/^(m|min|dim|ø|°)/.test(rest) || /m7|m9|m11|m13/.test(rest));
   const dom =
     !sixthNine &&
     (/^(7|9|11|13)/.test(rest) || /7alt|7#|7b|sus/.test(rest) || /13|11|9/.test(rest));
