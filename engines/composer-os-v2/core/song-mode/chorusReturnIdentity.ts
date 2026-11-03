@@ -1,11 +1,14 @@
 /**
  * Chorus return identity — reuse first chorus harmony + opening guitar motif on later choruses.
  * Uses the same measure-clone pattern as mosaic section retry (no new generator).
+ * When destination harmony differs from source, motif pitches are degree-adapted at write time.
  */
 
 import type { MosaicModeSectionPlanEntry } from '../mosaic-mode/precomputeMosaicEffectiveHarmonyBars';
-import type { MeasureModel, ScoreModel } from '../score-model/scoreModelTypes';
+import type { MeasureModel, NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { SectionChordPlan } from './songCompilationTypes';
+import { lockedHarmonyChordSymbolsEquivalent } from '../harmony/chordProgressionParser';
+import { adaptMotifChainToDestinationChord } from '../goldenPath/phraseEngineV2';
 
 function cloneMeasure(m: MeasureModel): MeasureModel {
   return {
@@ -35,6 +38,7 @@ export function alignRepeatedChorusHarmony(chordPlan: SectionChordPlan[]): Secti
 /**
  * Copy guitar opening bars from first `chorus_*` mosaic section onto later chorus sections.
  * Default: 1 bar (opening motif cell). Bridge and other sections untouched.
+ * Literal copy when source/dest chords match; otherwise destination-chord degree adaptation.
  */
 export function applyChorusOpeningMotifRecall(
   score: ScoreModel,
@@ -71,7 +75,34 @@ export function applyChorusOpeningMotifRecall(
       const cloned = cloneMeasure(src);
       cloned.index = dstBar;
       /** Keep destination bar's chord symbol (locked harmony already aligned). */
+      const destChord = (prev.chord ?? '').trim();
       if (prev.chord != null) cloned.chord = prev.chord;
+
+      const sourceChord = (src.chord ?? '').trim();
+      if (
+        sourceChord &&
+        destChord &&
+        !lockedHarmonyChordSymbolsEquivalent(sourceChord, destChord)
+      ) {
+        const noteIdxs: number[] = [];
+        const chain: number[] = [];
+        for (let ei = 0; ei < cloned.events.length; ei++) {
+          const ev = cloned.events[ei]!;
+          if (ev.kind !== 'note') continue;
+          if (((ev as NoteEvent).voice ?? 1) !== 1) continue;
+          noteIdxs.push(ei);
+          chain.push((ev as NoteEvent).pitch);
+        }
+        if (chain.length > 0) {
+          const adapted = adaptMotifChainToDestinationChord(chain, sourceChord, destChord, 'mid');
+          for (let ni = 0; ni < noteIdxs.length; ni++) {
+            const ei = noteIdxs[ni]!;
+            const ev = cloned.events[ei] as NoteEvent;
+            cloned.events[ei] = { ...ev, pitch: adapted[ni]! };
+          }
+        }
+      }
+
       part.measures[dstIdx] = cloned;
     }
   }

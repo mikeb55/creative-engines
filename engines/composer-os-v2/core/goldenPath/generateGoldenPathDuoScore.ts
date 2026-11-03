@@ -5899,6 +5899,7 @@ function buildGuitarPart(
           chordToneOpts,
         });
       } else if (isDuoGolden && phase === 7) {
+
         emitGuitarDuoIdentityBar7({
           m,
           chord: resolveBarSymbol(context, b).symbol,
@@ -5969,6 +5970,7 @@ function buildGuitarPart(
         if (sectionSlon?.phraseIntent === 'shock' && densityLevel !== 'sparse') {
           densityLevel = 'sparse';
         }
+
 
         emitGuitarPhraseBar({
           m,
@@ -6684,7 +6686,7 @@ function applyEcmSchneiderDensityEnvelope(score: ScoreModel, totalBars: number):
 }
 
 /** Bar 4: bass supports peak — two half notes (same shape as overlap thinning; does not touch bass engine module). */
-function simplifyBassAtPeakBar(
+export function simplifyBassAtPeakBar(
   context: CompositionContext,
   bassPart: PartModel,
   bassMap: InstrumentRegisterMap,
@@ -6703,7 +6705,7 @@ function simplifyBassAtPeakBar(
     parsed.slashBassPc !== undefined
       ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
       : rootClamped;
-  const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
+  const fifth = clampPitch(tones.fifth, walkLow, effectiveHigh);
   const m = bassPart.measures.find((x) => x.index === bar);
   if (!m) return;
   const cap = measureBeatSpanQuartersOf(m);
@@ -6715,7 +6717,7 @@ function simplifyBassAtPeakBar(
 }
 
 /** When both parts are in high activity on a non-climax bar, thin bass to two half notes (bar math preserved). */
-function resolveOverlapInDuoScore(
+export function resolveOverlapInDuoScore(
   context: CompositionContext,
   guitarPart: PartModel,
   bassPart: PartModel,
@@ -6743,7 +6745,7 @@ function resolveOverlapInDuoScore(
       parsed.slashBassPc !== undefined
         ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
         : rootClamped;
-    const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
+    const fifth = clampPitch(tones.fifth, walkLow, effectiveHigh);
     const m = bassPart.measures.find((x) => x.index === b);
     if (!m) continue;
     const cap = measureBeatSpanQuartersOf(m);
@@ -6902,6 +6904,22 @@ function computePhraseGuitarContours(guitarPart: PartModel, totalBars: number): 
   return out;
 }
 
+/**
+ * Fit a chord-tone MIDI into [low, high] by octave transposition only.
+ * Unlike {@link clampPitch}, never changes pitch class at the register edge
+ * (e.g. F3=41 with high=40 → F2=29, not E=40).
+ */
+function fitBassChordToneMidi(midi: number, low: number, high: number): number {
+  if (!(Number.isFinite(midi) && Number.isFinite(low) && Number.isFinite(high))) return midi;
+  if (low > high) return midi;
+  const pc = ((midi % 12) + 12) % 12;
+  let m = midi;
+  while (m < low) m += 12;
+  while (m > high) m -= 12;
+  if (m >= low && m <= high && ((m % 12) + 12) % 12 === pc) return m;
+  return pitchClassToBassMidi(pc, low, high);
+}
+
 function buildBassPart(
   context: CompositionContext,
   bassPlan: BassBehaviourPlan,
@@ -7038,15 +7056,15 @@ function buildBassPart(
       followRootProbability !== undefined && seededUnit(seed, b, 65601) > followRootProbability
         ? pickGuideTone(tones, b, seed)
         : root;
-    const rootClamped = clampPitch(rootTarget, effectiveLow, Math.min(effectiveHigh, high));
+    const rootClamped = fitBassChordToneMidi(rootTarget, effectiveLow, Math.min(effectiveHigh, high));
     const slashBassPitch =
       parsed.slashBassPc !== undefined
         ? pitchClassToBassMidi(parsed.slashBassPc, walkLow, effectiveHigh)
         : undefined;
-    const guide = clampPitch(pickGuideTone(tones, b, seed), walkLow, effectiveHigh);
-    const fifth = clampPitch(rootClamped + 5, walkLow, effectiveHigh);
-    const third = clampPitch(tones.third, walkLow, effectiveHigh);
-    const seventh = clampPitch(tones.seventh, walkLow, effectiveHigh);
+    const guide = fitBassChordToneMidi(pickGuideTone(tones, b, seed), walkLow, effectiveHigh);
+    const fifth = fitBassChordToneMidi(tones.fifth, walkLow, effectiveHigh);
+    const third = fitBassChordToneMidi(tones.third, walkLow, effectiveHigh);
+    const seventh = fitBassChordToneMidi(tones.seventh, walkLow, effectiveHigh);
 
     const abstractNow =
       context.generationMetadata?.contrapuntalLineSet ?? contrapuntalLineSet ?? null;
@@ -7577,6 +7595,7 @@ function buildBassPart(
         if (phraseRetryAttempt > 0 && phraseRetryAttempt % 2 === 0) {
           effectiveMode = phraseRetryAttempt % 4 === 0 ? 'leap' : 'rhythmic';
         }
+
         emitDuoPhraseModeBar({
           m,
           mode: effectiveMode,
@@ -7624,6 +7643,7 @@ function buildBassPart(
           const guitarPitchClassesInBar = new Set(
             gPitches.map((gp) => (((gp % 12) + 12) % 12) as number)
           );
+
           emitDuoBassQuarterStrideBar({
             m,
             t0,
@@ -7652,6 +7672,7 @@ function buildBassPart(
         addEvent(m, createNote(clampPitch(secondPitchPick, walkLow, effectiveHigh), t0 + half, half2));
       }
     } else if (duoGoldenBass && swingBassMode) {
+
       emitDuoSwingBassBar({
         m,
         mode: swingModes[(s + b * 3 + phraseRetryAttempt * 2) % 3],
@@ -7667,6 +7688,7 @@ function buildBassPart(
         slashBassPitch,
       });
     } else {
+
       emitMelodicBassBar({
         m,
         bar: b,
@@ -9355,7 +9377,7 @@ export function generateGoldenPathDuoScore(
       if (pi >= 0) afterExpressive.parts[pi] = guitarPhraseV2;
       const bPhraseV2 = afterExpressive.parts.find((p) => p.id === 'bass');
       if (bPhraseV2) {
-        const bassPhraseV2 = applyBassMotifEcho(bPhraseV2, motifPool);
+        const bassPhraseV2 = applyBassMotifEcho(bPhraseV2, motifPool, context);
         const bi = afterExpressive.parts.indexOf(bPhraseV2);
         if (bi >= 0) afterExpressive.parts[bi] = bassPhraseV2;
       }
@@ -9438,6 +9460,23 @@ export function generateGoldenPathDuoScore(
           prevHookRep;
       }
       syncMotifTrackerStateFromHookGuitar(guitarHook, plans.motifState, tb);
+      /** Hook reassert plants absolute motif PCs — re-apply destination-chord-aware A-section anchors. */
+      let motifPoolPostReassert = buildMotifPool(afterExpressive, {
+        seed: context.seed,
+        generationId: context.generationMetadata?.generatedAt,
+      });
+      const mdHookPost = context.generationMetadata as GenerationMetadata & {
+        songModeHookIdentity?: SongModeHookIdentity;
+      };
+      if (mdHookPost.songModeHookIdentity) {
+        motifPoolPostReassert = seedPoolFromHookIdentity(motifPoolPostReassert, mdHookPost.songModeHookIdentity);
+      }
+      const primaryPostReassert = primaryMutationCellFromPool(motifPoolPostReassert);
+      if (primaryPostReassert) {
+        const adapted = applyMotifToASection(guitarHook, primaryPostReassert, context, false);
+        const gi = afterExpressive.parts.indexOf(guitarHook);
+        if (gi >= 0) afterExpressive.parts[gi] = adapted;
+      }
     }
   }
   /** Last mutable Marr bass fold — must run before `finalizeAndSealDuoScoreBarMath` freezes events. */
@@ -9454,9 +9493,19 @@ export function generateGoldenPathDuoScore(
   const wantVoiceRelations = context.generationMetadata?.e1VoiceRelations === true;
   const wantPartTintinnabuli =
     context.generationMetadata?.songwriterStyleId === 'arvo_part' && isGuitarBassDuoFamily(context.presetId);
+  const wantPhraseAMotifAdapt =
+    context.generationMetadata?.songModeHookFirstIdentity === true &&
+    isGuitarBassDuoFamily(context.presetId) &&
+    tb >= 8;
+  const wantSlashBassFinalHonour =
+    isGuitarBassDuoFamily(context.presetId) && context.presetId !== 'ecm_chamber';
   const duoVaultFinalReSnapTelemetry = finalizeAndSealDuoScoreBarMath(afterExpressive, context.presetId, {
     vaultFinalResnap:
-      wantVaultResnap || wantVoiceRelations || wantPartTintinnabuli
+      wantVaultResnap ||
+      wantVoiceRelations ||
+      wantPartTintinnabuli ||
+      wantPhraseAMotifAdapt ||
+      wantSlashBassFinalHonour
         ? (score) => {
             const telemetry = wantVaultResnap
               ? applyDuoVaultFinalResnapPass(score, context)
@@ -9478,6 +9527,48 @@ export function generateGoldenPathDuoScore(
                   walkLow,
                   bassCeiling,
                 });
+              }
+            }
+            /**
+             * After vault absolute-PC restore: destination-chord-aware A-section motif write
+             * so phrase-stage adaptation is last pitch authority before seal freeze.
+             */
+            if (wantPhraseAMotifAdapt) {
+              const gAdapt = score.parts.find(
+                (p) => p.id === 'guitar' || p.instrumentIdentity === 'clean_electric_guitar'
+              );
+              if (gAdapt) {
+                let motifPoolSeal = buildMotifPool(score, {
+                  seed: context.seed,
+                  generationId: context.generationMetadata?.generatedAt,
+                });
+                const mdHookSeal = context.generationMetadata as GenerationMetadata & {
+                  songModeHookIdentity?: SongModeHookIdentity;
+                };
+                if (mdHookSeal?.songModeHookIdentity) {
+                  motifPoolSeal = seedPoolFromHookIdentity(motifPoolSeal, mdHookSeal.songModeHookIdentity);
+                }
+                const primarySeal = primaryMutationCellFromPool(motifPoolSeal);
+                if (primarySeal) {
+                  const adapted = applyMotifToASection(gAdapt, primarySeal, context, false);
+                  const gi = score.parts.indexOf(gAdapt);
+                  if (gi >= 0) score.parts[gi] = adapted;
+                }
+              }
+            }
+            /** After bassBeatNotationGrouping: re-honour slash on strong/sustained (grouping can split off-beat sustained). */
+            if (wantSlashBassFinalHonour) {
+              const bassSlashFinal = score.parts.find(
+                (p) => p.instrumentIdentity === 'acoustic_upright_bass'
+              );
+              if (bassSlashFinal) {
+                repairSlashBassHonourInDuoScore(
+                  context,
+                  bassSlashFinal,
+                  plans.bassMap,
+                  walkLow,
+                  bassCeiling
+                );
               }
             }
             return telemetry;

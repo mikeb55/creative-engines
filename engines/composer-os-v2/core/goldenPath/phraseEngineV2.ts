@@ -21,6 +21,9 @@ import type {
 } from '../score-model/scoreModelTypes';
 import type { SongModeHookIdentity } from '../motif/motifEngineTypes';
 import type { CompositionContext } from '../compositionContext';
+import { getChordForBar } from '../harmony/harmonyResolution';
+import { lockedHarmonyChordSymbolsEquivalent } from '../harmony/chordProgressionParser';
+import { chordTonesForChordSymbol, noteNameToPitchClass } from '../harmony/chordSymbolAnalysis';
 import { vaultMotifPitchMutationSkipForV1Note, v1SortedNoteIndexForEvent } from './duoVaultMotifContourSnap';
 
 /** Short melodic/rhythmic fragment candidate. */
@@ -201,6 +204,246 @@ function nearestMidiCarryingPc(currentMidi: number, pc: number): number {
   return currentMidi + delta;
 }
 
+function chordTonePcs(symbol: string): number[] {
+  const t = chordTonesForChordSymbol(symbol, { lockedHarmony: true });
+  return [...new Set([t.root, t.third, t.fifth, t.seventh].map((p) => ((p % 12) + 12) % 12))];
+}
+
+function slashPcOfChordSymbol(symbol: string): number | undefined {
+  const m = symbol.trim().match(/\/([A-Ga-g][#b]?)$/);
+  if (!m) return undefined;
+  return noteNameToPitchClass(m[1]!);
+}
+
+/** Destination chord tones + slash bass PC (locked-harmony write / diagnostic parity). */
+function allowedDestinationPcs(symbol: string): number[] {
+  const pcs = chordTonePcs(symbol);
+  const slash = slashPcOfChordSymbol(symbol);
+  if (slash !== undefined && !pcs.includes(slash)) pcs.push(slash);
+  return pcs;
+}
+
+function nearestAllowedPc(pc: number, allowed: readonly number[]): number {
+  const p = ((pc % 12) + 12) % 12;
+  if (allowed.length === 0) return p;
+  let best = ((allowed[0]! % 12) + 12) % 12;
+  let bestD = 99;
+  for (const raw of allowed) {
+    const a = ((raw % 12) + 12) % 12;
+    const d = Math.min(Math.abs(p - a), 12 - Math.abs(p - a));
+    if (d < bestD) {
+      bestD = d;
+      best = a;
+    }
+  }
+  return best;
+}
+
+/**
+ * Write-time harmonic gate: keep chord tones + legitimate short approach/passing;
+ * reject unresolved strong-beat or sustained non-chord tones (snap to nearest dest tone).
+ */
+function resolveDestinationWritablePitch(
+  candidateMidi: number,
+  destChord: string,
+  startBeat: number,
+  duration: number,
+  prevPc: number | null,
+  nextPc: number | null,
+  band?: MutationMotifCell['registerBand']
+): number {
+  const allowed = allowedDestinationPcs(destChord);
+  const allowedSet = new Set(allowed);
+  const pc = ((candidateMidi % 12) + 12) % 12;
+  if (allowedSet.has(pc)) {
+    return band ? clampMidiToRegisterBand(candidateMidi, band) : candidateMidi;
+  }
+
+  const isStrong = startBeat < 1e-9 || Math.abs(startBeat - 2) < 1e-9;
+  const sustained = duration >= 1 - 1e-9;
+  const short = duration <= 0.5 + 1e-9;
+  const near = (a: number, b: number) =>
+    ((a - b + 12) % 12 === 1 || (b - a + 12) % 12 === 1);
+  const approach =
+    short &&
+    ((nextPc != null && allowedSet.has(nextPc) && near(pc, nextPc)) ||
+      (prevPc != null && allowedSet.has(prevPc) && near(pc, prevPc)));
+  if (approach || (short && !isStrong)) {
+    return band ? clampMidiToRegisterBand(candidateMidi, band) : candidateMidi;
+  }
+  if (!(isStrong || sustained)) {
+    return band ? clampMidiToRegisterBand(candidateMidi, band) : candidateMidi;
+  }
+
+  const snapped = nearestMidiCarryingPc(candidateMidi, nearestAllowedPc(pc, allowed));
+  return band ? clampMidiToRegisterBand(snapped, band) : snapped;
+}
+
+function chordToneMidiRefs(symbol: string): number[] {
+  const t = chordTonesForChordSymbol(symbol, { lockedHarmony: true });
+  return [t.root, t.third, t.fifth, t.seventh];
+}
+
+function degreeIndexForPc(pc: number, chordPcs: readonly number[]): number | null {
+  const p = ((pc % 12) + 12) % 12;
+  for (let i = 0; i < chordPcs.length; i++) {
+    if (((chordPcs[i]! % 12) + 12) % 12 === p) return i;
+  }
+  return null;
+}
+
+function rootPcOfChord(symbol: string): number {
+  return chordTonePcs(symbol)[0] ?? 0;
+}
+
+/** Next chord-tone MIDI above/below `from` in the destination PC set (contour step). */
+function stepAlongChordTones(
+  fromMidi: number,
+  destPcs: readonly number[],
+  direction: 1 | -1,
+  band: MutationMotifCell['registerBand']
+): number {
+  const ordered = [...destPcs].sort((a, b) => a - b);
+  if (ordered.length === 0) return clampMidiToRegisterBand(fromMidi + direction, band);
+  const fromPc = ((fromMidi % 12) + 12) % 12;
+  let idx = ordered.findIndex((p) => p === fromPc);
+  if (idx < 0) {
+    // from is ornamental: pick nearest dest tone then step
+    let best = ordered[0]!;
+    let bestD = 99;
+    for (const p of ordered) {
+      const d = Math.min(Math.abs(fromPc - p), 12 - Math.abs(fromPc - p));
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    idx = ordered.indexOf(best);
+  }
+  const nextIdx = (idx + direction + ordered.length * 4) % ordered.length;
+  let targetPc = ordered[nextIdx]!;
+  // Keep rising/falling through octaves when wrapping the tone set.
+  let realized = nearestMidiCarryingPc(fromMidi, targetPc);
+  if (direction > 0 && realized <= fromMidi) realized += 12;
+  if (direction < 0 && realized >= fromMidi) realized -= 12;
+  return clampMidiToRegisterBand(realized, band);
+}
+
+/**
+ * Destination-chord-aware motif chain realization (write-time, not post-hoc snap).
+ * - Source chord tones: map by degree onto the destination chord (identity when harmony matches).
+ * - Non-chord tones: keep contour via chord-degree steps on the destination (expressive color
+ *   without planting foreign strong-beat PCs). Chromatic residue preserved as ±degree motion.
+ * Exported for chorus opening motif recall (same write-time degree policy).
+ */
+export function adaptMotifChainToDestinationChord(
+  chain: readonly number[],
+  sourceChord: string,
+  destChord: string,
+  band: MutationMotifCell['registerBand'] = 'mid'
+): number[] {
+  if (chain.length === 0) return [];
+
+  const srcPcs = chordTonePcs(sourceChord);
+  const dstRefs = chordToneMidiRefs(destChord);
+  const dstPcs = dstRefs.map((m) => ((m % 12) + 12) % 12);
+  const harmonyMatches = lockedHarmonyChordSymbolsEquivalent(sourceChord, destChord);
+  const rootShift = (rootPcOfChord(destChord) - rootPcOfChord(sourceChord) + 12) % 12;
+  const signedRootShift = rootShift > 6 ? rootShift - 12 : rootShift;
+
+  const out: number[] = [];
+  for (let i = 0; i < chain.length; i++) {
+    const midi = chain[i]!;
+    const pc = ((midi % 12) + 12) % 12;
+    const deg = degreeIndexForPc(pc, srcPcs);
+
+    if (deg != null && deg < dstRefs.length) {
+      // Structural chord tone: retain literal PC when harmony matches; else degree-map.
+      if (harmonyMatches) {
+        out.push(clampMidiToRegisterBand(midi, band));
+      } else {
+        const targetPc = dstPcs[deg]!;
+        let realized = nearestMidiCarryingPc(midi + signedRootShift, targetPc);
+        realized = clampMidiToRegisterBand(realized, band);
+        out.push(realized);
+      }
+      continue;
+    }
+
+    // Non-chord (expressive) tone: write as destination chord-degree step in contour direction.
+    if (i === 0 || out.length === 0) {
+      const fallbackPc = dstPcs[0] ?? pc;
+      out.push(clampMidiToRegisterBand(nearestMidiCarryingPc(midi, fallbackPc), band));
+    } else {
+      const srcInterval = midi - chain[i - 1]!;
+      const direction: 1 | -1 = srcInterval >= 0 ? 1 : -1;
+      out.push(stepAlongChordTones(out[out.length - 1]!, dstPcs, direction, band));
+    }
+  }
+  return out;
+}
+
+function resolvePartBarChord(
+  part: PartModel,
+  bar: number,
+  context?: CompositionContext
+): string {
+  if (context) {
+    try {
+      return getChordForBar(bar, context);
+    } catch {
+      /* fall through */
+    }
+  }
+  return part.measures.find((m) => m.index === bar)?.chord?.trim() || 'Cmaj7';
+}
+
+/**
+ * Build per-anchor motif chains:
+ * - Source bar: leave pitches untouched (identity seed).
+ * - Other anchors: cycle the source-bar pitch figure to the destination note count, then
+ *   realize by destination-chord degree (literal chord tones when harmony matches).
+ */
+function motifChainsForAnchorBars(
+  part: PartModel,
+  anchors: readonly number[],
+  primary: MutationMotifCell,
+  band: MutationMotifCell['registerBand'],
+  context?: CompositionContext
+): Map<number, number[]> {
+  const pcs = primary.pitchClasses;
+  const chains = new Map<number, number[]>();
+  if (pcs.length === 0 && primary.intervalSpine.length === 0) return chains;
+
+  const sourceBar = anchors.find((b) => collectSortedNoteRefs(part, b, b, 1).length > 0) ?? anchors[0]!;
+  const sourceChord = resolvePartBarChord(part, sourceBar, context);
+  const sourceRefs = collectSortedNoteRefs(part, sourceBar, sourceBar, 1);
+  if (sourceRefs.length === 0) return chains;
+
+  /** Literal pitches as they sound on the source bar (not spine-reinvented). */
+  const sourceLiteral: number[] = [];
+  for (const ref of sourceRefs) {
+    const ev = part.measures[ref.mi]!.events[ref.ei] as NoteEvent;
+    sourceLiteral.push(clampMidiToRegisterBand(ev.pitch, band));
+  }
+  if (sourceLiteral.length === 0) return chains;
+
+  for (const bar of anchors) {
+    const destChord = resolvePartBarChord(part, bar, context);
+    const destCount = Math.max(
+      collectSortedNoteRefs(part, bar, bar, 1).length,
+      sourceLiteral.length
+    );
+    const extended: number[] = [];
+    for (let i = 0; i < destCount; i++) {
+      extended.push(sourceLiteral[i % sourceLiteral.length]!);
+    }
+    // Same-harmony path retains chord-tone literals; non-chord tones degree-step on dest.
+    chains.set(bar, adaptMotifChainToDestinationChord(extended, sourceChord, destChord, band));
+  }
+  return chains;
+}
+
 function sectionRoleForDevelopmentBar(bar: number): import('../song-mode/motifMutationEngine').SectionRole {
   if (bar <= 20) return 'B';
   if (bar <= 24) return 'bridge';
@@ -298,49 +541,100 @@ function enforceContourTwoNotes(
   return [a, b];
 }
 
-/** Bars 1–16: same literal opening chain at anchors 1 / 5 / 9 / 13 (recurrence across the A section). */
+/**
+ * Reject unresolved strong/sustained non-chord tones on bars `lo`–`hi` at write time.
+ * Preserves short approach/passing; snaps contradictions to nearest destination chord tone.
+ */
+function rejectUnresolvedDestinationContradictions(
+  part: PartModel,
+  lo: number,
+  hi: number,
+  context?: CompositionContext,
+  band?: MutationMotifCell['registerBand']
+): void {
+  const lastBar = Math.max(0, ...part.measures.map((m) => m.index));
+  const end = Math.min(hi, lastBar);
+  for (let bar = lo; bar <= end; bar++) {
+    const refs = collectSortedNoteRefs(part, bar, bar, 1);
+    if (refs.length === 0) continue;
+    const destChord = resolvePartBarChord(part, bar, context);
+    const notes = refs.map((r) => part.measures[r.mi]!.events[r.ei] as NoteEvent);
+    for (let i = 0; i < refs.length; i++) {
+      const r = refs[i]!;
+      const ev = notes[i]!;
+      const prevPc = i > 0 ? (((notes[i - 1]!.pitch % 12) + 12) % 12) : null;
+      const nextPc = i + 1 < notes.length ? (((notes[i + 1]!.pitch % 12) + 12) % 12) : null;
+      const nextPitch = resolveDestinationWritablePitch(
+        ev.pitch,
+        destChord,
+        ev.startBeat,
+        ev.duration,
+        prevPc,
+        nextPc,
+        band
+      );
+      if (nextPitch !== ev.pitch) {
+        part.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
+        notes[i] = part.measures[r.mi]!.events[r.ei] as NoteEvent;
+      }
+    }
+  }
+}
+
+/**
+ * Bars 1–16: destination-chord-aware motif at anchors 1 / 5 / 9 / 13.
+ * Always writes (vault snap receipts do not suppress A-section recall — degree adapt at write time).
+ * Rhythm / note count preserved; only pitch is selected.
+ * Write-time gate rejects unresolved strong/sustained contradictions across the A window.
+ */
 export function applyMotifToASection(
   part: PartModel,
   primary: MutationMotifCell,
   context?: CompositionContext,
-  vaultPitchLock?: boolean,
+  _vaultPitchLock?: boolean,
 ): PartModel {
-  if (vaultPitchLock && (context?.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0) {
-    return part;
-  }
   const out = clonePartModel(part);
   const anchors = [1, 5, 9, 13];
   const pcs = primary.pitchClasses;
   const spine = primary.intervalSpine;
   if (pcs.length === 0 && spine.length === 0) return out;
 
-  let sharedChain: number[] | undefined;
   const aBand = registerBandForTrebleMotif(primary.registerBand, out);
+  const chainsByBar = motifChainsForAnchorBars(out, anchors, primary, aBand, context);
 
   for (const bar of anchors) {
     const refs = collectSortedNoteRefs(out, bar, bar, 1);
     if (refs.length === 0) continue;
+    const chain = chainsByBar.get(bar);
+    if (!chain || chain.length === 0) continue;
+    const destChord = resolvePartBarChord(out, bar, context);
+    const notes = refs.map((r) => out.measures[r.mi]!.events[r.ei] as NoteEvent);
 
-    if (sharedChain === undefined) {
-      const ev0 = out.measures[refs[0]!.mi]!.events[refs[0]!.ei] as NoteEvent;
-      const anchorPc = pcs[0] ?? (((ev0.pitch % 12) + 12) % 12);
-      let p0 = nearestMidiCarryingPc(ev0.pitch, anchorPc);
-      p0 = clampMidiToRegisterBand(p0, aBand);
-      const chain: number[] = [p0];
-      for (let s = 0; s < spine.length && chain.length < 4; s++) {
-        chain.push(chain[chain.length - 1]! + spine[s]!);
-      }
-      sharedChain = chain.map((m) => clampMidiToRegisterBand(m, aBand));
-    }
-
-    const maxNotes = Math.min(sharedChain!.length, refs.length);
+    const maxNotes = Math.min(chain.length, refs.length);
     for (let i = 0; i < maxNotes; i++) {
-      if (context && vaultMotifPitchMutationSkipForV1Note(bar, i, context)) continue;
       const r = refs[i]!;
-      const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
-      out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: sharedChain![i]! };
+      const ev = notes[i]!;
+      const prevPc = i > 0 ? (((notes[i - 1]!.pitch % 12) + 12) % 12) : null;
+      const nextPc = i + 1 < notes.length ? (((notes[i + 1]!.pitch % 12) + 12) % 12) : null;
+      // Prefer upcoming motif target PC as resolution hint when present.
+      const nextMotifPc =
+        i + 1 < maxNotes ? (((chain[i + 1]! % 12) + 12) % 12) : nextPc;
+      const pitch = resolveDestinationWritablePitch(
+        chain[i]!,
+        destChord,
+        ev.startBeat,
+        ev.duration,
+        prevPc,
+        nextMotifPc,
+        aBand
+      );
+      out.measures[r.mi]!.events[r.ei] = { ...ev, pitch };
+      notes[i] = out.measures[r.mi]!.events[r.ei] as NoteEvent;
     }
   }
+
+  // Hook reassert may plant absolute motif PCs on non-anchor A bars — gate those too.
+  rejectUnresolvedDestinationContradictions(out, 1, 16, context, aBand);
   return out;
 }
 
@@ -436,6 +730,8 @@ export function applyPhraseEngineV2(
     (context?.generationMetadata?.duoVaultMotifSnapReceipts?.length ?? 0) > 0;
   const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI, 1);
 
+  const motifSourceChord = resolvePartBarChord(out, 1, context);
+
   for (const cell of pool.cells) {
     if (cell.weight <= 0) continue;
     const patLen = Math.min(cell.durations.length, cell.pitches.length);
@@ -455,7 +751,29 @@ export function applyPhraseEngineV2(
         const v1Idx = v1SortedNoteIndexForEvent(m, r.ei);
         if (context && v1Idx >= 0 && vaultMotifPitchMutationSkipForV1Note(m.index, v1Idx, context)) continue;
         const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
-        const nextPitch = stepTowardPitch(ev.pitch, targets[j]!);
+        const destChord = resolvePartBarChord(out, m.index, context);
+        const writeBand = registerBandFromMidi(targets[0] ?? ev.pitch);
+        const adaptedTargets = adaptMotifChainToDestinationChord(
+          targets,
+          motifSourceChord,
+          destChord,
+          writeBand
+        );
+        const target = adaptedTargets[j] ?? targets[j]!;
+        const stepped = stepTowardPitch(ev.pitch, target);
+        const barNotes = slice.map((sr) => out.measures[sr.mi]!.events[sr.ei] as NoteEvent);
+        const prevPc = j > 0 ? (((barNotes[j - 1]!.pitch % 12) + 12) % 12) : null;
+        const nextPc =
+          j + 1 < barNotes.length ? (((barNotes[j + 1]!.pitch % 12) + 12) % 12) : null;
+        const nextPitch = resolveDestinationWritablePitch(
+          stepped,
+          destChord,
+          ev.startBeat,
+          ev.duration,
+          prevPc,
+          nextPc,
+          writeBand
+        );
         out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
       }
       break;
@@ -481,7 +799,9 @@ export function applyPhraseEngineV2(
     }
 
     const devStarts = [17, 21, 25, 29];
-    let sharedDevOpeningChain: number[] | undefined;
+    /** Literal A-motif chain at source harmony; each development phrase adapts by destination chord. */
+    let literalDevOpeningChain: number[] | undefined;
+    const aSourceChord = motifSourceChord;
     for (const phraseStart of devStarts) {
       const phraseEnd = phraseStart + PHRASE_ENGINE_V2_PHRASE_BARS - 1;
       const phraseRefs = collectSortedNoteRefs(out, phraseStart, phraseEnd, 1);
@@ -501,22 +821,25 @@ export function applyPhraseEngineV2(
       const spine = primary.intervalSpine.length > 0 ? primary.intervalSpine : mutated.intervalSpine;
 
       if (spine.length > 0) {
-        let chain: number[];
-        if (sharedDevOpeningChain !== undefined) {
-          chain = sharedDevOpeningChain;
-        } else {
-          const e0 = out.measures[phraseRefs[0]!.mi]!.events[phraseRefs[0]!.ei] as NoteEvent;
+        if (literalDevOpeningChain === undefined) {
+          const aRefs = collectSortedNoteRefs(out, 1, 4, 1);
+          const hintRef = aRefs[0] ?? phraseRefs[0]!;
+          const e0 = out.measures[hintRef.mi]!.events[hintRef.ei] as NoteEvent;
           let p0 = nearestMidiCarryingPc(e0.pitch, anchorPc);
           p0 = clampMidiToRegisterBand(p0, band);
-          chain = [p0];
-          for (let s = 0; s < spine.length && chain.length < 4; s++) {
-            chain.push(chain[chain.length - 1]! + spine[s]!);
+          const built: number[] = [p0];
+          for (let s = 0; s < spine.length && built.length < 4; s++) {
+            built.push(built[built.length - 1]! + spine[s]!);
           }
-          for (let i = 0; i < chain.length; i++) {
-            chain[i] = clampMidiToRegisterBand(chain[i]!, band);
-          }
-          sharedDevOpeningChain = [...chain];
+          literalDevOpeningChain = built.map((m) => clampMidiToRegisterBand(m, band));
         }
+        const destChord = resolvePartBarChord(out, phraseStart, context);
+        const chain = adaptMotifChainToDestinationChord(
+          literalDevOpeningChain,
+          aSourceChord,
+          destChord,
+          band
+        );
         const kMax = Math.min(4, chain.length, phraseRefs.length);
         for (let i = 0; i < kMax; i++) {
           const r = phraseRefs[i]!;
@@ -531,6 +854,29 @@ export function applyPhraseEngineV2(
           }
           pitch = clampMidiToRegisterBand(pitch, band);
           const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+          const destChordNote = resolvePartBarChord(out, m.index, context);
+          const prevEv =
+            i > 0 ? (out.measures[phraseRefs[i - 1]!.mi]!.events[phraseRefs[i - 1]!.ei] as NoteEvent) : null;
+          const nextEv =
+            i + 1 < kMax
+              ? (out.measures[phraseRefs[i + 1]!.mi]!.events[phraseRefs[i + 1]!.ei] as NoteEvent)
+              : null;
+          const prevPc = prevEv ? (((prevEv.pitch % 12) + 12) % 12) : null;
+          const nextPc =
+            i + 1 < kMax
+              ? (((chain[i + 1]! % 12) + 12) % 12)
+              : nextEv
+                ? (((nextEv.pitch % 12) + 12) % 12)
+                : null;
+          pitch = resolveDestinationWritablePitch(
+            pitch,
+            destChordNote,
+            ev.startBeat,
+            ev.duration,
+            prevPc,
+            nextPc,
+            band
+          );
           out.measures[r.mi]!.events[r.ei] = { ...ev, pitch };
         }
       } else if (phraseRefs.length >= 2) {
@@ -550,6 +896,26 @@ export function applyPhraseEngineV2(
           let [np0, np1] = enforceContourTwoNotes(ev0.pitch, ev1.pitch, mutated.contourCode);
           np0 = clampMidiToRegisterBand(np0, band);
           np1 = clampMidiToRegisterBand(np1, band);
+          const dest0 = resolvePartBarChord(out, m0.index, context);
+          const dest1 = resolvePartBarChord(out, m1.index, context);
+          np0 = resolveDestinationWritablePitch(
+            np0,
+            dest0,
+            ev0.startBeat,
+            ev0.duration,
+            null,
+            ((np1 % 12) + 12) % 12,
+            band
+          );
+          np1 = resolveDestinationWritablePitch(
+            np1,
+            dest1,
+            ev1.startBeat,
+            ev1.duration,
+            ((np0 % 12) + 12) % 12,
+            null,
+            band
+          );
           if (!skip0) out.measures[r0.mi]!.events[r0.ei] = { ...ev0, pitch: np0 };
           if (!skip1) out.measures[r1.mi]!.events[r1.ei] = { ...ev1, pitch: np1 };
         }
@@ -572,6 +938,16 @@ export function applyPhraseEngineV2(
             const goalPc = motifPcs[0]!;
             let newP = nearestMidiCarryingPc(lev.pitch, goalPc);
             newP = clampMidiToRegisterBand(newP, band);
+            const destLast = resolvePartBarChord(out, mLast.index, context);
+            newP = resolveDestinationWritablePitch(
+              newP,
+              destLast,
+              lev.startBeat,
+              lev.duration,
+              null,
+              null,
+              band
+            );
             out.measures[lastR.mi]!.events[lastR.ei] = { ...lev, pitch: newP };
           }
         }
@@ -615,20 +991,89 @@ function durationMatchesAnyCellDuration(noteDur: number, cellDurations: number[]
 }
 
 const BASS_MOTIF_ANCHOR_BARS = [1, 9, 17, 25] as const;
+/** Hard degree-adapted pitch write (A-section); 17/25 stay rhythm-only + soft development nudge. */
+const BASS_MOTIF_PITCH_WRITE_ANCHORS = [1, 9] as const;
+
+/** Slash / approach / passing — do not overwrite with motif echo. */
+function isProtectedBassEchoNote(
+  ev: NoteEvent,
+  barChord: string,
+  barNotes: readonly NoteEvent[],
+  noteIdx: number
+): boolean {
+  const pc = ((ev.pitch % 12) + 12) % 12;
+  const slash = slashPcOfChordSymbol(barChord);
+  if (slash !== undefined && pc === slash) return true;
+
+  const allowed = new Set(allowedDestinationPcs(barChord));
+  if (allowed.has(pc)) return false;
+
+  const isStrong = ev.startBeat < 1e-9 || Math.abs(ev.startBeat - 2) < 1e-9;
+  const short = ev.duration <= 0.5 + 1e-9;
+  const prev = noteIdx > 0 ? barNotes[noteIdx - 1] : undefined;
+  const next = noteIdx + 1 < barNotes.length ? barNotes[noteIdx + 1] : undefined;
+  const prevPc = prev ? (((prev.pitch % 12) + 12) % 12) : null;
+  const nextPc = next ? (((next.pitch % 12) + 12) % 12) : null;
+  const near = (a: number, b: number) => ((a - b + 12) % 12 === 1 || (b - a + 12) % 12 === 1);
+  const approach =
+    short &&
+    ((nextPc != null && allowed.has(nextPc) && near(pc, nextPc)) ||
+      (prevPc != null && allowed.has(prevPc) && near(pc, prevPc)));
+  if (approach) return true;
+  if (short && !isStrong) return true; // passing
+  return false;
+}
+
+function barNotesSorted(part: PartModel, mi: number): NoteEvent[] {
+  return part.measures[mi]!.events
+    .filter((e): e is NoteEvent => isNoteEvent(e))
+    .slice()
+    .sort((a, b) => a.startBeat - b.startBeat);
+}
+
+/** Degree-adapt motif midis, then fold each PC into the existing bass octave. */
+function adaptBassMotifPitchesNear(
+  chain: readonly number[],
+  sourceChord: string,
+  destChord: string,
+  nearMidis: readonly number[]
+): number[] {
+  const adapted = adaptMotifChainToDestinationChord(chain, sourceChord, destChord, 'low');
+  const out: number[] = [];
+  for (let i = 0; i < adapted.length; i++) {
+    const near = nearMidis[i] ?? nearMidis[nearMidis.length - 1] ?? adapted[i]!;
+    const pc = ((adapted[i]! % 12) + 12) % 12;
+    out.push(nearestMidiCarryingPc(near, pc));
+  }
+  return out;
+}
 
 /**
- * Anchors 1 / 9 / 17 / 25: force bass note durations to primary motif {@link MutationMotifCell.rhythmicCell}
- * (pitch free). Then: per weighted pool cell, first bass note in bars 17–32 whose duration matches any
- * {@link MotifCell.durations} entry is nudged ±1 semitone toward the lowest pitch in {@link MotifCell.pitches}.
- * One pitch nudge per cell max.
+ * Anchors 1 / 9 / 17 / 25: force bass note durations to primary motif {@link MutationMotifCell.rhythmicCell},
+ * and write destination-chord degree-adapted motif pitches (literal when harmony matches).
+ * Slash / approach / passing notes kept.
+ * Strong/sustained arrivals gated via {@link resolveDestinationWritablePitch} (chord tones + slash bass).
+ * Then: per weighted pool cell, duration-matched notes in bars 17–32 nudge ±1 semitone toward
+ * harmony-adapted cell pitches (same {@link adaptMotifChainToDestinationChord} policy as guitar).
+ * Finally: A-window reject gate (bars 1–16) mirrors guitar motif write — clears unresolved
+ * strong/sustained arrivals without touching development soft nudges (17–32).
  */
-export function applyBassMotifEcho(bassPart: PartModel, pool: MotifPool): PartModel {
+export function applyBassMotifEcho(
+  bassPart: PartModel,
+  pool: MotifPool,
+  context?: CompositionContext
+): PartModel {
   const out = clonePartModel(bassPart);
   const primary = primaryMutationCellFromPool(pool);
+  const motifSourceChord = resolvePartBarChord(out, 1, context);
+  const seedCell = pool.cells.find((c) => c.weight > 0 && c.pitches.length > 0);
+  const motifSeedPitches = seedCell?.pitches ?? [];
+
   const rhythm = primary?.rhythmicCell;
-  if (rhythm && rhythm.length > 0) {
-    for (const bar of BASS_MOTIF_ANCHOR_BARS) {
-      const refs = collectSortedNoteRefs(out, bar, bar);
+  for (const bar of BASS_MOTIF_ANCHOR_BARS) {
+    const refs = collectSortedNoteRefs(out, bar, bar);
+    if (refs.length === 0) continue;
+    if (rhythm && rhythm.length > 0) {
       for (let i = 0; i < Math.min(rhythm.length, refs.length); i++) {
         const r = refs[i]!;
         const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
@@ -636,23 +1081,96 @@ export function applyBassMotifEcho(bassPart: PartModel, pool: MotifPool): PartMo
       }
     }
   }
+  for (const bar of BASS_MOTIF_PITCH_WRITE_ANCHORS) {
+    const refs = collectSortedNoteRefs(out, bar, bar);
+    if (refs.length === 0 || motifSeedPitches.length === 0) continue;
+    const destChord = resolvePartBarChord(out, bar, context);
+    const near: number[] = [];
+    const extended: number[] = [];
+    for (let i = 0; i < refs.length; i++) {
+      const ev = out.measures[refs[i]!.mi]!.events[refs[i]!.ei] as NoteEvent;
+      near.push(ev.pitch);
+      extended.push(motifSeedPitches[i % motifSeedPitches.length]!);
+    }
+    const adapted = adaptBassMotifPitchesNear(extended, motifSourceChord, destChord, near);
+    const sorted = barNotesSorted(out, refs[0]!.mi);
+    const writeNotes = refs.map((r) => out.measures[r.mi]!.events[r.ei] as NoteEvent);
+    for (let i = 0; i < refs.length; i++) {
+      const r = refs[i]!;
+      const ev = writeNotes[i]!;
+      const noteIdx = sorted.findIndex(
+        (n) => n.startBeat === ev.startBeat && n.pitch === ev.pitch && n.duration === ev.duration
+      );
+      if (isProtectedBassEchoNote(ev, destChord, sorted, noteIdx >= 0 ? noteIdx : i)) continue;
+      const prevPc = i > 0 ? (((writeNotes[i - 1]!.pitch % 12) + 12) % 12) : null;
+      const nextPc = i + 1 < writeNotes.length ? (((writeNotes[i + 1]!.pitch % 12) + 12) % 12) : null;
+      const pitch = resolveDestinationWritablePitch(
+        adapted[i]!,
+        destChord,
+        ev.startBeat,
+        ev.duration,
+        prevPc,
+        nextPc,
+        'low'
+      );
+      out.measures[r.mi]!.events[r.ei] = { ...ev, pitch };
+      writeNotes[i] = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+    }
+  }
 
   const refs = collectSortedNoteRefs(out, PHRASE_ENGINE_V2_DEVELOPMENT_LO, PHRASE_ENGINE_V2_DEVELOPMENT_HI);
 
   for (const cell of pool.cells) {
     if (cell.weight <= 0) continue;
+    if (cell.durations.length === 0 || cell.pitches.length === 0) continue;
+    const patLen = Math.min(cell.durations.length, cell.pitches.length);
+    const pattern = cell.durations.slice(0, patLen);
+    const targets = cell.pitches.slice(0, patLen);
+
+    let wrote = false;
+    for (let start = 0; start + patLen <= refs.length; start++) {
+      const slice = refs.slice(start, start + patLen);
+      const notes = slice.map((r) => out.measures[r.mi]!.events[r.ei] as NoteEvent);
+      if (!durationsMatchFigure(notes, pattern)) continue;
+      const destBar = out.measures[slice[0]!.mi]!.index;
+      const destChord = resolvePartBarChord(out, destBar, context);
+      const adapted = adaptBassMotifPitchesNear(targets, motifSourceChord, destChord, notes.map((n) => n.pitch));
+      for (let j = 0; j < patLen; j++) {
+        const r = slice[j]!;
+        const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
+        const sorted = barNotesSorted(out, r.mi);
+        const noteIdx = sorted.findIndex(
+          (n) => n.startBeat === ev.startBeat && n.pitch === ev.pitch && n.duration === ev.duration
+        );
+        if (isProtectedBassEchoNote(ev, destChord, sorted, noteIdx >= 0 ? noteIdx : j)) continue;
+        const nextPitch = stepTowardPitch(ev.pitch, adapted[j]!);
+        out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
+      }
+      wrote = true;
+      break;
+    }
+    if (wrote) continue;
+
+    // Fallback: first duration match → ±1 toward harmony-adapted cell floor (smoke / sparse bars).
     const targetLow = lowestPitchInCell(cell);
     if (targetLow === undefined || !Number.isFinite(targetLow)) continue;
-    if (cell.durations.length === 0) continue;
-
     for (const r of refs) {
       const ev = out.measures[r.mi]!.events[r.ei] as NoteEvent;
       if (!durationMatchesAnyCellDuration(ev.duration, cell.durations)) continue;
-      const nextPitch = stepTowardPitch(ev.pitch, targetLow);
+      const destChord = resolvePartBarChord(out, out.measures[r.mi]!.index, context);
+      const sorted = barNotesSorted(out, r.mi);
+      const noteIdx = sorted.findIndex(
+        (n) => n.startBeat === ev.startBeat && n.pitch === ev.pitch && n.duration === ev.duration
+      );
+      if (isProtectedBassEchoNote(ev, destChord, sorted, noteIdx >= 0 ? noteIdx : 0)) continue;
+      const adapted = adaptBassMotifPitchesNear([targetLow], motifSourceChord, destChord, [ev.pitch]);
+      const nextPitch = stepTowardPitch(ev.pitch, adapted[0]!);
       out.measures[r.mi]!.events[r.ei] = { ...ev, pitch: nextPitch };
       break;
     }
   }
 
+  // A-window gate (guitar parity): strong/sustained arrivals must respect chord + slash bass.
+  rejectUnresolvedDestinationContradictions(out, 1, 16, context, 'low');
   return out;
 }

@@ -155,10 +155,16 @@ export function emitDuoPhraseModeBar(params: {
   addWeightedPhrase(m, t, sp, applyPhraseWeights(perturbWeights(base, bar, seed), bar, seed, false));
 }
 
-/**
- * Slash-bass symbols (e.g. Dmaj9/F#): ensure pitch class Y appears somewhere in the bar.
- * Placement varies by bar (first / last / middle / approach→Y) so bars do not collapse to one repeated shape.
- */
+/** Beat 0 / 2 — survives bassBeatNotationGrouping better than off-beat sustained. */
+function isStrongBeatBassArrival(startBeat: number): boolean {
+  return startBeat < 1e-9 || Math.abs(startBeat - 2) < 1e-9;
+}
+
+/** Strong beat (0 / 2) or sustained (≥1 beat) — acceptance slash arrival. */
+function isStrongOrSustainedBassArrival(startBeat: number, duration: number): boolean {
+  return isStrongBeatBassArrival(startBeat) || duration >= 1 - 1e-9;
+}
+
 export function ensureSlashBassPitchPresentInMeasure(
   m: MeasureModel,
   slashBassPitch: number | undefined,
@@ -170,31 +176,57 @@ export function ensureSlashBassPitchPresentInMeasure(
   const targetPc = ((slashBassPitch % 12) + 12) % 12;
   for (const e of m.events) {
     if (e.kind !== 'note') continue;
-    const pc = (((e as { pitch: number }).pitch % 12) + 12) % 12;
-    if (pc === targetPc) return;
+    const n = e as { pitch: number; startBeat: number; duration: number };
+    const pc = (((n.pitch % 12) + 12) % 12);
+    /** Require strong-beat slash (not only off-beat sustained) so post-grouping still passes. */
+    if (pc === targetPc && isStrongBeatBassArrival(n.startBeat)) return;
   }
   const seed = opts?.seed ?? 0;
   const bar = opts?.bar ?? 1;
   const y = clampPitch(slashBassPitch, walkLow, high);
   const noteIdxs = m.events.map((e, i) => (e.kind === 'note' ? i : -1)).filter((i) => i >= 0);
   if (noteIdxs.length === 0) return;
+  const strongBeatIdxs = noteIdxs.filter((i) => {
+    const n = m.events[i] as { startBeat: number };
+    return isStrongBeatBassArrival(n.startBeat);
+  });
+  const strongOrSustIdxs = noteIdxs.filter((i) => {
+    const n = m.events[i] as { startBeat: number; duration: number };
+    return isStrongOrSustainedBassArrival(n.startBeat, n.duration);
+  });
+  const pool =
+    strongBeatIdxs.length > 0
+      ? strongBeatIdxs
+      : strongOrSustIdxs.length > 0
+        ? strongOrSustIdxs
+        : noteIdxs;
   const u = seededUnit(seed, bar, 9911);
   let replaceIdx: number;
   if (u < 0.26) {
-    replaceIdx = noteIdxs[0]!;
+    replaceIdx = pool[0]!;
   } else if (u < 0.52) {
-    replaceIdx = noteIdxs[noteIdxs.length - 1]!;
-  } else if (u < 0.74 && noteIdxs.length >= 2) {
-    replaceIdx = noteIdxs[Math.floor(noteIdxs.length * 0.5)]!;
-  } else if (u < 0.86 && noteIdxs.length >= 2) {
-    replaceIdx = noteIdxs[1]!;
+    replaceIdx = pool[pool.length - 1]!;
+  } else if (u < 0.74 && pool.length >= 2) {
+    replaceIdx = pool[Math.floor(pool.length * 0.5)]!;
+  } else if (u < 0.86 && pool.length >= 2) {
+    replaceIdx = pool[1]!;
   } else {
-    const j = Math.floor(seededUnit(seed, bar, 9912) * noteIdxs.length);
-    replaceIdx = noteIdxs[j]!;
+    const j = Math.floor(seededUnit(seed, bar, 9912) * pool.length);
+    replaceIdx = pool[j]!;
   }
   const n = m.events[replaceIdx] as { pitch: number; kind: 'note'; startBeat: number; duration: number };
-  m.events[replaceIdx] = { ...n, pitch: y };
+  /** Keep register of replaced note — absolute walkLow slash MIDI can create behaviour-gate leaps. */
+  const curPc = ((n.pitch % 12) + 12) % 12;
+  let delta = targetPc - curPc;
+  if (delta > 6) delta -= 12;
+  if (delta < -6) delta += 12;
+  let placed = n.pitch + delta;
+  while (placed < walkLow) placed += 12;
+  while (placed > high) placed -= 12;
+  if (placed < walkLow || placed > high) placed = y;
+  m.events[replaceIdx] = { ...n, pitch: placed };
 }
+
 
 /** Every bar should articulate 3rd or 7th somewhere (guide-tone voice). */
 export function ensureBassBarHitsThirdOrSeventh(
