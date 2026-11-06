@@ -16,6 +16,7 @@ export {
   apiCompareMusicalScores,
 } from '../../app-api/evaluationApp';
 
+import { exportScoreModelToMusicXml } from '../export/musicxmlExporter';
 import {
   generateMelodicVariations,
   scoreMelodicVariationsForPack,
@@ -29,6 +30,12 @@ import {
 } from '../harmony/reharmController';
 import type { EmotionalDrift, ReharmApproach } from '../harmony/reharmCandidateEngine';
 import type { ReharmLockedEvent } from '../harmony/reharmSequenceTypes';
+import {
+  buildSonicYouthPolychordProgressionScore,
+  type SonicYouthPolychordTuningOptions,
+  type SyProtoPolychordPair,
+  type SyProtoTriadInput,
+} from './sonicYouthPolychordScore';
 
 export type { ReharmLockedEvent };
 
@@ -327,3 +334,60 @@ export function packPassageReharmBrowser(
     };
   }
 }
+
+export type { SonicYouthPolychordTuningOptions, SyProtoPolychordPair, SyProtoTriadInput };
+
+export type GenerateSonicYouthPolychordMusicXmlOptions = {
+  bpm?: number;
+  /** Optional Guitar 1 opens: six integer MIDI 0–127, physical order 6→1. Default AAEEAA. */
+  guitar1Tuning?: readonly number[];
+  /** Optional Guitar 2 opens: six integer MIDI 0–127, physical order 6→1. Default ACCGG#C. */
+  guitar2Tuning?: readonly number[];
+};
+
+/**
+ * Browser entry: ordered dual-guitar polychord pairs → MusicXML string.
+ * Reuses {@link buildSonicYouthPolychordProgressionScore} + MusicXML exporter.
+ * Preserves two electric guitar parts. Grip failures keep bar / guitar / chord detail.
+ * Optional tunings pass through to solveGuitarGrip({ openStrings }).
+ */
+export function generateSonicYouthPolychordMusicXml(
+  pairs: readonly SyProtoPolychordPair[],
+  options?: GenerateSonicYouthPolychordMusicXmlOptions
+): string {
+  if (!Array.isArray(pairs) || pairs.length === 0) {
+    throw new Error(
+      'generateSonicYouthPolychordMusicXml: pairs must be a non-empty ordered list of { guitar1, guitar2 }'
+    );
+  }
+  const tuning: SonicYouthPolychordTuningOptions = {};
+  if (options?.guitar1Tuning !== undefined) tuning.guitar1Tuning = options.guitar1Tuning;
+  if (options?.guitar2Tuning !== undefined) tuning.guitar2Tuning = options.guitar2Tuning;
+  const built = buildSonicYouthPolychordProgressionScore(
+    pairs,
+    Object.keys(tuning).length > 0 ? tuning : undefined
+  );
+  for (const p of built.score.parts) {
+    if (p.id === 'guitar' || p.id === 'guitar_2') {
+      p.instrumentIdentity = 'clean_electric_guitar';
+      p.midiProgram = 27;
+      p.scoreInstrumentName = 'Electric Guitar';
+      p.catalogueInstrumentSound = 'strings.guitar.electric';
+    }
+  }
+  const bpm =
+    options?.bpm !== undefined && Number.isFinite(options.bpm)
+      ? Math.floor(options.bpm)
+      : built.score.tempo ?? 96;
+  const result = exportScoreModelToMusicXml(built.score, { bpm });
+  const xml = result.xml ?? '';
+  if (!result.success || !xml.includes('<score-partwise')) {
+    throw new Error(
+      `generateSonicYouthPolychordMusicXml: MusicXML export failed${
+        result.errors?.length ? `: ${result.errors.join('; ')}` : ''
+      }`
+    );
+  }
+  return xml;
+}
+
