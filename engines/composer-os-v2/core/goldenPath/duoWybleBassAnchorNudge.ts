@@ -10,6 +10,10 @@ import type { NoteEvent, ScoreModel } from '../score-model/scoreModelTypes';
 import type { EnsembleWybleRoleMap } from '../wyble/wybleVoiceLayoutTypes';
 import { WYBLE_ROLE_MAP_DUO_FAMILY } from '../wyble/ensembleWybleRoleMaps';
 import { isGuitarBassDuoFamily } from '../presets/guitarBassDuoPresetIds';
+import {
+  countBassMotifEchoHits,
+  minBassMotifEchoHits,
+} from '../score-integrity/bassIdentityValidation';
 
 /** Semitone lift applied only to the first bass note event in measure 1. */
 export const WYBLE_DUO_BASS_BAR1_ANCHOR_NUDGE_SEMITONES = 2;
@@ -37,11 +41,21 @@ export function applyDuoWybleBassAnchorBar1Nudge(score: ScoreModel, context: Com
   const m0 = bass.measures[0];
   if (!m0) return;
 
+  const upright = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const nBassBars = upright?.measures.length ?? bass.measures.length;
+  const minEcho = minBassMotifEchoHits(nBassBars);
+  const echoBefore = countBassMotifEchoHits(score);
+
   for (const ev of m0.events) {
     if (ev.kind === 'note') {
       const n = ev as NoteEvent;
       if (typeof n.pitch === 'number' && Number.isFinite(n.pitch)) {
+        const beforePitch = n.pitch;
         n.pitch += WYBLE_DUO_BASS_BAR1_ANCHOR_NUDGE_SEMITONES;
+        /** Keep repaired motif echo when this bar-1 lift would drop below the identity minimum. */
+        if (echoBefore >= minEcho && countBassMotifEchoHits(score) < minEcho) {
+          n.pitch = beforePitch;
+        }
       }
       break;
     }

@@ -2439,12 +2439,13 @@ function repairBassMotifEchoBars1to8(
     }
     return false;
   };
-  for (let bar = 1; bar <= 8; bar++) {
+  const scanEnd = Math.min(8, context.form.totalBars);
+  for (let bar = 1; bar <= scanEnd; bar++) {
     if (barHasEcho(bar)) return;
   }
   let bestBar = 1;
   let bestFlex = -1;
-  for (let bar = 1; bar <= 8; bar++) {
+  for (let bar = 1; bar <= scanEnd; bar++) {
     const chord = resolveBarSymbol(context, bar).symbol;
     const tones = chordTonesForChordSymbolWithContext(chord, context);
     const gm = guitarPart.measures.find((x) => x.index === bar);

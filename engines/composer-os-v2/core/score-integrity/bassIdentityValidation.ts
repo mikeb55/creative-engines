@@ -67,6 +67,52 @@ export interface BassIdentityResult {
   errors: string[];
 }
 
+/** Classic duo head window is 8 bars; shorter locked forms only count bars that exist. */
+export function bassMotifEchoHeadBars(nBassBars: number): number {
+  return Math.min(8, Math.max(1, nBassBars));
+}
+
+/**
+ * Motif-echo minimum — same formula as {@link validateBassIdentity}.
+ * 8-bar étude keeps minEcho=2; sub-8 heads require ≥1; long-form (≥16) requires 1.
+ */
+export function minBassMotifEchoHits(nBassBars: number): number {
+  const longForm = nBassBars >= 16;
+  const head = bassMotifEchoHeadBars(nBassBars);
+  return longForm ? 1 : head < 8 ? 1 : 2;
+}
+
+/**
+ * Count bars in the echo head window with a shared pitch-class between guitar Voice-1
+ * and any bass note — same criteria as {@link validateBassIdentity}.
+ */
+export function countBassMotifEchoHits(score: ScoreModel): number {
+  const bass = score.parts.find((p) => p.instrumentIdentity === 'acoustic_upright_bass');
+  const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
+  if (!bass || !guitar) return 0;
+  const head = bassMotifEchoHeadBars(bass.measures.length);
+  let echoHits = 0;
+  for (let bar = 1; bar <= head; bar++) {
+    const gm = guitar.measures.find((x) => x.index === bar);
+    const bm = bass.measures.find((x) => x.index === bar);
+    if (!gm || !bm) continue;
+    const gPitches = gm.events
+      .filter((e) => isGuitarMelodyVoiceNote(e))
+      .map((e) => (e as { pitch: number }).pitch);
+    if (gPitches.length === 0) continue;
+    const gPc = new Set(gPitches.map((p) => p % 12));
+    for (const e of bm.events) {
+      if (e.kind !== 'note') continue;
+      const bp = (e as { pitch: number }).pitch % 12;
+      if (gPc.has(bp)) {
+        echoHits++;
+        break;
+      }
+    }
+  }
+  return echoHits;
+}
+
 /**
  * Golden-path bass must read as a melodic voice: contour, rhythm, targets, anti-loop.
  * `useLiveChordRoots` — Marr only; all other styles keep the golden-map root checker.
@@ -178,7 +224,7 @@ export function validateBassIdentity(
 
   const guitar = score.parts.find((p) => p.instrumentIdentity === 'clean_electric_guitar');
   /** Classic duo head window is 8 bars; shorter locked forms only count bars that exist. */
-  const head = Math.min(8, Math.max(1, nBassBars));
+  const head = bassMotifEchoHeadBars(nBassBars);
   let answerBars = 0;
   if (guitar) {
     for (let bar = 1; bar <= head; bar++) {
@@ -196,29 +242,8 @@ export function validateBassIdentity(
     errors.push('Bass identity: insufficient conversational onset contrast with guitar');
   }
 
-  let echoHits = 0;
-  if (guitar) {
-    for (let bar = 1; bar <= head; bar++) {
-      const gm = guitar.measures.find((x) => x.index === bar);
-      const bm = bass.measures.find((x) => x.index === bar);
-      if (!gm || !bm) continue;
-      const gPitches = gm.events
-        .filter((e) => isGuitarMelodyVoiceNote(e))
-        .map((e) => (e as { pitch: number }).pitch);
-      if (gPitches.length === 0) continue;
-      const gPc = new Set(gPitches.map((p) => p % 12));
-      for (const e of bm.events) {
-        if (e.kind !== 'note') continue;
-        const bp = (e as { pitch: number }).pitch % 12;
-        if (gPc.has(bp)) {
-          echoHits++;
-          break;
-        }
-      }
-    }
-  }
-  /** 8-bar étude keeps minEcho=2; sub-8 heads require ≥1 (8-bar echo often lands in B). */
-  const minEcho = longForm ? 1 : head < 8 ? 1 : 2;
+  const echoHits = countBassMotifEchoHits(score);
+  const minEcho = minBassMotifEchoHits(nBassBars);
   if (echoHits < minEcho) {
     errors.push('Bass identity: motif echo / shared pitch-class with guitar too weak');
   }
