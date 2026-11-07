@@ -263,6 +263,35 @@ function electricGuitarTriadPart(
 }
 
 /**
+ * Combined polychord label for MusicXML `<direction><words>` above Guitar 1.
+ * Spelling from declared parents (via analyzeSyProtoCombinedPolychord); stack vs overlap from grip MIDI.
+ * Stacked (disjoint ranges): higher chord "over" lower. Overlapping: "G1 + G2".
+ * No Forte / analysis details; not a slash-chord harmony element.
+ */
+export function syProtoCombinedPolychordNotationLabel(
+  pair: SyProtoPolychordPair,
+  guitar1Pitches: readonly number[],
+  guitar2Pitches: readonly number[]
+): string {
+  const analysis = analyzeSyProtoCombinedPolychord(pair);
+  const g1Sym = triadChordSymbol({
+    rootPc: analysis.guitar1.rootPc,
+    quality: analysis.guitar1.quality,
+  });
+  const g2Sym = triadChordSymbol({
+    rootPc: analysis.guitar2.rootPc,
+    quality: analysis.guitar2.quality,
+  });
+  const g1Min = Math.min(...guitar1Pitches);
+  const g1Max = Math.max(...guitar1Pitches);
+  const g2Min = Math.min(...guitar2Pitches);
+  const g2Max = Math.max(...guitar2Pitches);
+  if (g2Min > g1Max) return `${g2Sym} over ${g1Sym}`;
+  if (g1Min > g2Max) return `${g1Sym} over ${g2Sym}`;
+  return `${g1Sym} + ${g2Sym}`;
+}
+
+/**
  * One-bar dual-electric polychord (no bass).
  * Reference pair: D major (G1) + E major (G2).
  * Optional tunings → solveGuitarGrip({ openStrings }); default AAEEAA / ACCGG#C.
@@ -295,9 +324,15 @@ export function buildSonicYouthOneBarPolychordScore(
     guitar2Pitches,
     guitar2Triad
   );
+  const combinedLabel = syProtoCombinedPolychordNotationLabel(
+    { guitar1: guitar1Triad, guitar2: guitar2Triad },
+    guitar1Pitches,
+    guitar2Pitches
+  );
   const score = createScore('Sonic Youth one-bar polychord prototype', [guitar1, guitar2], {
     tempo: 96,
   });
+  score.partMeasureWordsMarkings = { guitar: { 1: combinedLabel } };
 
   return {
     score,
@@ -331,6 +366,7 @@ export function buildSonicYouthPolychordProgressionScore(
   const bars: SonicYouthOneBarPolychordResult[] = [];
   const g1Measures = [];
   const g2Measures = [];
+  const combinedWordsByBar: Record<number, string> = {};
 
   for (let i = 0; i < pairs.length; i++) {
     const bar = i + 1;
@@ -343,6 +379,11 @@ export function buildSonicYouthPolychordProgressionScore(
       throw new Error(`bar ${bar}: ${detail}`);
     }
     bars.push(oneBar);
+    combinedWordsByBar[bar] = syProtoCombinedPolychordNotationLabel(
+      pair,
+      oneBar.guitar1Pitches,
+      oneBar.guitar2Pitches
+    );
 
     const srcG1 = oneBar.score.parts.find((p) => p.id === 'guitar');
     const srcG2 = oneBar.score.parts.find((p) => p.id === 'guitar_2');
@@ -377,6 +418,7 @@ export function buildSonicYouthPolychordProgressionScore(
   const score = createScore('Sonic Youth polychord progression prototype', [guitar1, guitar2], {
     tempo: 96,
   });
+  score.partMeasureWordsMarkings = { guitar: combinedWordsByBar };
 
   return {
     score,
