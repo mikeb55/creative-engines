@@ -64,18 +64,40 @@ function guitarPartNameFromOpens(
   return `${guitarLabel} (${opens.map(midiToNoteOctave).join(' ')})`;
 }
 
-function chordAt(pitches: number[], startBeat: number, duration: number, voice = 1): ChordEvent {
+function chordAt(
+  pitches: number[],
+  startBeat: number,
+  duration: number,
+  voice = 1,
+  chordSymbol?: string
+): ChordEvent {
   return {
     kind: 'chord',
     pitches: [...pitches].sort((a, b) => a - b),
     startBeat,
     duration,
     voice,
+    ...(chordSymbol !== undefined ? { chordSymbol } : {}),
   };
 }
 
 function normalizeRootPc(rootPc: number): number {
   return ((rootPc % 12) + 12) % 12;
+}
+
+/** MusicXML-compatible lead-sheet token: major bare, minor m, diminished dim, augmented aug. */
+function triadChordSymbol(triad: SyProtoTriadInput): string {
+  const root = PC_NAMES[normalizeRootPc(triad.rootPc)] ?? '?';
+  switch (triad.quality) {
+    case 'major':
+      return root;
+    case 'minor':
+      return `${root}m`;
+    case 'diminished':
+      return `${root}dim`;
+    case 'augmented':
+      return `${root}aug`;
+  }
 }
 
 function triadLabel(triad: SyProtoTriadInput): string {
@@ -161,10 +183,11 @@ function solveTriadGripOnOpens(
 function electricGuitarTriadPart(
   id: 'guitar' | 'guitar_2',
   name: string,
-  pitches: number[]
+  pitches: number[],
+  triad: SyProtoTriadInput
 ): PartModel {
   const m = createMeasure(1, undefined);
-  addEvent(m, chordAt(pitches, 0, 4, 1));
+  addEvent(m, chordAt(pitches, 0, 4, 1, triadChordSymbol(triad)));
   return {
     id,
     name,
@@ -199,12 +222,14 @@ export function buildSonicYouthOneBarPolychordScore(
   const guitar1 = electricGuitarTriadPart(
     'guitar',
     guitarPartNameFromOpens('Guitar 1', g1Open),
-    guitar1Pitches
+    guitar1Pitches,
+    guitar1Triad
   );
   const guitar2 = electricGuitarTriadPart(
     'guitar_2',
     guitarPartNameFromOpens('Guitar 2', g2Open),
-    guitar2Pitches
+    guitar2Pitches,
+    guitar2Triad
   );
   const score = createScore('Sonic Youth one-bar polychord prototype', [guitar1, guitar2], {
     tempo: 96,
