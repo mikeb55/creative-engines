@@ -7,6 +7,7 @@ import { solveGuitarGrip } from '../guitar/voicingFeasibility';
 import type { ChordEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { addEvent, createMeasure, createScore } from '../score-model/scoreEventBuilder';
 import type { SYSixStringMidi } from '../sy-tuning/syTuningTypes';
+import { QUALITY_INTERVALS, type TriadQuality } from '../wwh/wwhTriadPair';
 
 /** Lee AAEEAA opens — 6→1. A2 A2 E3 E3 A3 A3. */
 export const SY_PROTO_LEE_AAEEAA_OPEN: SYSixStringMidi = [45, 45, 52, 52, 57, 57];
@@ -14,7 +15,7 @@ export const SY_PROTO_LEE_AAEEAA_OPEN: SYSixStringMidi = [45, 45, 52, 52, 57, 57
 /** Thurston ACCGG♯C opens — 6→1. A2 C3 C3 G3 G♯3 C4. */
 export const SY_PROTO_ACCGGSHARP_C_OPEN: SYSixStringMidi = [45, 48, 48, 55, 56, 60];
 
-export type SyProtoTriadQuality = 'major' | 'minor';
+export type SyProtoTriadQuality = TriadQuality;
 export type SyProtoTriadInput = {
   rootPc: number;
   quality: SyProtoTriadQuality;
@@ -64,13 +65,14 @@ function normalizeRootPc(rootPc: number): number {
 
 function triadLabel(triad: SyProtoTriadInput): string {
   const root = PC_NAMES[normalizeRootPc(triad.rootPc)] ?? '?';
-  return triad.quality === 'minor' ? `${root} minor` : `${root} major`;
+  return `${root} ${triad.quality}`;
 }
 
 function triadPitchClasses(triad: SyProtoTriadInput): [number, number, number] {
   const root = normalizeRootPc(triad.rootPc);
-  const third = normalizeRootPc(root + (triad.quality === 'minor' ? 3 : 4));
-  const fifth = normalizeRootPc(root + 7);
+  const intervals = QUALITY_INTERVALS[triad.quality];
+  const third = normalizeRootPc(root + intervals.third);
+  const fifth = normalizeRootPc(root + intervals.fifth);
   return [root, third, fifth];
 }
 
