@@ -334,6 +334,12 @@ export interface ScoreModel {
    * Keys are part ids (`guitar`, `guitar_2`).
    */
   exportMeasure1TuningWordsByPartId?: Record<string, string>;
+  /**
+   * Measure-1 `<staff-details>` only: per-part open-string MIDI pitches (physical order 6→1).
+   * Exporter emits six `<staff-tuning>` entries with MusicXML lines 1→6 reversing that order.
+   * Keys are part ids (`guitar`, `guitar_2`). Absent leaves export unchanged.
+   */
+  exportStaffTuningByPartId?: Record<string, readonly number[]>;
   /** V65 P2: per-bar section tuning ids for score/export diagnostics. */
   sectionArchitectureTuningByBarByPartId?: Record<number, Record<string, string>>;
   /** V65 P2: per-bar section profile echo for ensemble score diagnostics. */

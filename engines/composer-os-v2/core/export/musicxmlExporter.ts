@@ -260,6 +260,31 @@ function formatPlayerFacingFeelLabel(tempoFeel: 'slow' | 'medium' | 'fast'): str
   return `${label} feel; straight 8ths`;
 }
 
+/**
+ * Measure-1 `<staff-details>` from six open-string MIDI pitches (physical 6→1).
+ * MusicXML `line` 1→6 reverses that order (high→low).
+ */
+function staffDetailsTuningXml(openMidi6to1: readonly number[], preferFlats: boolean): string {
+  if (!Array.isArray(openMidi6to1) || openMidi6to1.length !== 6) return '';
+  const tunings: string[] = [];
+  for (let line = 1; line <= 6; line++) {
+    const midi = openMidi6to1[6 - line]!;
+    const { step, alter, octave } = midiToPitch(midi, preferFlats);
+    const alterEl = alter !== 0 ? `\n        <tuning-alter>${alter}</tuning-alter>` : '';
+    tunings.push(
+      `      <staff-tuning line="${line}">
+        <tuning-step>${step}</tuning-step>${alterEl}
+        <tuning-octave>${octave}</tuning-octave>
+      </staff-tuning>`
+    );
+  }
+  return `      <staff-details>
+        <staff-lines>6</staff-lines>
+${tunings.join('\n')}
+      </staff-details>
+`;
+}
+
 /** Song form sections on score (attached in runGoldenPath when `formId` is set); not on `ScoreModel` type. */
 type FormSectionExport = { startBar: number; label: string };
 
@@ -1743,6 +1768,11 @@ ${partList}
             : transposeSemi !== undefined
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
+          const staffTuningOpens = score.exportStaffTuningByPartId?.[part.id];
+          const staffDetailsXml =
+            staffTuningOpens !== undefined
+              ? staffDetailsTuningXml(staffTuningOpens, fifths < 0)
+              : '';
           const stavesAndClefXml = part.pianoGrandStaff || part.harpGrandStaff
             ? `      <staves>2</staves>
       <clef number="1"><sign>G</sign><line>2</line></clef>
@@ -1760,7 +1790,7 @@ ${partList}
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>
       ${formatTimeXml(meter0.numerator, meter0.denominator, groups0)}
-${stavesAndClefXml}${transposeXml}    </attributes>
+${stavesAndClefXml}${staffDetailsXml}${transposeXml}    </attributes>
 `;
           if (part.instrumentIdentity === 'fela_afrobeat_drums') {
             xml += `    <direction placement="below"><direction-type><words>${escapeXml(
