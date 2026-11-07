@@ -4,6 +4,13 @@
  */
 
 import { solveGuitarGrip } from '../guitar/voicingFeasibility';
+import { classifyPitchClassSet } from '../hexatonic/setClass';
+import {
+  commonToneCount,
+  disjointTertianSplits,
+  type TertianTriad,
+} from '../hexatonic/tertianTriadUniverse';
+import { canonicalPitchSet } from '../pentatonic/pitch';
 import type { ChordEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
 import { addEvent, createMeasure, createScore } from '../score-model/scoreEventBuilder';
 import type { SYSixStringMidi } from '../sy-tuning/syTuningTypes';
@@ -32,6 +39,32 @@ export type SonicYouthOneBarPolychordResult = {
 export type SyProtoPolychordPair = {
   guitar1: SyProtoTriadInput;
   guitar2: SyProtoTriadInput;
+};
+
+/** Declared parent triad as given on the pair (root + quality + derived PCs). */
+export type SyProtoPolychordParentIdentity = {
+  rootPc: number;
+  quality: SyProtoTriadQuality;
+  pitchClasses: readonly [number, number, number];
+};
+
+/**
+ * Pure combined-polychord facts from declared parents only.
+ * Forte only when |union| === 6. Splits are alternate tertian readings; order not significant.
+ */
+export type SyProtoCombinedPolychordAnalysis = {
+  guitar1: SyProtoPolychordParentIdentity;
+  guitar2: SyProtoPolychordParentIdentity;
+  /** Canonical PC union of both declared parents. */
+  unionPitchClasses: readonly number[];
+  /** PCs present in both parents. */
+  sharedPitchClasses: readonly number[];
+  commonToneCount: number;
+  pitchClassCount: number;
+  /** Set-class label only when pitchClassCount === 6. */
+  forte: string | null;
+  /** All disjoint tertian splits of the union; empty when |union| ≠ 6 or none exist. */
+  alternativeDisjointSplits: readonly { left: TertianTriad; right: TertianTriad }[];
 };
 
 /** Optional per-guitar opens (MIDI 6→1). Omitted → AAEEAA / ACCGG#C. */
@@ -111,6 +144,37 @@ function triadPitchClasses(triad: SyProtoTriadInput): [number, number, number] {
   const third = normalizeRootPc(root + intervals.third);
   const fifth = normalizeRootPc(root + intervals.fifth);
   return [root, third, fifth];
+}
+
+/**
+ * Pure analysis of a declared SY polychord pair.
+ * Reuses commonToneCount, classifyPitchClassSet, disjointTertianSplits; no invented chord names.
+ */
+export function analyzeSyProtoCombinedPolychord(pair: SyProtoPolychordPair): SyProtoCombinedPolychordAnalysis {
+  const guitar1Pcs = triadPitchClasses(pair.guitar1);
+  const guitar2Pcs = triadPitchClasses(pair.guitar2);
+  const unionPitchClasses = canonicalPitchSet([...guitar1Pcs, ...guitar2Pcs]);
+  const guitar2Set = new Set(guitar2Pcs);
+  const sharedPitchClasses = canonicalPitchSet(guitar1Pcs.filter((pc) => guitar2Set.has(pc)));
+  const pitchClassCount = unionPitchClasses.length;
+  return {
+    guitar1: {
+      rootPc: normalizeRootPc(pair.guitar1.rootPc),
+      quality: pair.guitar1.quality,
+      pitchClasses: guitar1Pcs,
+    },
+    guitar2: {
+      rootPc: normalizeRootPc(pair.guitar2.rootPc),
+      quality: pair.guitar2.quality,
+      pitchClasses: guitar2Pcs,
+    },
+    unionPitchClasses,
+    sharedPitchClasses,
+    commonToneCount: commonToneCount(guitar1Pcs, guitar2Pcs),
+    pitchClassCount,
+    forte: pitchClassCount === 6 ? classifyPitchClassSet(unionPitchClasses).forte : null,
+    alternativeDisjointSplits: disjointTertianSplits(unionPitchClasses),
+  };
 }
 
 function midisForPcInRange(pc: number, lo: number, hi: number): number[] {
