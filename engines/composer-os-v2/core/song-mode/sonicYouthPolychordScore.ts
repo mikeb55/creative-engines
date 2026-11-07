@@ -209,10 +209,6 @@ export function buildSonicYouthOneBarPolychordScore(
   const score = createScore('Sonic Youth one-bar polychord prototype', [guitar1, guitar2], {
     tempo: 96,
   });
-  score.exportStaffTuningByPartId = {
-    guitar: g1Open,
-    guitar_2: g2Open,
-  };
 
   return {
     score,
@@ -292,10 +288,6 @@ export function buildSonicYouthPolychordProgressionScore(
   const score = createScore('Sonic Youth polychord progression prototype', [guitar1, guitar2], {
     tempo: 96,
   });
-  score.exportStaffTuningByPartId = {
-    guitar: g1Open,
-    guitar_2: g2Open,
-  };
 
   return {
     score,

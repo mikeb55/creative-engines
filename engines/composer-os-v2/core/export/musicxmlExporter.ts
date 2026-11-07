@@ -261,8 +261,10 @@ function formatPlayerFacingFeelLabel(tempoFeel: 'slow' | 'medium' | 'fast'): str
 }
 
 /**
- * Measure-1 `<staff-details>` from six open-string MIDI pitches (physical 6→1).
+ * Measure-1 TAB-only `<staff-details>` from six open-string MIDI pitches (physical 6→1).
  * MusicXML `line` 1→6 reverses that order (high→low).
+ * Must not be emitted on five-line notation (G/F) staves — Sibelius treats
+ * staff-lines=6 + staff-tuning as TAB geometry and misplaces pitched notes.
  */
 function staffDetailsTuningXml(openMidi6to1: readonly number[], preferFlats: boolean): string {
   if (!Array.isArray(openMidi6to1) || openMidi6to1.length !== 6) return '';
@@ -1769,10 +1771,6 @@ ${partList}
               ? `      <transpose><chromatic>${transposeSemi}</chromatic></transpose>\n`
               : '';
           const staffTuningOpens = score.exportStaffTuningByPartId?.[part.id];
-          const staffDetailsXml =
-            staffTuningOpens !== undefined
-              ? staffDetailsTuningXml(staffTuningOpens, fifths < 0)
-              : '';
           const stavesAndClefXml = part.pianoGrandStaff || part.harpGrandStaff
             ? `      <staves>2</staves>
       <clef number="1"><sign>G</sign><line>2</line></clef>
@@ -1786,6 +1784,11 @@ ${partList}
             : `      <staves>1</staves>
       ${clefXml}
 `;
+          // staff-tuning is TAB-only; never attach to five-line notation staves (breaks Sibelius).
+          const staffDetailsXml =
+            staffTuningOpens !== undefined && guitarInstrumentGroupTabExport
+              ? staffDetailsTuningXml(staffTuningOpens, fifths < 0)
+              : '';
           xml += `    <attributes>
       <divisions>${DIVISIONS}</divisions>
       <key${printAttr}><fifths>${fifths}</fifths><mode>${keyMode}</mode></key>

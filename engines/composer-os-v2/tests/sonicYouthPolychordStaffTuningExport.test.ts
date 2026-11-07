@@ -1,5 +1,6 @@
 /**
- * Focused — MusicXML <staff-tuning> export for SY polychord scores.
+ * Focused — SY polychord MusicXML is ordinary five-line treble notation.
+ * No six-line TAB staff-details / staff-tuning (breaks Sibelius on pitched staves).
  */
 
 import { exportScoreModelToMusicXml } from '../core/export/musicxmlExporter';
@@ -7,8 +8,6 @@ import { midiToPitch } from '../core/export/musicXmlNoteFragment';
 import {
   buildSonicYouthOneBarPolychordScore,
   buildSonicYouthPolychordProgressionScore,
-  SY_PROTO_ACCGGSHARP_C_OPEN,
-  SY_PROTO_LEE_AAEEAA_OPEN,
 } from '../core/song-mode/sonicYouthPolychordScore';
 import type { ScoreModel } from '../core/score-model/scoreModelTypes';
 import { buildIndieDualGuitarTuningFixtureScore } from '../core/song-mode/indieDualGuitarTuningFixture';
@@ -33,55 +32,6 @@ function measure1Attributes(partBody: string): string {
   return attrs?.[1] ?? '';
 }
 
-function parseStaffTunings(
-  attrs: string
-): Array<{ line: number; step: string; alter: number; octave: number }> {
-  const out: Array<{ line: number; step: string; alter: number; octave: number }> = [];
-  const re =
-    /<staff-tuning line="(\d+)">\s*<tuning-step>([A-G])<\/tuning-step>(?:\s*<tuning-alter>(-?\d+)<\/tuning-alter>)?\s*<tuning-octave>(-?\d+)<\/tuning-octave>\s*<\/staff-tuning>/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(attrs)) !== null) {
-    out.push({
-      line: Number(m[1]),
-      step: m[2]!,
-      alter: m[3] !== undefined ? Number(m[3]) : 0,
-      octave: Number(m[4]),
-    });
-  }
-  return out;
-}
-
-function expectedTunings(opens6to1: readonly number[]): Array<{
-  line: number;
-  step: string;
-  alter: number;
-  octave: number;
-}> {
-  const out = [];
-  for (let line = 1; line <= 6; line++) {
-    const midi = opens6to1[6 - line]!;
-    const { step, alter, octave } = midiToPitch(midi, false);
-    out.push({ line, step, alter, octave });
-  }
-  return out;
-}
-
-function sameTuning(
-  a: Array<{ line: number; step: string; alter: number; octave: number }>,
-  b: Array<{ line: number; step: string; alter: number; octave: number }>
-): boolean {
-  return (
-    a.length === b.length &&
-    a.every(
-      (t, i) =>
-        t.line === b[i]!.line &&
-        t.step === b[i]!.step &&
-        t.alter === b[i]!.alter &&
-        t.octave === b[i]!.octave
-    )
-  );
-}
-
 function extractPitchedNotes(partBody: string): string[] {
   const notes: string[] = [];
   const re =
@@ -101,37 +51,24 @@ function hasTranspose(attrs: string): boolean {
   return attrs.includes('<transpose>');
 }
 
-function assertPartStaffTuning(
-  xml: string,
-  partId: string,
-  opens6to1: readonly number[]
-): { ok: boolean; detail: string } {
+/** Ordinary five-line treble: G clef, no TAB / six-line staff-tuning metadata. */
+function assertFiveLineTrebleNoTab(xml: string, partId: string): { ok: boolean; detail: string } {
   const body = partXml(xml, partId);
   const attrs = measure1Attributes(body);
-  if (!attrs.includes('<staff-details>') || !attrs.includes('<staff-lines>6</staff-lines>')) {
-    return { ok: false, detail: `${partId}: missing staff-details/staff-lines` };
+  if (clefSign(attrs) !== 'G') {
+    return { ok: false, detail: `${partId}: expected G clef, got ${clefSign(attrs)}` };
   }
-  const got = parseStaffTunings(attrs);
-  if (got.length !== 6) {
-    return { ok: false, detail: `${partId}: expected 6 staff-tuning, got ${got.length}` };
+  if (attrs.includes('<sign>TAB</sign>')) {
+    return { ok: false, detail: `${partId}: unexpected TAB clef` };
   }
-  if (got[0]!.line !== 1 || got[5]!.line !== 6) {
-    return { ok: false, detail: `${partId}: lines not 1..6` };
+  if (attrs.includes('<staff-lines>6</staff-lines>')) {
+    return { ok: false, detail: `${partId}: unexpected six-line staff` };
   }
-  const exp = expectedTunings(opens6to1);
-  // line 1 = high string = opens[5]; line 6 = low = opens[0]
-  const highMidi = opens6to1[5]!;
-  const lowMidi = opens6to1[0]!;
-  const high = midiToPitch(highMidi, false);
-  const low = midiToPitch(lowMidi, false);
-  if (got[0]!.step !== high.step || got[0]!.octave !== high.octave || got[0]!.alter !== high.alter) {
-    return { ok: false, detail: `${partId}: line 1 not high string` };
+  if (attrs.includes('<staff-tuning') || attrs.includes('<staff-details>')) {
+    return { ok: false, detail: `${partId}: unexpected TAB staff-details/staff-tuning` };
   }
-  if (got[5]!.step !== low.step || got[5]!.octave !== low.octave || got[5]!.alter !== low.alter) {
-    return { ok: false, detail: `${partId}: line 6 not low string` };
-  }
-  if (!sameTuning(got, exp)) {
-    return { ok: false, detail: `${partId}: step/alter/octave mismatch` };
+  if (hasTranspose(attrs)) {
+    return { ok: false, detail: `${partId}: unexpected transpose` };
   }
   return { ok: true, detail: 'ok' };
 }
@@ -145,7 +82,7 @@ function exportXml(score: ScoreModel): string {
 export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; ok: boolean }[] {
   const out: { name: string; ok: boolean }[] = [];
 
-  // 1–4. Default tunings — one-bar + progression, both guitars
+  // 1. Default tunings — one-bar + progression: five-line treble, no TAB metadata
   {
     const one = buildSonicYouthOneBarPolychordScore(REF_PAIR.guitar1, REF_PAIR.guitar2);
     const prog = buildSonicYouthPolychordProgressionScore([REF_PAIR, REF_PAIR]);
@@ -158,34 +95,29 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
         [oneXml, 'one-bar-default'],
         [progXml, 'prog-default'],
       ] as const) {
-        for (const [id, opens] of [
-          ['guitar', SY_PROTO_LEE_AAEEAA_OPEN],
-          ['guitar_2', SY_PROTO_ACCGGSHARP_C_OPEN],
-        ] as const) {
-          const r = assertPartStaffTuning(xml, id, opens);
+        for (const id of ['guitar', 'guitar_2'] as const) {
+          const r = assertFiveLineTrebleNoTab(xml, id);
           if (!r.ok) {
             ok = false;
             detail = `${label}: ${r.detail}`;
           }
         }
+        if (xml.includes('<staff-lines>6</staff-lines>') || xml.includes('<staff-tuning')) {
+          ok = false;
+          detail = `${label}: document still has TAB staff-tuning metadata`;
+        }
       }
-      // G# alter present on guitar 2 default (MIDI 56)
-      ok =
-        ok &&
-        /<staff-tuning line="2">[\s\S]*?<tuning-step>G<\/tuning-step>\s*<tuning-alter>1<\/tuning-alter>\s*<tuning-octave>3<\/tuning-octave>/.test(
-          partXml(oneXml, 'guitar_2')
-        );
     } catch (e) {
       ok = false;
       detail = e instanceof Error ? e.message : String(e);
     }
     out.push({
-      name: `default tunings: six staff-tuning/guitar, line1=high line6=low, pitch match${detail ? ` (${detail})` : ''}`,
+      name: `default polychord export: five-line treble, no six-line TAB metadata${detail ? ` (${detail})` : ''}`,
       ok,
     });
   }
 
-  // 1–4. Custom tunings
+  // 2. Custom tunings — same notation contract (tuning affects grips, not TAB staff)
   {
     let ok = true;
     let detail = '';
@@ -201,11 +133,8 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
       const oneXml = exportXml(one.score);
       const progXml = exportXml(prog.score);
       for (const xml of [oneXml, progXml]) {
-        for (const [id, opens] of [
-          ['guitar', CUSTOM_G1],
-          ['guitar_2', CUSTOM_G2],
-        ] as const) {
-          const r = assertPartStaffTuning(xml, id, opens);
+        for (const id of ['guitar', 'guitar_2'] as const) {
+          const r = assertFiveLineTrebleNoTab(xml, id);
           if (!r.ok) {
             ok = false;
             detail = r.detail;
@@ -217,23 +146,25 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
       detail = e instanceof Error ? e.message : String(e);
     }
     out.push({
-      name: `custom tunings match supplied MIDI in one-bar + progression${detail ? ` (${detail})` : ''}`,
+      name: `custom-tuning polychord export: five-line treble, no TAB metadata${detail ? ` (${detail})` : ''}`,
       ok,
     });
   }
 
-  // 5. Notes, clef, transpose unchanged (staff-tuning additive)
+  // 3. Notes + G clef preserved; no staff-tuning / transpose
   {
     let ok = true;
     let detail = '';
     try {
       const withMeta = buildSonicYouthOneBarPolychordScore(REF_PAIR.guitar1, REF_PAIR.guitar2);
       const notesBefore = {
-        g1: withMeta.score.parts.find((p) => p.id === 'guitar')!.measures[0]!.events
-          .filter((e) => e.kind === 'chord')
+        g1: withMeta.score.parts
+          .find((p) => p.id === 'guitar')!
+          .measures[0]!.events.filter((e) => e.kind === 'chord')
           .flatMap((e) => ('pitches' in e ? [...e.pitches] : [])),
-        g2: withMeta.score.parts.find((p) => p.id === 'guitar_2')!.measures[0]!.events
-          .filter((e) => e.kind === 'chord')
+        g2: withMeta.score.parts
+          .find((p) => p.id === 'guitar_2')!
+          .measures[0]!.events.filter((e) => e.kind === 'chord')
           .flatMap((e) => ('pitches' in e ? [...e.pitches] : [])),
       };
       const xml = exportXml(withMeta.score);
@@ -247,10 +178,13 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
         clefSign(g2Attrs) === 'G' &&
         !hasTranspose(g1Attrs) &&
         !hasTranspose(g2Attrs) &&
+        !g1Attrs.includes('<staff-tuning') &&
+        !g2Attrs.includes('<staff-tuning') &&
+        !g1Attrs.includes('<staff-details>') &&
+        !g2Attrs.includes('<staff-details>') &&
         g1Notes.length === notesBefore.g1.length &&
         g2Notes.length === notesBefore.g2.length;
 
-      // Exported pitches match model MIDI
       const modelToTokens = (midis: number[]) =>
         midis.map((m) => {
           const p = midiToPitch(m, false);
@@ -263,20 +197,19 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
         [...g1Notes].sort().join('|') === g1Exp &&
         [...g2Notes].sort().join('|') === g2Exp;
 
-      // staff-tuning present alongside clef
-      ok = ok && g1Attrs.includes('<staff-tuning') && g1Attrs.includes('<clef>');
-      if (!ok) detail = 'clef/transpose/notes regression';
+      ok = ok && g1Attrs.includes('<clef>') && g2Attrs.includes('<clef>');
+      if (!ok) detail = 'clef/notes/TAB-metadata regression';
     } catch (e) {
       ok = false;
       detail = e instanceof Error ? e.message : String(e);
     }
     out.push({
-      name: `notes, clef, transpose preserved with staff-tuning${detail ? ` (${detail})` : ''}`,
+      name: `notes + G clef preserved; no staff-tuning on notation staff${detail ? ` (${detail})` : ''}`,
       ok,
     });
   }
 
-  // 6. Exports without tuning metadata remain unchanged (no staff-tuning)
+  // 4. Exports without tuning metadata remain unchanged (no staff-tuning)
   {
     let ok = true;
     let detail = '';
@@ -284,7 +217,6 @@ export function runSonicYouthPolychordStaffTuningExportTests(): { name: string; 
       const fixture = buildIndieDualGuitarTuningFixtureScore();
       const xml = exportXml(fixture);
       ok = !xml.includes('<staff-tuning>') && !xml.includes('<staff-details>');
-      // Still has clefs / notes
       ok =
         ok &&
         partXml(xml, 'guitar').includes('<clef>') &&
