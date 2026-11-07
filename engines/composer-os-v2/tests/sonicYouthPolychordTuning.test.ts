@@ -19,8 +19,31 @@ const REF_PAIR = {
 const TUNING_ERR =
   /tuning must contain six integer MIDI pitches in 0–127 \(string order 6→1\)$/;
 
+const PC_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
+
+function midiToNoteOctave(midi: number): string {
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return `${PC_NAMES[pc]!}${octave}`;
+}
+
+function expectedPartName(guitar: 'Guitar 1' | 'Guitar 2', opens: readonly number[]): string {
+  return `${guitar} (${opens.map(midiToNoteOctave).join(' ')})`;
+}
+
+function partNameFromScore(
+  score: { parts: readonly { id: string; name: string }[] },
+  id: 'guitar' | 'guitar_2'
+): string | undefined {
+  return score.parts.find((p) => p.id === id)?.name;
+}
+
 function sameSix(a: readonly number[], b: readonly number[]): boolean {
   return a.length === 6 && b.length === 6 && a.every((n, i) => n === b[i]);
+}
+
+function sameArr(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((n, i) => n === b[i]);
 }
 
 function catchMsg(fn: () => void): string | null {
@@ -185,6 +208,94 @@ export function runSonicYouthPolychordTuningTests(): { name: string; ok: boolean
         oneMsg === 'Guitar 1 grip unavailable for C major' &&
         progMsg === 'bar 1: Guitar 1 grip unavailable for C major' &&
         apiMsg === 'bar 1: Guitar 1 grip unavailable for C major',
+    });
+  }
+
+  // 5. Default part labels = all six opens (6→1 note+octave); MusicXML <part-name>
+  {
+    const g1Label = expectedPartName('Guitar 1', SY_PROTO_LEE_AAEEAA_OPEN);
+    const g2Label = expectedPartName('Guitar 2', SY_PROTO_ACCGGSHARP_C_OPEN);
+    const one = buildSonicYouthOneBarPolychordScore(REF_PAIR.guitar1, REF_PAIR.guitar2);
+    const prog = buildSonicYouthPolychordProgressionScore([REF_PAIR]);
+    const xml = generateSonicYouthPolychordMusicXml([REF_PAIR]);
+    out.push({
+      name: 'default labels match six opens 6→1; both <part-name> in MusicXML',
+      ok:
+        g1Label === 'Guitar 1 (A2 A2 E3 E3 A3 A3)' &&
+        g2Label === 'Guitar 2 (A2 C3 C3 G3 G#3 C4)' &&
+        partNameFromScore(one.score, 'guitar') === g1Label &&
+        partNameFromScore(one.score, 'guitar_2') === g2Label &&
+        partNameFromScore(prog.score, 'guitar') === g1Label &&
+        partNameFromScore(prog.score, 'guitar_2') === g2Label &&
+        xml.includes(`<part-name>${g1Label}</part-name>`) &&
+        xml.includes(`<part-name>${g2Label}</part-name>`),
+    });
+  }
+
+  // 6. Custom tunings → correct labels; order 6→1; pitches/grip unchanged vs same opens
+  {
+    const customG1 = [38, 45, 53, 59, 55, 54] as const; // D2 A2 F3 B3 G3 F#3
+    const customG2 = [47, 57, 48, 50, 54, 71] as const; // B2 A3 C3 D3 F#3 B4
+    const g1Label = expectedPartName('Guitar 1', customG1);
+    const g2Label = expectedPartName('Guitar 2', customG2);
+    let ok = true;
+    try {
+      const baseline = buildSonicYouthOneBarPolychordScore(REF_PAIR.guitar1, REF_PAIR.guitar2);
+      const oneExplicitDefault = buildSonicYouthOneBarPolychordScore(
+        REF_PAIR.guitar1,
+        REF_PAIR.guitar2,
+        {
+          guitar1Tuning: SY_PROTO_LEE_AAEEAA_OPEN,
+          guitar2Tuning: SY_PROTO_ACCGGSHARP_C_OPEN,
+        }
+      );
+      ok =
+        ok &&
+        sameArr(baseline.guitar1Pitches, oneExplicitDefault.guitar1Pitches) &&
+        sameArr(baseline.guitar2Pitches, oneExplicitDefault.guitar2Pitches);
+
+      const one = buildSonicYouthOneBarPolychordScore(REF_PAIR.guitar1, REF_PAIR.guitar2, {
+        guitar1Tuning: customG1,
+        guitar2Tuning: customG2,
+      });
+      const prog = buildSonicYouthPolychordProgressionScore([REF_PAIR], {
+        guitar1Tuning: customG1,
+        guitar2Tuning: customG2,
+      });
+      const xml = generateSonicYouthPolychordMusicXml([REF_PAIR], {
+        guitar1Tuning: customG1,
+        guitar2Tuning: customG2,
+      });
+
+      ok =
+        ok &&
+        g1Label === 'Guitar 1 (D2 A2 F3 B3 G3 F#3)' &&
+        g2Label === 'Guitar 2 (B2 A3 C3 D3 F#3 B4)' &&
+        partNameFromScore(one.score, 'guitar') === g1Label &&
+        partNameFromScore(one.score, 'guitar_2') === g2Label &&
+        partNameFromScore(prog.score, 'guitar') === g1Label &&
+        partNameFromScore(prog.score, 'guitar_2') === g2Label &&
+        sameSix(one.guitar1OpenPitches, customG1) &&
+        sameSix(one.guitar2OpenPitches, customG2) &&
+        xml.includes(`<part-name>${g1Label}</part-name>`) &&
+        xml.includes(`<part-name>${g2Label}</part-name>`);
+
+      const g1 = solveGuitarGrip(one.guitar1Pitches, { openStrings: customG1 });
+      const g2 = solveGuitarGrip(one.guitar2Pitches, { openStrings: customG2 });
+      ok =
+        ok &&
+        g1.feasible &&
+        g1.frets.length === 3 &&
+        g2.feasible &&
+        g2.frets.length === 3 &&
+        sameArr(one.guitar1Pitches, prog.bars[0]!.guitar1Pitches) &&
+        sameArr(one.guitar2Pitches, prog.bars[0]!.guitar2Pitches);
+    } catch {
+      ok = false;
+    }
+    out.push({
+      name: 'custom labels note+octave 6→1; MusicXML; grip/pitches stable',
+      ok,
     });
   }
 

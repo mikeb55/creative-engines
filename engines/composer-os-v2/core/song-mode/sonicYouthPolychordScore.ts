@@ -49,6 +49,21 @@ export type SonicYouthPolychordProgressionResult = {
 
 const PC_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 
+/** MIDI → note+octave (e.g. 45 → A2). */
+function midiToNoteOctave(midi: number): string {
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return `${PC_NAMES[pc]!}${octave}`;
+}
+
+/** Part label from opens 6→1, e.g. "Guitar 1 (A2 A2 E3 E3 A3 A3)". */
+function guitarPartNameFromOpens(
+  guitarLabel: 'Guitar 1' | 'Guitar 2',
+  opens: readonly number[]
+): string {
+  return `${guitarLabel} (${opens.map(midiToNoteOctave).join(' ')})`;
+}
+
 function chordAt(pitches: number[], startBeat: number, duration: number, voice = 1): ChordEvent {
   return {
     kind: 'chord',
@@ -181,8 +196,16 @@ export function buildSonicYouthOneBarPolychordScore(
     throw new Error(`Guitar 2 grip unavailable for ${triadLabel(guitar2Triad)}`);
   }
 
-  const guitar1 = electricGuitarTriadPart('guitar', 'Guitar 1 (AAEEAA)', guitar1Pitches);
-  const guitar2 = electricGuitarTriadPart('guitar_2', 'Guitar 2 (ACCGG#C)', guitar2Pitches);
+  const guitar1 = electricGuitarTriadPart(
+    'guitar',
+    guitarPartNameFromOpens('Guitar 1', g1Open),
+    guitar1Pitches
+  );
+  const guitar2 = electricGuitarTriadPart(
+    'guitar_2',
+    guitarPartNameFromOpens('Guitar 2', g2Open),
+    guitar2Pitches
+  );
   const score = createScore('Sonic Youth one-bar polychord prototype', [guitar1, guitar2], {
     tempo: 96,
   });
@@ -247,7 +270,7 @@ export function buildSonicYouthPolychordProgressionScore(
 
   const guitar1: PartModel = {
     id: 'guitar',
-    name: 'Guitar 1 (AAEEAA)',
+    name: guitarPartNameFromOpens('Guitar 1', g1Open),
     instrumentIdentity: 'clean_electric_guitar',
     midiProgram: 27,
     clef: 'treble',
@@ -255,7 +278,7 @@ export function buildSonicYouthPolychordProgressionScore(
   };
   const guitar2: PartModel = {
     id: 'guitar_2',
-    name: 'Guitar 2 (ACCGG#C)',
+    name: guitarPartNameFromOpens('Guitar 2', g2Open),
     instrumentIdentity: 'clean_electric_guitar',
     midiProgram: 27,
     clef: 'treble',
