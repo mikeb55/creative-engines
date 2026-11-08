@@ -13,7 +13,8 @@ import {
 import type { Transposition } from '../instruments/instrumentTypes';
 import { soundingToWritten } from '../instruments/writtenPitch';
 import { canonicalPitchSet } from '../pentatonic/pitch';
-import { applyOperator, type Motif } from '../motif-ops';
+import { applyOperator, type Motif, type OperatorId, type OperatorParams } from '../motif-ops';
+import { mulberry32 } from '../remix/vaultSeedMix';
 import type {
   ChordEvent,
   NoteEvent,
@@ -90,6 +91,15 @@ export type SyProtoCombinedPolychordAnalysis = {
 export type SonicYouthPolychordTuningOptions = {
   guitar1Tuning?: readonly number[];
   guitar2Tuning?: readonly number[];
+};
+
+/**
+ * Proto 1 dialogue options. Tuning fields match polychord builders.
+ * `seed` omitted → verified fixed motif + invert-in-field answer.
+ */
+export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
+  /** Deterministic G1 motif + G2 answer variation via motif-ops. */
+  seed?: number;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -545,6 +555,33 @@ const PROTO1_MELODY_VOICE = 1;
 /** Lower sustained triad under active melody — even voice → exporter stem down. */
 const PROTO1_CHORD_VOICE = 2;
 
+/** Sounding melody band for Proto 1 (fretted, above open-string floor). */
+const PROTO1_MELODY_MIDI_MIN = 60;
+const PROTO1_MELODY_MIDI_MAX = 84;
+
+type Proto1PitchOp = { op: OperatorId; params?: OperatorParams };
+
+/** Field-safe ops that keep a 4-note cell (no fragment / rhythm / liquidate). */
+const PROTO1_SEEDED_MOTIF_OPS: readonly Proto1PitchOp[] = [
+  { op: 'transpose-in-field', params: { degrees: 1 } },
+  { op: 'transpose-in-field', params: { degrees: 2 } },
+  { op: 'transpose-in-field', params: { degrees: 3 } },
+  { op: 'transpose-in-field', params: { degrees: -1 } },
+  { op: 'transpose-in-field', params: { degrees: -2 } },
+  { op: 'retrograde' },
+  { op: 'invert-in-field' },
+];
+
+/** Answer transforms applied to the (possibly varied) G1 motif. */
+const PROTO1_SEEDED_ANSWER_OPS: readonly Proto1PitchOp[] = [
+  { op: 'invert-in-field' },
+  { op: 'retrograde' },
+  { op: 'transpose-in-field', params: { degrees: 1 } },
+  { op: 'transpose-in-field', params: { degrees: -1 } },
+  { op: 'transpose-in-field', params: { degrees: 2 } },
+  { op: 'transpose-in-field', params: { degrees: -2 } },
+];
+
 function proto1CombinedField(pair: SyProtoPolychordPair): readonly number[] {
   return analyzeSyProtoCombinedPolychord(pair).unionPitchClasses;
 }
@@ -556,16 +593,13 @@ function assertPitchInCombinedField(midi: number, pair: SyProtoPolychordPair, la
   }
 }
 
-/**
- * Invert Prototype 1 motif inside the combined six-note field (motif-ops invert-in-field).
- * Axis = first sounding pitch (G4).
- */
-function proto1AnswerMidiFromMotif(
+function proto1MotifFromMidi(
   motifMidi: readonly number[],
-  field: readonly number[]
-): { answerMidi: number[]; motifId: string } {
-  const motif: Motif = {
-    id: 'sy_proto1_m1',
+  field: readonly number[],
+  id: string
+): Motif {
+  return {
+    id,
     field: [...field],
     events: motifMidi.map((midi, i) => ({
       onset: i,
@@ -573,16 +607,109 @@ function proto1AnswerMidiFromMotif(
       midi,
     })),
   };
-  const { motif: inverted } = applyOperator(motif, 'invert-in-field');
-  const answerMidi: number[] = [];
-  for (const event of inverted.events) {
+}
+
+function proto1ExtractSoundingMidi(motif: Motif, expectedCount: number, label: string): number[] {
+  const midis: number[] = [];
+  for (const event of motif.events) {
     if (event.midi === null) continue;
-    answerMidi.push(event.midi);
+    midis.push(event.midi);
   }
-  if (answerMidi.length !== motifMidi.length) {
-    throw new Error('Prototype 1 answer lost motif pitch count after invert-in-field');
+  if (midis.length !== expectedCount) {
+    throw new Error(`${label}: expected ${expectedCount} pitches, got ${midis.length}`);
   }
+  return midis;
+}
+
+/** Octave-shift whole cell into playable guitar melody band; PCs unchanged. */
+function proto1ClampMelodyRegister(midis: readonly number[]): number[] {
+  let out = [...midis];
+  for (let guard = 0; guard < 4; guard++) {
+    const lo = Math.min(...out);
+    const hi = Math.max(...out);
+    if (lo < PROTO1_MELODY_MIDI_MIN) out = out.map((m) => m + 12);
+    else if (hi > PROTO1_MELODY_MIDI_MAX) out = out.map((m) => m - 12);
+    else break;
+  }
+  return out;
+}
+
+function proto1ApplyPitchOp(
+  motifMidi: readonly number[],
+  field: readonly number[],
+  sourceId: string,
+  pitchOp: Proto1PitchOp,
+  label: string
+): { midi: number[]; motifId: string } {
+  const source = proto1MotifFromMidi(motifMidi, field, sourceId);
+  const { motif, warnings } = applyOperator(source, pitchOp.op, pitchOp.params);
+  if (warnings.some((w) => w.includes('pitch left field'))) {
+    throw new Error(`${label}: ${pitchOp.op} left combined field`);
+  }
+  const midi = proto1ClampMelodyRegister(proto1ExtractSoundingMidi(motif, motifMidi.length, label));
+  return { midi, motifId: motif.id };
+}
+
+/**
+ * Invert Prototype 1 motif inside the combined six-note field (motif-ops invert-in-field).
+ * Axis = first sounding pitch (G4). Verified path — no register clamp.
+ */
+function proto1AnswerMidiFromMotif(
+  motifMidi: readonly number[],
+  field: readonly number[]
+): { answerMidi: number[]; motifId: string } {
+  const motif = proto1MotifFromMidi(motifMidi, field, 'sy_proto1_m1');
+  const { motif: inverted } = applyOperator(motif, 'invert-in-field');
+  const answerMidi = proto1ExtractSoundingMidi(
+    inverted,
+    motifMidi.length,
+    'Prototype 1 answer'
+  );
   return { answerMidi, motifId: inverted.id };
+}
+
+/** Seeded answer: applyOperator on G1 motif, then clamp into playable band. */
+function proto1SeededAnswerMidiFromMotif(
+  motifMidi: readonly number[],
+  field: readonly number[],
+  sourceMotifId: string,
+  answerOp: Proto1PitchOp
+): { answerMidi: number[]; motifId: string } {
+  const { midi: answerMidi, motifId } = proto1ApplyPitchOp(
+    motifMidi,
+    field,
+    sourceMotifId,
+    answerOp,
+    `Prototype 1 seeded answer (${answerOp.op})`
+  );
+  return { answerMidi, motifId };
+}
+
+/**
+ * Seed → G1 motif MIDI via field-safe applyOperator; falls back to base cell on failure.
+ * Index is seed modulo table length (not hashed) so adjacent seeds pick distinct ops —
+ * seeds 1–4 map to four different pitch sequences.
+ */
+function proto1SeededMotifMidi(
+  baseMidi: readonly number[],
+  field: readonly number[],
+  seed: number
+): { motifMidi: number[]; motifId: string } {
+  const n = PROTO1_SEEDED_MOTIF_OPS.length;
+  const idx = ((seed % n) + n) % n;
+  const pick = PROTO1_SEEDED_MOTIF_OPS[idx]!;
+  try {
+    const varied = proto1ApplyPitchOp(baseMidi, field, 'sy_proto1_m1', pick, `Prototype 1 seeded motif (${pick.op})`);
+    return { motifMidi: varied.midi, motifId: varied.motifId };
+  } catch {
+    return { motifMidi: [...baseMidi], motifId: 'sy_proto1_m1' };
+  }
+}
+
+/** Seed → answer operator (still derived from motif via applyOperator). */
+function proto1SeededAnswerOp(seed: number): Proto1PitchOp {
+  const rng = mulberry32((seed ^ 0x595002) >>> 0 || 1);
+  return PROTO1_SEEDED_ANSWER_OPS[Math.floor(rng() * PROTO1_SEEDED_ANSWER_OPS.length)]!;
 }
 
 /**
@@ -590,22 +717,23 @@ function proto1AnswerMidiFromMotif(
  * Bars 3–4: no melody events (idle triad keeps a single chord voice only).
  */
 function proto1Guitar1MelodicBars(
-  motifMidi: readonly number[]
+  motifMidi: readonly number[],
+  motifId: string = 'sy_proto1_m1'
 ): SyProtoProto1MelodicEvent[][] {
   const [n0, n1, n2, n3] = motifMidi;
   return [
     // Bar 1: G4 q · rest ⅛ · F♯4 ⅛ · rest q · C♯5 q — first three motif notes
     [
-      createNote(n0!, 0, 1, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createNote(n0!, 0, 1, PROTO1_MELODY_VOICE, motifId),
       createRest(1, 0.5, PROTO1_MELODY_VOICE),
-      createNote(n1!, 1.5, 0.5, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createNote(n1!, 1.5, 0.5, PROTO1_MELODY_VOICE, motifId),
       createRest(2, 1, PROTO1_MELODY_VOICE),
-      createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, motifId),
     ],
     // Bar 2: rest ½ · C5 ½ — fourth motif note; delayed entry
     [
       createRest(0, 2, PROTO1_MELODY_VOICE),
-      createNote(n3!, 2, 2, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createNote(n3!, 2, 2, PROTO1_MELODY_VOICE, motifId),
     ],
     [],
     [],
@@ -613,8 +741,8 @@ function proto1Guitar1MelodicBars(
 }
 
 /**
- * Bars 1–2: no melody events (G2 idle while G1 states — single chord voice).
- * Bars 3–4: answer with invert-in-field pitches, different rhythm.
+ * Bar 1: idle (G1 alone). Bar 2: enter under G1’s delayed C5 — genuine overlap.
+ * Bars 3–4: continue invert-in-field answer with different rhythm.
  */
 function proto1Guitar2MelodicBars(
   answerMidi: readonly number[],
@@ -623,17 +751,22 @@ function proto1Guitar2MelodicBars(
   const [a0, a1, a2, a3] = answerMidi;
   return [
     [],
-    [],
-    // Bar 3: rest ⅛ · answer0 ⅛ · rest ⅛ · answer1 q · rest ⅛ · answer2 q
+    // Bar 2: rest q · a0 q · a1 ½ — enters beat 1; overlaps G1 C5 (beats 2–4)
+    [
+      createRest(0, 1, PROTO1_MELODY_VOICE),
+      createNote(a0!, 1, 1, PROTO1_MELODY_VOICE, answerMotifId),
+      createNote(a1!, 2, 2, PROTO1_MELODY_VOICE, answerMotifId),
+    ],
+    // Bar 3: rest ⅛ · a2 ⅛ · rest ⅛ · a3 q · rest ⅛ · a2 q
     [
       createRest(0, 0.5, PROTO1_MELODY_VOICE),
-      createNote(a0!, 0.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+      createNote(a2!, 0.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
       createRest(1, 0.5, PROTO1_MELODY_VOICE),
-      createNote(a1!, 1.5, 1, PROTO1_MELODY_VOICE, answerMotifId),
+      createNote(a3!, 1.5, 1, PROTO1_MELODY_VOICE, answerMotifId),
       createRest(2.5, 0.5, PROTO1_MELODY_VOICE),
       createNote(a2!, 3, 1, PROTO1_MELODY_VOICE, answerMotifId),
     ],
-    // Bar 4: rest q · answer3 dotted-half
+    // Bar 4: rest q · a3 dotted-half
     [
       createRest(0, 1, PROTO1_MELODY_VOICE),
       createNote(a3!, 1, 3, PROTO1_MELODY_VOICE, answerMotifId),
@@ -758,9 +891,10 @@ function applyGuitarWrittenOctaveNotation(score: ScoreModel): ScoreModel {
  * Prototype 1 — four-bar call/response melodic dialogue over fixed C + F♯m.
  * Chord grips from existing progression builder. Active bars: melody voice 1, triad voice 2.
  * Idle bars: triad alone as voice 1 (no invented second layer).
+ * Optional `seed` varies G1 motif + G2 answer via motif-ops; omitted = verified Proto 1.
  */
 export function buildSonicYouthProto1MelodicDialogue(
-  options?: SonicYouthPolychordTuningOptions
+  options?: SonicYouthProto1MelodicDialogueOptions
 ): SyProtoProto1MelodicDialogueResult {
   const pair = SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR;
   const combinedField = proto1CombinedField(pair);
@@ -768,17 +902,58 @@ export function buildSonicYouthProto1MelodicDialogue(
     throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
   }
 
-  const motifMidi = [...SY_PROTO1_MOTIF_MIDI];
+  const seed = options?.seed;
+  const tuningOpts: SonicYouthPolychordTuningOptions | undefined =
+    options == null
+      ? undefined
+      : {
+          ...(options.guitar1Tuning != null ? { guitar1Tuning: options.guitar1Tuning } : {}),
+          ...(options.guitar2Tuning != null ? { guitar2Tuning: options.guitar2Tuning } : {}),
+        };
+  const tuningForProgression =
+    tuningOpts && (tuningOpts.guitar1Tuning != null || tuningOpts.guitar2Tuning != null)
+      ? tuningOpts
+      : undefined;
+
+  let motifMidi: number[];
+  let motifId: string;
+  let answerMidi: number[];
+  let answerMotifId: string;
+
+  if (seed === undefined) {
+    motifMidi = [...SY_PROTO1_MOTIF_MIDI];
+    motifId = 'sy_proto1_m1';
+    const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
+    answerMidi = answer.answerMidi;
+    answerMotifId = answer.motifId;
+  } else {
+    const seededMotif = proto1SeededMotifMidi(SY_PROTO1_MOTIF_MIDI, combinedField, seed);
+    motifMidi = seededMotif.motifMidi;
+    motifId = seededMotif.motifId;
+    try {
+      const answer = proto1SeededAnswerMidiFromMotif(
+        motifMidi,
+        combinedField,
+        motifId,
+        proto1SeededAnswerOp(seed)
+      );
+      answerMidi = answer.answerMidi;
+      answerMotifId = answer.motifId;
+    } catch {
+      const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
+      answerMidi = answer.answerMidi;
+      answerMotifId = answer.motifId;
+    }
+  }
+
   for (const midi of motifMidi) {
     assertPitchInCombinedField(midi, pair, 'Prototype 1 motif');
   }
-
-  const { answerMidi, motifId: answerMotifId } = proto1AnswerMidiFromMotif(motifMidi, combinedField);
   for (const midi of answerMidi) {
     assertPitchInCombinedField(midi, pair, 'Prototype 1 answer');
   }
 
-  const guitar1MelodicEventsByBar = proto1Guitar1MelodicBars(motifMidi);
+  const guitar1MelodicEventsByBar = proto1Guitar1MelodicBars(motifMidi, motifId);
   const guitar2MelodicEventsByBar = proto1Guitar2MelodicBars(answerMidi, answerMotifId);
   const toneRoleReceipts = collectToneRoleReceipts(
     pair,
@@ -788,7 +963,7 @@ export function buildSonicYouthProto1MelodicDialogue(
 
   const chordBars = buildSonicYouthPolychordProgressionScore(
     [pair, pair, pair, pair],
-    options
+    tuningForProgression
   );
   const score = overlayMelodyOnChordScore(
     chordBars,
