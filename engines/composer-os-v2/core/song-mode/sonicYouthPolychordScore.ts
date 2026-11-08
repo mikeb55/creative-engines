@@ -8,11 +8,26 @@ import { classifyPitchClassSet } from '../hexatonic/setClass';
 import {
   commonToneCount,
   disjointTertianSplits,
+  listTertianTriads,
+  minVoiceLeading,
   type TertianTriad,
 } from '../hexatonic/tertianTriadUniverse';
+import { scoreTymoczkoHorizontal } from '../counterpoint/voiceLeadingScorer';
+import { getSYDissonancePreset } from '../score-model/sonicYouthChordTypes';
 import type { Transposition } from '../instruments/instrumentTypes';
 import { soundingToWritten } from '../instruments/writtenPitch';
 import { canonicalPitchSet } from '../pentatonic/pitch';
+import {
+  defaultGceWeights,
+  evaluateGce,
+  GCE_CATEGORY_ORDER,
+  type GceCategory,
+  type GceEvaluationResult,
+} from '../evaluation';
+import { extractScoreModelFeatures } from '../evaluation/featureExtractor';
+import { scoreArrangementAndOrchestration, scoreRhythmicIdentity } from '../gce/gceAutoScorers';
+import type { MelodicNote } from '../gce/gce_melody_eval';
+import { scoreModelToMelodicLine } from '../gce/scoreModelToMelodicLine';
 import { applyOperator, type Motif, type OperatorId, type OperatorParams } from '../motif-ops';
 import { mulberry32 } from '../remix/vaultSeedMix';
 import type {
@@ -93,13 +108,27 @@ export type SonicYouthPolychordTuningOptions = {
   guitar2Tuning?: readonly number[];
 };
 
+/** Proto1 harmonic surface: A = C/F♯m all bars; B = bar 4 G2 −1 semitone (C/Fm). */
+export type SyProto1HarmonicVariant = 'A' | 'B';
+
+/** Proto1 harmony source: fixed C/F♯m (compat) or seeded adaptive polychord plan. */
+export type SyProto1HarmonyMode = 'fixed' | 'adaptive';
+
 /**
  * Proto 1 dialogue options. Tuning fields match polychord builders.
  * `seed` omitted → verified fixed motif + invert-in-field answer.
+ * `harmonicVariant` omitted or `'A'` → verified Proto 1 harmony; `'B'` → bar-4 G2 transform (fixed mode only).
+ * `harmonyMode` omitted or `'fixed'` → verified C/F♯m × 4; `'adaptive'` → {@link planSyProto1PolychordBars}.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
   seed?: number;
+  /** Harmonic A/B. Default `'A'` (unchanged C/F♯m). Research-only; ignored when `harmonyMode: 'adaptive'`. */
+  harmonicVariant?: SyProto1HarmonicVariant;
+  /** Default `'fixed'`. Adaptive uses seeded polychord planner + per-bar field mapping. */
+  harmonyMode?: SyProto1HarmonyMode;
+  /** Adaptive bar count (default 8). Ignored in fixed mode (always 4). */
+  barCount?: number;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -520,6 +549,211 @@ export const SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR: SyProtoPolychordPair = {
   guitar2: { rootPc: 6, quality: 'minor' },
 };
 
+/** Qualities preferred for Proto1 polychord planning (SY rock colour). */
+const SY_PROTO1_PLAN_QUALITIES: readonly SyProtoTriadQuality[] = [
+  'major',
+  'minor',
+  'diminished',
+  'augmented',
+];
+
+function syProto1PairKey(pair: SyProtoPolychordPair): string {
+  return `${normalizeRootPc(pair.guitar1.rootPc)}:${pair.guitar1.quality}|${normalizeRootPc(
+    pair.guitar2.rootPc
+  )}:${pair.guitar2.quality}`;
+}
+
+function syProto1TriadPcsEqual(a: SyProtoTriadInput, b: SyProtoTriadInput): boolean {
+  const pa = triadPitchClasses(a);
+  const pb = triadPitchClasses(b);
+  return pa[0] === pb[0] && pa[1] === pb[1] && pa[2] === pb[2];
+}
+
+/**
+ * Cross-guitar friction 0–1 from declared parent PCs (m2 / M2 / TT / unison tallies).
+ * Feeds {@link getSYDissonancePreset}; does not mutate score events.
+ */
+function syProto1InterGuitarFriction(pair: SyProtoPolychordPair): number {
+  const g1 = triadPitchClasses(pair.guitar1);
+  const g2 = triadPitchClasses(pair.guitar2);
+  let minor2 = 0;
+  let major2 = 0;
+  let tritone = 0;
+  let unison = 0;
+  for (const a of g1) {
+    for (const b of g2) {
+      const iv = Math.min((a - b + 12) % 12, (b - a + 12) % 12);
+      if (iv === 0) unison += 1;
+      else if (iv === 1) minor2 += 1;
+      else if (iv === 2) major2 += 1;
+      else if (iv === 6) tritone += 1;
+    }
+  }
+  const raw = (minor2 * 1.0 + major2 * 0.45 + tritone * 0.75 - unison * 0.15) / 9;
+  return Math.max(0, Math.min(1, raw));
+}
+
+/** Tension target 0–1 across bars: establish → peak → release (not fixed bar-4 −1). */
+function syProto1BarTensionTarget(barIndex: number, barCount: number): number {
+  if (barCount <= 1) return 0.4;
+  const t = barIndex / (barCount - 1);
+  if (t <= 0.35) return 0.32 + t * 0.4;
+  if (t <= 0.7) return 0.55 + (t - 0.35) * 0.9;
+  return Math.max(0.22, 0.85 - (t - 0.7) * 1.6);
+}
+
+function syProto1RootProxy(triad: SyProtoTriadInput): number {
+  return normalizeRootPc(triad.rootPc);
+}
+
+function syProto1ThirdProxy(triad: SyProtoTriadInput): number {
+  return triadPitchClasses(triad)[1]!;
+}
+
+/** Horizontal VL proxy between consecutive polychord pairs (Tymoczko 3-voice). */
+function syProto1PairVoiceLeadingScore(
+  prev: SyProtoPolychordPair,
+  curr: SyProtoPolychordPair
+): number {
+  return scoreTymoczkoHorizontal(
+    syProto1RootProxy(prev.guitar1),
+    syProto1RootProxy(curr.guitar1),
+    syProto1RootProxy(prev.guitar2),
+    syProto1RootProxy(curr.guitar2),
+    syProto1ThirdProxy(prev.guitar1),
+    syProto1ThirdProxy(curr.guitar1)
+  );
+}
+
+/** Per-guitar tertian VL cost (lower sum = smoother). */
+function syProto1PairMinVoiceLeadingCost(
+  prev: SyProtoPolychordPair,
+  curr: SyProtoPolychordPair
+): number {
+  return (
+    minVoiceLeading(triadPitchClasses(prev.guitar1), triadPitchClasses(curr.guitar1)) +
+    minVoiceLeading(triadPitchClasses(prev.guitar2), triadPitchClasses(curr.guitar2))
+  );
+}
+
+let syProto1PlannerCandidateCache: SyProtoPolychordPair[] | null = null;
+
+/**
+ * Valid Proto1 polychord candidates: distinct parents, union 4–6 pcs,
+ * major/minor preferred; dim/aug kept for tension colour.
+ */
+function syProto1PlannerCandidates(): readonly SyProtoPolychordPair[] {
+  if (syProto1PlannerCandidateCache) return syProto1PlannerCandidateCache;
+  const triads = listTertianTriads().filter((t) =>
+    (SY_PROTO1_PLAN_QUALITIES as readonly string[]).includes(t.quality)
+  );
+  const out: SyProtoPolychordPair[] = [];
+  const seen = new Set<string>();
+  for (const g1 of triads) {
+    for (const g2 of triads) {
+      const pair: SyProtoPolychordPair = {
+        guitar1: { rootPc: g1.rootPc, quality: g1.quality as SyProtoTriadQuality },
+        guitar2: { rootPc: g2.rootPc, quality: g2.quality as SyProtoTriadQuality },
+      };
+      if (syProto1TriadPcsEqual(pair.guitar1, pair.guitar2)) continue;
+      const analysis = analyzeSyProtoCombinedPolychord(pair);
+      if (analysis.pitchClassCount < 4 || analysis.pitchClassCount > 6) continue;
+      // Prefer true dual-colour: at least one non-shared tone each side.
+      if (analysis.commonToneCount >= 3) continue;
+      const key = syProto1PairKey(pair);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(pair);
+    }
+  }
+  // Always keep verified Proto1 anchor in the pool.
+  const anchorKey = syProto1PairKey(SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR);
+  if (!seen.has(anchorKey)) out.unshift(SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR);
+  syProto1PlannerCandidateCache = out;
+  return out;
+}
+
+function syProto1ScorePlannedPair(
+  pair: SyProtoPolychordPair,
+  prev: SyProtoPolychordPair | null,
+  tensionTarget: number
+): number {
+  const analysis = analyzeSyProtoCombinedPolychord(pair);
+  const friction = syProto1InterGuitarFriction(pair);
+  const preset = getSYDissonancePreset(friction);
+  const tensionFit = 1 - Math.abs(friction - tensionTarget);
+
+  let colour = 0.35;
+  if (analysis.pitchClassCount === 6) colour += 0.25;
+  else if (analysis.pitchClassCount === 5) colour += 0.15;
+  if (analysis.forte) colour += 0.1;
+  if (analysis.alternativeDisjointSplits.length > 0) colour += 0.05;
+  // Prefer major/minor parents for SY rock; soft-penalise dim/aug except at high tension.
+  const rockParents =
+    (pair.guitar1.quality === 'major' || pair.guitar1.quality === 'minor' ? 0.08 : 0) +
+    (pair.guitar2.quality === 'major' || pair.guitar2.quality === 'minor' ? 0.08 : 0);
+  colour += rockParents;
+  if (
+    tensionTarget < 0.55 &&
+    (pair.guitar1.quality === 'diminished' ||
+      pair.guitar1.quality === 'augmented' ||
+      pair.guitar2.quality === 'diminished' ||
+      pair.guitar2.quality === 'augmented')
+  ) {
+    colour -= 0.12;
+  }
+  if (preset === 'high_friction' && tensionTarget >= 0.6) colour += 0.08;
+  if (preset === 'low_friction' && tensionTarget <= 0.4) colour += 0.08;
+
+  let continuity = 0.55;
+  if (prev) {
+    const vl = syProto1PairVoiceLeadingScore(prev, pair);
+    const vlCost = syProto1PairMinVoiceLeadingCost(prev, pair);
+    continuity = 0.45 * vl + 0.55 * (1 - Math.min(1, vlCost / 12));
+    if (syProto1PairKey(prev) === syProto1PairKey(pair)) continuity *= 0.35; // discourage stuck repeats
+  }
+
+  return 0.4 * tensionFit + 0.3 * colour + 0.3 * continuity;
+}
+
+/**
+ * Seeded Proto1 polychord planner — returns one {@link SyProtoPolychordPair} per bar.
+ * Uses {@link analyzeSyProtoCombinedPolychord}, {@link minVoiceLeading},
+ * {@link scoreTymoczkoHorizontal}, and {@link getSYDissonancePreset}.
+ * Deterministic for (seed, barCount). Does not alter fixed Proto1 generation or tunings.
+ */
+export function planSyProto1PolychordBars(
+  seed: number,
+  barCount: number
+): SyProtoPolychordPair[] {
+  if (!Number.isFinite(barCount) || barCount < 1) {
+    throw new Error(`planSyProto1PolychordBars: barCount must be >= 1, got ${barCount}`);
+  }
+  const n = Math.floor(barCount);
+  const rng = mulberry32((seed >>> 0) || 1);
+  const candidates = syProto1PlannerCandidates();
+  if (candidates.length === 0) {
+    throw new Error('planSyProto1PolychordBars: empty candidate pool');
+  }
+
+  const out: SyProtoPolychordPair[] = [];
+  let prev: SyProtoPolychordPair | null = null;
+  for (let i = 0; i < n; i++) {
+    const tensionTarget = syProto1BarTensionTarget(i, n);
+    const ranked = candidates
+      .map((pair) => ({ pair, score: syProto1ScorePlannedPair(pair, prev, tensionTarget) }))
+      .sort((a, b) => b.score - a.score || syProto1PairKey(a.pair).localeCompare(syProto1PairKey(b.pair)));
+    const topK = ranked.slice(0, Math.min(5, ranked.length));
+    const pick = topK[Math.floor(rng() * topK.length)]!;
+    out.push({
+      guitar1: { ...pick.pair.guitar1 },
+      guitar2: { ...pick.pair.guitar2 },
+    });
+    prev = pick.pair;
+  }
+  return out;
+}
+
 /** Design cell G4–F♯4–C♯5–C5 (cross-triad semitones + C–F♯ tritone frame). */
 export const SY_PROTO1_MOTIF_MIDI: readonly number[] = [67, 66, 73, 72];
 
@@ -534,12 +768,14 @@ export type SyProtoProto1ToneRoleReceipt = {
 
 export type SyProtoProto1MelodicDialogueResult = {
   pair: SyProtoPolychordPair;
+  /** Per-bar polychord pairs (fixed = repeated C/F♯m; adaptive = planner output). */
+  pairs: readonly SyProtoPolychordPair[];
   combinedField: readonly number[];
   motifMidi: readonly number[];
   answerMidi: readonly number[];
-  /** Per-bar melody/rest events for Guitar 1 (voice 1 when active); length 4. */
+  /** Per-bar melody/rest events for Guitar 1 (voice 1 when active); length = score bars. */
   guitar1MelodicEventsByBar: readonly (readonly SyProtoProto1MelodicEvent[])[];
-  /** Per-bar melody/rest events for Guitar 2 (voice 1 when active); length 4. */
+  /** Per-bar melody/rest events for Guitar 2 (voice 1 when active); length = score bars. */
   guitar2MelodicEventsByBar: readonly (readonly SyProtoProto1MelodicEvent[])[];
   toneRoleReceipts: readonly SyProtoProto1ToneRoleReceipt[];
   /**
@@ -548,6 +784,10 @@ export type SyProtoProto1MelodicDialogueResult = {
    */
   score: ScoreModel;
   chordBars: SonicYouthPolychordProgressionResult;
+  /** Harmonic surface applied to {@link score} (`B` = G2 bar 4 −1 / C/Fm; fixed mode only). */
+  harmonicVariant: SyProto1HarmonicVariant;
+  /** Harmony source used for this build. */
+  harmonyMode: SyProto1HarmonyMode;
 };
 
 /** Upper melody layer — odd voice → exporter stem up. */
@@ -775,7 +1015,7 @@ function proto1Guitar2MelodicBars(
 }
 
 function collectToneRoleReceipts(
-  pair: SyProtoPolychordPair,
+  pairs: readonly SyProtoPolychordPair[],
   guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
   guitar2Bars: readonly (readonly SyProtoProto1MelodicEvent[])[]
 ): SyProtoProto1ToneRoleReceipt[] {
@@ -785,6 +1025,7 @@ function collectToneRoleReceipts(
     guitar: 'guitar1' | 'guitar2'
   ) => {
     bars.forEach((events, i) => {
+      const pair = pairs[i] ?? pairs[pairs.length - 1]!;
       const bar = i + 1;
       for (const event of events) {
         if (event.kind !== 'note') continue;
@@ -798,6 +1039,76 @@ function collectToneRoleReceipts(
   return out;
 }
 
+/** Nearest combined-field MIDI to `midi` (PC snap + nearby octave in melody band). */
+function proto1SnapMidiToField(midi: number, field: readonly number[]): number {
+  if (field.length === 0) return midi;
+  const pc = normalizeRootPc(midi);
+  let bestPc = normalizeRootPc(field[0]!);
+  let bestDist = 99;
+  for (const f of field) {
+    const fPc = normalizeRootPc(f);
+    const d = Math.min((pc - fPc + 12) % 12, (fPc - pc + 12) % 12);
+    if (d < bestDist) {
+      bestDist = d;
+      bestPc = fPc;
+    }
+  }
+  let best = bestPc;
+  let bestAbs = Infinity;
+  for (let m = bestPc; m <= 127; m += 12) {
+    if (m < 0) continue;
+    const abs = Math.abs(m - midi);
+    if (abs < bestAbs) {
+      bestAbs = abs;
+      best = m;
+    }
+  }
+  const clamped = proto1ClampMelodyRegister([best]);
+  return clamped[0]!;
+}
+
+function proto1MapMidiSequenceIntoField(
+  midis: readonly number[],
+  field: readonly number[]
+): number[] {
+  return midis.map((m) => proto1SnapMidiToField(m, field));
+}
+
+function proto1CloneMelodicEvent(event: SyProtoProto1MelodicEvent): SyProtoProto1MelodicEvent {
+  if (event.kind === 'note') {
+    return { ...event };
+  }
+  return { ...event };
+}
+
+/** Tile the verified 4-bar call/response rhythm to `barCount` (preserves onsets/durations). */
+function proto1TileMelodicBars(
+  cycle: readonly (readonly SyProtoProto1MelodicEvent[])[],
+  barCount: number
+): SyProtoProto1MelodicEvent[][] {
+  const out: SyProtoProto1MelodicEvent[][] = [];
+  for (let i = 0; i < barCount; i++) {
+    const src = cycle[i % cycle.length] ?? [];
+    out.push(src.map(proto1CloneMelodicEvent));
+  }
+  return out;
+}
+
+/** Remap sounding note pitches into each bar's polychord field; rests/rhythms unchanged. */
+function proto1MapMelodicBarsIntoPairs(
+  bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
+  pairs: readonly SyProtoPolychordPair[]
+): SyProtoProto1MelodicEvent[][] {
+  return bars.map((events, i) => {
+    const pair = pairs[i] ?? pairs[pairs.length - 1]!;
+    const field = proto1CombinedField(pair);
+    return events.map((event) => {
+      if (event.kind !== 'note') return proto1CloneMelodicEvent(event);
+      return { ...event, pitch: proto1SnapMidiToField(event.pitch, field) };
+    });
+  });
+}
+
 function overlayMelodyOnChordScore(
   chordBars: SonicYouthPolychordProgressionResult,
   guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
@@ -805,8 +1116,18 @@ function overlayMelodyOnChordScore(
 ): ScoreModel {
   const g1 = chordBars.score.parts.find((p) => p.id === 'guitar');
   const g2 = chordBars.score.parts.find((p) => p.id === 'guitar_2');
-  if (!g1 || !g2 || g1.measures.length !== 4 || g2.measures.length !== 4) {
-    throw new Error('Prototype 1 expects a 4-bar dual-guitar chord score from existing builder');
+  const barCount = chordBars.bars.length;
+  if (
+    !g1 ||
+    !g2 ||
+    g1.measures.length !== barCount ||
+    g2.measures.length !== barCount ||
+    guitar1Bars.length !== barCount ||
+    guitar2Bars.length !== barCount
+  ) {
+    throw new Error(
+      `Prototype 1 expects matching dual-guitar chord + melody bar counts (got chords=${barCount}, g1m=${g1?.measures.length}, g2m=${g2?.measures.length}, mel1=${guitar1Bars.length}, mel2=${guitar2Bars.length})`
+    );
   }
 
   const overlay = (part: PartModel, melodicBars: readonly (readonly SyProtoProto1MelodicEvent[])[]): PartModel => ({
@@ -888,21 +1209,22 @@ function applyGuitarWrittenOctaveNotation(score: ScoreModel): ScoreModel {
 }
 
 /**
- * Prototype 1 — four-bar call/response melodic dialogue over fixed C + F♯m.
- * Chord grips from existing progression builder. Active bars: melody voice 1, triad voice 2.
- * Idle bars: triad alone as voice 1 (no invented second layer).
- * Optional `seed` varies G1 motif + G2 answer via motif-ops; omitted = verified Proto 1.
+ * Prototype 1 — call/response melodic dialogue over dual-guitar polychords.
+ * Default `harmonyMode: 'fixed'` = verified 4-bar C + F♯m (compat).
+ * `harmonyMode: 'adaptive'` = seeded {@link planSyProto1PolychordBars} (default 8 bars),
+ * motif/answer mapped into each bar's combined field; rhythms tiled from Proto1 cycle.
+ * Chord grips via {@link buildSonicYouthPolychordProgressionScore}; custom tunings pass through.
+ * Optional `harmonicVariant: 'B'` remains fixed-mode research only (unchanged helper).
  */
 export function buildSonicYouthProto1MelodicDialogue(
   options?: SonicYouthProto1MelodicDialogueOptions
 ): SyProtoProto1MelodicDialogueResult {
-  const pair = SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR;
-  const combinedField = proto1CombinedField(pair);
-  if (combinedField.length !== 6) {
-    throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
-  }
-
+  const harmonyMode: SyProto1HarmonyMode =
+    options?.harmonyMode === 'adaptive' ? 'adaptive' : 'fixed';
   const seed = options?.seed;
+  const harmonicVariant: SyProto1HarmonicVariant =
+    harmonyMode === 'fixed' && options?.harmonicVariant === 'B' ? 'B' : 'A';
+
   const tuningOpts: SonicYouthPolychordTuningOptions | undefined =
     options == null
       ? undefined
@@ -915,20 +1237,59 @@ export function buildSonicYouthProto1MelodicDialogue(
       ? tuningOpts
       : undefined;
 
+  const pairs: SyProtoPolychordPair[] =
+    harmonyMode === 'adaptive'
+      ? planSyProto1PolychordBars(
+          seed === undefined ? 1 : seed,
+          options?.barCount !== undefined && Number.isFinite(options.barCount)
+            ? Math.max(1, Math.floor(options.barCount))
+            : 8
+        )
+      : [
+          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+        ];
+
+  const pair = pairs[0]!;
+  const combinedField = proto1CombinedField(pair);
+  if (harmonyMode === 'fixed' && combinedField.length !== 6) {
+    throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
+  }
+  if (harmonyMode === 'adaptive' && combinedField.length < 4) {
+    throw new Error(
+      `Prototype 1 adaptive expected combined field of at least 4 pcs, got ${combinedField.length}`
+    );
+  }
+
   let motifMidi: number[];
   let motifId: string;
   let answerMidi: number[];
   let answerMotifId: string;
 
   if (seed === undefined) {
-    motifMidi = [...SY_PROTO1_MOTIF_MIDI];
+    motifMidi =
+      harmonyMode === 'adaptive'
+        ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
+        : [...SY_PROTO1_MOTIF_MIDI];
     motifId = 'sy_proto1_m1';
     const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
-    answerMidi = answer.answerMidi;
+    answerMidi =
+      harmonyMode === 'adaptive'
+        ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+        : answer.answerMidi;
     answerMotifId = answer.motifId;
   } else {
-    const seededMotif = proto1SeededMotifMidi(SY_PROTO1_MOTIF_MIDI, combinedField, seed);
-    motifMidi = seededMotif.motifMidi;
+    const seedBaseMidi =
+      harmonyMode === 'adaptive'
+        ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
+        : [...SY_PROTO1_MOTIF_MIDI];
+    const seededMotif = proto1SeededMotifMidi(seedBaseMidi, combinedField, seed);
+    motifMidi =
+      harmonyMode === 'adaptive'
+        ? proto1MapMidiSequenceIntoField(seededMotif.motifMidi, combinedField)
+        : seededMotif.motifMidi;
     motifId = seededMotif.motifId;
     try {
       const answer = proto1SeededAnswerMidiFromMotif(
@@ -937,11 +1298,17 @@ export function buildSonicYouthProto1MelodicDialogue(
         motifId,
         proto1SeededAnswerOp(seed)
       );
-      answerMidi = answer.answerMidi;
+      answerMidi =
+        harmonyMode === 'adaptive'
+          ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+          : answer.answerMidi;
       answerMotifId = answer.motifId;
     } catch {
       const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
-      answerMidi = answer.answerMidi;
+      answerMidi =
+        harmonyMode === 'adaptive'
+          ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+          : answer.answerMidi;
       answerMotifId = answer.motifId;
     }
   }
@@ -953,26 +1320,31 @@ export function buildSonicYouthProto1MelodicDialogue(
     assertPitchInCombinedField(midi, pair, 'Prototype 1 answer');
   }
 
-  const guitar1MelodicEventsByBar = proto1Guitar1MelodicBars(motifMidi, motifId);
-  const guitar2MelodicEventsByBar = proto1Guitar2MelodicBars(answerMidi, answerMotifId);
+  const cycleG1 = proto1Guitar1MelodicBars(motifMidi, motifId);
+  const cycleG2 = proto1Guitar2MelodicBars(answerMidi, answerMotifId);
+  let guitar1MelodicEventsByBar = proto1TileMelodicBars(cycleG1, pairs.length);
+  let guitar2MelodicEventsByBar = proto1TileMelodicBars(cycleG2, pairs.length);
+  if (harmonyMode === 'adaptive') {
+    guitar1MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar1MelodicEventsByBar, pairs);
+    guitar2MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar2MelodicEventsByBar, pairs);
+  }
+
   const toneRoleReceipts = collectToneRoleReceipts(
-    pair,
+    pairs,
     guitar1MelodicEventsByBar,
     guitar2MelodicEventsByBar
   );
 
-  const chordBars = buildSonicYouthPolychordProgressionScore(
-    [pair, pair, pair, pair],
-    tuningForProgression
-  );
+  const chordBars = buildSonicYouthPolychordProgressionScore(pairs, tuningForProgression);
   const score = overlayMelodyOnChordScore(
     chordBars,
     guitar1MelodicEventsByBar,
     guitar2MelodicEventsByBar
   );
 
-  return {
+  const base: SyProtoProto1MelodicDialogueResult = {
     pair,
+    pairs,
     combinedField,
     motifMidi,
     answerMidi,
@@ -981,5 +1353,338 @@ export function buildSonicYouthProto1MelodicDialogue(
     toneRoleReceipts,
     score,
     chordBars,
+    harmonicVariant: 'A',
+    harmonyMode,
+  };
+
+  if (harmonicVariant === 'B') {
+    return {
+      ...base,
+      score: deriveSonicYouthProto1HarmonicVariantB(base),
+      harmonicVariant: 'B',
+    };
+  }
+  return base;
+}
+
+/** G2 bar-4 harmonic A/B: F♯ minor → F minor (−1 semitone). */
+export const SY_PROTO1_AB_G2_BAR4_TRIAD: SyProtoTriadInput = {
+  rootPc: 5,
+  quality: 'minor',
+};
+
+function shiftScoreEventSemitones(event: ScoreEvent, semitones: number): ScoreEvent {
+  if (event.kind === 'note') {
+    const { spelling: _spelling, ...rest } = event;
+    return { ...rest, pitch: event.pitch + semitones };
+  }
+  if (event.kind === 'chord') {
+    const nextSymbol =
+      event.chordSymbol === triadChordSymbol(SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR.guitar2)
+        ? triadChordSymbol(SY_PROTO1_AB_G2_BAR4_TRIAD)
+        : event.chordSymbol;
+    return {
+      ...event,
+      pitches: event.pitches.map((p) => p + semitones),
+      ...(nextSymbol !== undefined ? { chordSymbol: nextSymbol } : {}),
+    };
+  }
+  return event;
+}
+
+function chordPitchesFromMeasure(measure: { events: readonly ScoreEvent[] }): number[] {
+  for (const e of measure.events) {
+    if (e.kind === 'chord' && e.pitches.length > 0) return [...e.pitches];
+  }
+  return [];
+}
+
+/**
+ * Proto1 harmonic variant B score transform.
+ * Identical to A except Guitar 2 bar 4 transposed −1 semitone (F♯m → Fm).
+ * Used by {@link buildSonicYouthProto1MelodicDialogue} when `harmonicVariant: 'B'`.
+ */
+export function deriveSonicYouthProto1HarmonicVariantB(
+  dialogue: SyProtoProto1MelodicDialogueResult
+): ScoreModel {
+  const score = dialogue.score;
+  const g1 = score.parts.find((p) => p.id === 'guitar');
+  const g2 = score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2 || g1.measures.length !== 4 || g2.measures.length !== 4) {
+    throw new Error('Proto1 A/B variant B expects 4-bar guitar + guitar_2 score');
+  }
+
+  const g2Bar4Index = 3;
+  const g2Measures = g2.measures.map((measure, i) => {
+    if (i !== g2Bar4Index) return measure;
+    const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
+    for (const event of measure.events) {
+      addEvent(m, shiftScoreEventSemitones(event, -1));
+    }
+    return m;
+  });
+
+  const g1Bar4Pitches = chordPitchesFromMeasure(g1.measures[g2Bar4Index]!);
+  const g2Bar4Pitches = chordPitchesFromMeasure(g2Measures[g2Bar4Index]!);
+  const bar4Label = syProtoCombinedPolychordNotationLabel(
+    {
+      guitar1: SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR.guitar1,
+      guitar2: SY_PROTO1_AB_G2_BAR4_TRIAD,
+    },
+    g1Bar4Pitches,
+    g2Bar4Pitches
+  );
+
+  const words = { ...(score.partMeasureWordsMarkings?.guitar ?? {}) };
+  words[4] = bar4Label;
+
+  return {
+    ...score,
+    parts: [
+      g1,
+      {
+        ...g2,
+        measures: g2Measures,
+      },
+    ],
+    partMeasureWordsMarkings: {
+      ...score.partMeasureWordsMarkings,
+      guitar: words,
+    },
+  };
+}
+
+/**
+ * Four-bar Proto 1 is short-form: these GCE categories are structurally limited
+ * (not craft failure by score alone). Numeric formulas/weights unchanged.
+ */
+export const SY_PROTO1_STRUCTURALLY_LIMITED_GCE_CATEGORIES: readonly GceCategory[] = [
+  'thematicRecallPotential',
+  'structureAndForm',
+  'phraseGrammar',
+] as const;
+
+export type SyProto1GceStructuralLimitation = {
+  category: GceCategory;
+  structurallyLimited: true;
+  reason: string;
+};
+
+export type SyProto1MelodicDialogueGceResult = {
+  /** Echo of options.seed when provided; undefined for verified no-seed Proto 1. */
+  seed?: number;
+  /** Ten GCE V2 category scores (0–10), unchanged formulas. */
+  categoryScores: Record<GceCategory, number>;
+  /** Weighted overall from evaluateGce (unchanged weights). */
+  overallScore: number;
+  /** Explicit short-form / four-bar caveats — scores still reported. */
+  structurallyLimitedCategories: readonly SyProto1GceStructuralLimitation[];
+  /** Full evaluator receipt (pass/threshold/weakest/etc.). */
+  gce: GceEvaluationResult;
+  dialogue: SyProtoProto1MelodicDialogueResult;
+};
+
+const PROTO1_SHORT_FORM_LIMIT_REASON =
+  'Four-bar Proto 1 fragment: category is structurally limited on short-form material; interpret with caution (not automatic craft failure).';
+
+/**
+ * Proto1 GCE chord strip: declared parents as slash polychord tokens (G1/G2).
+ * Evaluation-only — does not mutate generated ScoreModel / MusicXML.
+ */
+export function syProto1GceChordStrip(
+  pair: SyProtoPolychordPair = SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+  barCount = 4
+): string[] {
+  const token = `${triadChordSymbol(pair.guitar1)}/${triadChordSymbol(pair.guitar2)}`;
+  return Array.from({ length: Math.max(1, barCount) }, () => token);
+}
+
+/**
+ * Shallow measure.chord annotation for {@link chordsPerBarFromScore} / evaluateGce.
+ * Notes, grips, voices, and part structure are unchanged (eval clone only).
+ */
+function scoreModelWithProto1GceChordStrip(
+  score: ScoreModel,
+  strip: readonly string[]
+): ScoreModel {
+  return {
+    ...score,
+    parts: score.parts.map((part) => ({
+      ...part,
+      measures: part.measures.map((measure, i) => ({
+        ...measure,
+        chord: strip[i] ?? strip[strip.length - 1] ?? measure.chord,
+      })),
+    })),
+  };
+}
+
+/**
+ * Proto1-only Arr eval: reuse {@link scoreArrangementAndOrchestration} formula by
+ * pointing the second-voice slot at real `guitar_2` notes (eval clone; no bass invented,
+ * generated ScoreModel / MusicXML untouched).
+ */
+function scoreProto1DualGuitarArrangement(score: ScoreModel): {
+  score: number;
+  justification: string;
+} {
+  const g1 = score.parts.find((p) => p.id === 'guitar');
+  const g2 = score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2) {
+    return { score: 4, justification: 'Proto1 dual-guitar: missing guitar or guitar_2' };
+  }
+  const aliased: ScoreModel = {
+    ...score,
+    parts: score.parts.map((p) => (p.id === 'guitar_2' ? { ...p, id: 'bass' } : p)),
+  };
+  const raw = scoreArrangementAndOrchestration(aliased);
+  return {
+    score: raw.score,
+    justification: `Proto1 dual-guitar (guitar vs guitar_2): ${raw.justification}`,
+  };
+}
+
+/** Replace one GCE pillar; recompute weighted overall with unchanged defaultGceWeights. */
+function applyProto1CategoryOverride(
+  gce: GceEvaluationResult,
+  category: GceCategory,
+  score: number
+): GceEvaluationResult {
+  const w = defaultGceWeights[category];
+  const categories = { ...gce.categories };
+  categories[category] = {
+    category,
+    score,
+    weight: w,
+    weightedScore: score * w,
+  };
+
+  let finalScore = 0;
+  let minScore = Infinity;
+  let maxScore = -Infinity;
+  let weakestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
+  let strongestCategory: GceCategory = GCE_CATEGORY_ORDER[0]!;
+  for (const cat of GCE_CATEGORY_ORDER) {
+    const row = categories[cat]!;
+    finalScore += row.weightedScore;
+    if (row.score <= minScore) {
+      minScore = row.score;
+      weakestCategory = cat;
+    }
+    if (row.score >= maxScore) {
+      maxScore = row.score;
+      strongestCategory = cat;
+    }
+  }
+  finalScore = Math.round(finalScore * 10) / 10;
+
+  return {
+    ...gce,
+    categories,
+    finalScore,
+    weakestCategory,
+    strongestCategory,
+    pass: finalScore >= gce.threshold,
+  };
+}
+
+function proto1MelodicOnsetKey(n: MelodicNote): string {
+  return `${n.bar}@${Math.round(n.beat * 1000)}`;
+}
+
+/**
+ * Merge G1+G2 melodic lines chronologically. Same bar/beat collapses to one event
+ * (sounding wins over rest; longer duration wins if both sound) — avoids double-onset artefacts.
+ */
+function mergeProto1MelodicLinesForRhythm(
+  lineA: readonly MelodicNote[],
+  lineB: readonly MelodicNote[]
+): MelodicNote[] {
+  const sorted = [...lineA, ...lineB].sort((x, y) => {
+    if (x.bar !== y.bar) return x.bar - y.bar;
+    if (x.beat !== y.beat) return x.beat - y.beat;
+    if (x.rest !== y.rest) return x.rest ? 1 : -1;
+    return y.beats - x.beats;
+  });
+  const out: MelodicNote[] = [];
+  for (const n of sorted) {
+    const prev = out[out.length - 1];
+    if (prev && proto1MelodicOnsetKey(prev) === proto1MelodicOnsetKey(n)) {
+      if (prev.rest && !n.rest) {
+        out[out.length - 1] = n;
+      } else if (!prev.rest && !n.rest && n.beats > prev.beats) {
+        out[out.length - 1] = n;
+      }
+      continue;
+    }
+    out.push(n);
+  }
+  return out;
+}
+
+/** Proto1-only RI: both guitars via scoreModelToMelodicLine → merge → scoreRhythmicIdentity. */
+function scoreProto1DualGuitarRhythmicIdentity(score: ScoreModel): {
+  score: number;
+  justification: string;
+} {
+  const g1 = scoreModelToMelodicLine(score, 'guitar');
+  const g2 = scoreModelToMelodicLine(score, 'guitar_2');
+  if (g1.length === 0 && g2.length === 0) {
+    return { score: 0, justification: 'Proto1 dual-guitar rhythm: no melodic notes' };
+  }
+  const merged = mergeProto1MelodicLinesForRhythm(g1, g2);
+  const raw = scoreRhythmicIdentity(merged);
+  return {
+    score: raw.score,
+    justification: `Proto1 dual-guitar merged rhythm: ${raw.justification}`,
+  };
+}
+
+/**
+ * Pure in-memory GCE V2 evaluation of one Proto 1 dialogue (optional seed).
+ * Builds via {@link buildSonicYouthProto1MelodicDialogue}; harmony strip adapted
+ * to C/F♯m; Arr/RI overridden for guitar + guitar_2 using shared scorers.
+ */
+export function evaluateSonicYouthProto1MelodicDialogueGce(
+  options?: SonicYouthProto1MelodicDialogueOptions
+): SyProto1MelodicDialogueGceResult {
+  const dialogue = buildSonicYouthProto1MelodicDialogue(options);
+  const chordStrip = syProto1GceChordStrip(
+    dialogue.pair,
+    dialogue.chordBars.bars.length || 4
+  );
+  const scoreForGce = scoreModelWithProto1GceChordStrip(dialogue.score, chordStrip);
+  const features = extractScoreModelFeatures(dialogue.score);
+  const gceBase = evaluateGce({
+    output: scoreForGce,
+    features,
+    weights: defaultGceWeights,
+    metadata: { songwriterStyleId: 'sonic_youth' },
+  });
+
+  const arr = scoreProto1DualGuitarArrangement(dialogue.score);
+  const ri = scoreProto1DualGuitarRhythmicIdentity(dialogue.score);
+  let gce = applyProto1CategoryOverride(gceBase, 'arrangementAndOrchestration', arr.score);
+  gce = applyProto1CategoryOverride(gce, 'rhythmicIdentity', ri.score);
+
+  const categoryScores = {} as Record<GceCategory, number>;
+  for (const cat of GCE_CATEGORY_ORDER) {
+    categoryScores[cat] = gce.categories[cat].score;
+  }
+
+  const structurallyLimitedCategories: SyProto1GceStructuralLimitation[] =
+    SY_PROTO1_STRUCTURALLY_LIMITED_GCE_CATEGORIES.map((category) => ({
+      category,
+      structurallyLimited: true as const,
+      reason: PROTO1_SHORT_FORM_LIMIT_REASON,
+    }));
+
+  return {
+    ...(options?.seed !== undefined ? { seed: options.seed } : {}),
+    categoryScores,
+    overallScore: gce.finalScore,
+    structurallyLimitedCategories,
+    gce,
+    dialogue,
   };
 }

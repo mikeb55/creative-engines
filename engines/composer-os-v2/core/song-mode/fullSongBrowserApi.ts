@@ -32,7 +32,11 @@ import type { EmotionalDrift, ReharmApproach } from '../harmony/reharmCandidateE
 import type { ReharmLockedEvent } from '../harmony/reharmSequenceTypes';
 import {
   buildSonicYouthPolychordProgressionScore,
+  buildSonicYouthProto1MelodicDialogue,
   type SonicYouthPolychordTuningOptions,
+  type SonicYouthProto1MelodicDialogueOptions,
+  type SyProto1HarmonicVariant,
+  type SyProto1HarmonyMode,
   type SyProtoPolychordPair,
   type SyProtoTriadInput,
 } from './sonicYouthPolychordScore';
@@ -335,7 +339,14 @@ export function packPassageReharmBrowser(
   }
 }
 
-export type { SonicYouthPolychordTuningOptions, SyProtoPolychordPair, SyProtoTriadInput };
+export type {
+  SonicYouthPolychordTuningOptions,
+  SonicYouthProto1MelodicDialogueOptions,
+  SyProto1HarmonicVariant,
+  SyProto1HarmonyMode,
+  SyProtoPolychordPair,
+  SyProtoTriadInput,
+};
 
 export type GenerateSonicYouthPolychordMusicXmlOptions = {
   bpm?: number;
@@ -344,6 +355,35 @@ export type GenerateSonicYouthPolychordMusicXmlOptions = {
   /** Optional Guitar 2 opens: six integer MIDI 0–127, physical order 6→1. Default ACCGG#C. */
   guitar2Tuning?: readonly number[];
 };
+
+/**
+ * TunePainter / browser Proto1 options.
+ * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount to the Proto1 builder.
+ * `harmonyMode` default `'fixed'`; `'adaptive'` uses seeded polychord planner.
+ */
+export type GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions =
+  SonicYouthProto1MelodicDialogueOptions & {
+    bpm?: number;
+  };
+
+function applySyElectricGuitarIdentity(score: {
+  parts: Array<{
+    id: string;
+    instrumentIdentity?: string;
+    midiProgram?: number;
+    scoreInstrumentName?: string;
+    catalogueInstrumentSound?: string;
+  }>;
+}): void {
+  for (const p of score.parts) {
+    if (p.id === 'guitar' || p.id === 'guitar_2') {
+      p.instrumentIdentity = 'clean_electric_guitar';
+      p.midiProgram = 27;
+      p.scoreInstrumentName = 'Electric Guitar';
+      p.catalogueInstrumentSound = 'strings.guitar.electric';
+    }
+  }
+}
 
 /**
  * Browser entry: ordered dual-guitar polychord pairs → MusicXML string.
@@ -367,14 +407,7 @@ export function generateSonicYouthPolychordMusicXml(
     pairs,
     Object.keys(tuning).length > 0 ? tuning : undefined
   );
-  for (const p of built.score.parts) {
-    if (p.id === 'guitar' || p.id === 'guitar_2') {
-      p.instrumentIdentity = 'clean_electric_guitar';
-      p.midiProgram = 27;
-      p.scoreInstrumentName = 'Electric Guitar';
-      p.catalogueInstrumentSound = 'strings.guitar.electric';
-    }
-  }
+  applySyElectricGuitarIdentity(built.score);
   const bpm =
     options?.bpm !== undefined && Number.isFinite(options.bpm)
       ? Math.floor(options.bpm)
@@ -384,6 +417,36 @@ export function generateSonicYouthPolychordMusicXml(
   if (!result.success || !xml.includes('<score-partwise')) {
     throw new Error(
       `generateSonicYouthPolychordMusicXml: MusicXML export failed${
+        result.errors?.length ? `: ${result.errors.join('; ')}` : ''
+      }`
+    );
+  }
+  return xml;
+}
+
+/**
+ * Browser entry: Sonic Youth Proto1 melodic dialogue → MusicXML string.
+ * Forwards `harmonyMode` / `harmonicVariant` / seed / custom tunings / `barCount`
+ * to {@link buildSonicYouthProto1MelodicDialogue}.
+ * Defaults: `harmonyMode: 'fixed'`, `harmonicVariant: 'A'`.
+ * No GUI — options-only surface for TunePainter.
+ */
+export function generateSonicYouthProto1MelodicDialogueMusicXml(
+  options?: GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions
+): string {
+  const { bpm: bpmOpt, ...dialogueOpts } = options ?? {};
+  // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount.
+  const built = buildSonicYouthProto1MelodicDialogue(dialogueOpts);
+  applySyElectricGuitarIdentity(built.score);
+  const bpm =
+    bpmOpt !== undefined && Number.isFinite(bpmOpt)
+      ? Math.floor(bpmOpt)
+      : built.score.tempo ?? 96;
+  const result = exportScoreModelToMusicXml(built.score, { bpm });
+  const xml = result.xml ?? '';
+  if (!result.success || !xml.includes('<score-partwise')) {
+    throw new Error(
+      `generateSonicYouthProto1MelodicDialogueMusicXml: MusicXML export failed${
         result.errors?.length ? `: ${result.errors.join('; ')}` : ''
       }`
     );
