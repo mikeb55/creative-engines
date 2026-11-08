@@ -31,6 +31,37 @@ function buildHarmonyXmlLineWithOffset(chordSymbol: string, _offsetTicks: number
   return buildHarmonyXmlLine(chordSymbol);
 }
 
+/** Score-model downbeat (musician beat 1). */
+function isBeatOneStart(startBeat: number): boolean {
+  return Math.abs(startBeat) <= 1e-9;
+}
+
+/**
+ * Beat-1 lead-sheet token from ChordEvent.chordSymbol on any voice.
+ * Emits at measure front (before first &lt;note&gt;); conflicting tokens throw.
+ */
+function resolveBeatOneChordSymbolFromEvents(measure: MeasureModel): string | undefined {
+  const symbols: string[] = [];
+  for (const e of measure.events) {
+    if (e.kind !== 'chord' || !isBeatOneStart(e.startBeat)) continue;
+    const sym = e.chordSymbol;
+    if (typeof sym !== 'string' || sym.length === 0) continue;
+    symbols.push(sym);
+  }
+  if (symbols.length === 0) return undefined;
+  const first = symbols[0]!;
+  const norm0 = normalizeChordToken(first);
+  for (let i = 1; i < symbols.length; i++) {
+    const next = symbols[i]!;
+    if (normalizeChordToken(next) !== norm0) {
+      throw new Error(
+        `MusicXML export measure ${measure.index}: conflicting beat-1 chord symbols "${first}" vs "${next}"`
+      );
+    }
+  }
+  return first;
+}
+
 function measureHasBarryHarrisOnsetHarmony(measure: MeasureModel): boolean {
   return measure.events.some((e) => e.kind === 'chord' && !!(e as ChordEvent).chordSymbol);
 }
@@ -1301,6 +1332,13 @@ function guitarInstrumentGroupTabEventsToXml(
   return xml;
 }
 
+/** Score title written by {@link buildSonicYouthProto1MelodicDialogue}. */
+const POLYCHORD_PROTO1_SCORE_TITLE = 'Sonic Youth Prototype 1 polychord melodic dialogue';
+
+function isPolychordProto1Score(score: ScoreModel): boolean {
+  return score.title === POLYCHORD_PROTO1_SCORE_TITLE;
+}
+
 function eventsToXml(
   measure: MeasureModel,
   measureIndex: number,
@@ -1310,7 +1348,14 @@ function eventsToXml(
   preferFlats: boolean,
   /** When any measure in this part uses voice 2, emit voice 1 → backup → voice 2 in every measure (voice 2 rests if empty). Sibelius requires this; sparse duo bars often only had v1 in the score model. */
   forceDualVoiceSecondLayer: boolean,
-  measureCapacity: number
+  measureCapacity: number,
+  /**
+   * Polychords Proto 1 only: do not invent an empty voice-2 layer (whole-bar rests under grips)
+   * when this measure has no actual voice-2 events. Active bars keep written notes/rests.
+   */
+  omitEmptyVoice2Padding = false,
+  /** Beat-1 ChordEvent.chordSymbol already written before the first &lt;note&gt; — skip event-level duplicate. */
+  suppressBeatOneChordSymbols = false
 ): string {
   const partId = part.id;
   let raw = measure.events.filter((e) => e.kind === 'note' || e.kind === 'rest' || e.kind === 'chord');
@@ -1327,8 +1372,12 @@ function eventsToXml(
   const dualLayerInstrument =
     part.instrumentIdentity === 'clean_electric_guitar' || isBigBandPianoPart(part);
   if (forceDualVoiceSecondLayer && dualLayerInstrument) {
-    if (!byVoice.has(2)) byVoice.set(2, []);
     if (!byVoice.has(1)) byVoice.set(1, []);
+    // Default: pad missing voice 2 with empty bucket → full-bar rests (Sibelius dual-layer).
+    // Proto 1 opt-out: skip inventing voice 2 when this measure has no voice-2 events.
+    if (!byVoice.has(2) && !omitEmptyVoice2Padding) {
+      byVoice.set(2, []);
+    }
   }
   const voices = [...byVoice.keys()].sort((a, b) => a - b);
   const multiVoice = voices.length > 1;
@@ -1390,7 +1439,10 @@ function eventsToXml(
       if (e.kind === 'chord') {
         const chordEv = e;
         if (chordEv.chordSymbol && typeof chordEv.chordSymbol === 'string') {
-          xml += buildHarmonyXmlLineWithOffset(chordEv.chordSymbol, safeStart);
+          const skipBeatOneDup = suppressBeatOneChordSymbols && isBeatOneStart(chordEv.startBeat);
+          if (!skipBeatOneDup) {
+            xml += buildHarmonyXmlLineWithOffset(chordEv.chordSymbol, safeStart);
+          }
         }
         let syAug = { dynamicsAttr: '', notationsXml: '' };
         if (isSonicYouthEvent(chordEv)) {
@@ -1742,6 +1794,8 @@ ${partList}
         (part.instrumentIdentity === 'clean_electric_guitar' || isBigBandPianoPart(part)) &&
         part.id !== 'zappa_solo' &&
         partUsesVoice2Somewhere;
+      /** Narrow Proto 1 opt-out only — other dual-layer guitar/piano parts keep empty-voice-2 padding. */
+      const omitEmptyVoice2Padding = isPolychordProto1Score(score);
       for (let i = 0; i < orderedMeasures.length; i++) {
         const m = orderedMeasures[i];
         const measureNumber = i + 1;
@@ -1845,6 +1899,7 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             : undefined;
         const chordForHarmony = lockedChord ?? m.chord;
         const bhOnsetHarmony = measureHasBarryHarrisOnsetHarmony(m);
+        const beatOneEventSym = resolveBeatOneChordSymbolFromEvents(m);
         /** Lead-sheet chord symbols: duo harmony staff only (`guitar` / ensemble piano), never bass or Zappa solo. */
         const writesLeadSheetHarmony =
           chordForHarmony &&
@@ -1856,6 +1911,16 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             isBigBandPianoPart(part) ||
             isStringQuartetPianoPart(part) ||
             part.pianoGrandStaff != null);
+        if (
+          beatOneEventSym &&
+          writesLeadSheetHarmony &&
+          chordForHarmony &&
+          normalizeChordToken(chordForHarmony) !== normalizeChordToken(beatOneEventSym)
+        ) {
+          throw new Error(
+            `MusicXML export measure ${measureNumber} part ${part.id}: conflicting beat-1 chord symbols "${chordForHarmony}" vs "${beatOneEventSym}"`
+          );
+        }
         if (m.pianoPolychord) {
           xml += pianoPolychordHarmonyXml(m.pianoPolychord);
         } else if (writesLeadSheetHarmony) {
@@ -1874,7 +1939,11 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
             }
           }
           xml += buildHarmonyXmlLine(chordForHarmony);
+        } else if (beatOneEventSym && !opts.omitChordSymbols) {
+          /** Any part/voice: beat-1 ChordEvent.chordSymbol before first &lt;note&gt; (Sibelius order). */
+          xml += buildHarmonyXmlLine(beatOneEventSym);
         }
+        const suppressBeatOneChordSymbols = beatOneEventSym != null;
 
         /** Section rehearsal marks once on top staff (part 0); after beat-1 harmony, before notes. */
         if (partIndex === 0) {
@@ -1990,7 +2059,18 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
                   ? pianoGrandStaffEventsToXml(m, i, part, decompose, preferFlats, measureCapacity)
                   : measureUsesExactStaff(m)
                     ? exactSingleStaffEventsToXml(m, part, preferFlats, measureCapacity)
-                    : eventsToXml(m, i, part, decompose, opts, preferFlats, forceDualVoiceSecondLayer, measureCapacity);
+                    : eventsToXml(
+                        m,
+                        i,
+                        part,
+                        decompose,
+                        opts,
+                        preferFlats,
+                        forceDualVoiceSecondLayer,
+                        measureCapacity,
+                        omitEmptyVoice2Padding,
+                        suppressBeatOneChordSymbols
+                      );
         if (score.repeatMarkers && scoreHasRepeatMarker(score, measureNumber, 'repeat_end')) {
           xml += `    <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
         }
@@ -2004,6 +2084,7 @@ ${feelDirectionTypeXml}      <sound tempo="${bpm}"/>
     xml = applyContextPitchSpellings(xml, score.pitchClassSpelling);
     assertSibeliusExportMeasureStructure(xml, {
       pianoGrandStaffPartIds: score.parts.filter((p) => p.pianoGrandStaff || p.harpGrandStaff).map((p) => p.id),
+      allowSparseDualVoiceMeasures: isPolychordProto1Score(score),
     });
     assertNoteXmlCanonicalChildOrder(xml);
     if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {

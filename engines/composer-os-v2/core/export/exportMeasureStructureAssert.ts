@@ -10,6 +10,11 @@ export interface SibeliusExportMeasureStructureOptions {
    * single-staff “exactly one backup” rule.
    */
   pianoGrandStaffPartIds?: readonly string[];
+  /**
+   * Polychords Proto 1: allow measures with only voice 1 (no invented voice-2 rest layer).
+   * Backup count must match voices present in that measure (0 or 1), not a blanket one-per-bar.
+   */
+  allowSparseDualVoiceMeasures?: boolean;
 }
 
 /**
@@ -79,10 +84,13 @@ export function assertSibeliusExportMeasureStructure(
         const voiceNums = [...inner.matchAll(/<voice>(\d+)<\/voice>/g)].map((vm) => Number(vm[1]));
         const voicesUsed = new Set(voiceNums.filter((v) => Number.isFinite(v) && v >= 1));
         const expectedBackups = voicesUsed.size > 1 ? voicesUsed.size - 1 : 0;
-        if (partId === 'zappa_solo') {
+        const sparseDual = options?.allowSparseDualVoiceMeasures === true;
+        if (partId === 'zappa_solo' || sparseDual) {
           if (backupCount !== expectedBackups) {
             errors.push(
-              `part ${partId} measure ${measureNum}: ferocity solo requires ${expectedBackups} <backup> for ${voicesUsed.size} voices (found ${backupCount})`
+              `part ${partId} measure ${measureNum}: ${
+                sparseDual && partId !== 'zappa_solo' ? 'sparse dual-voice' : 'ferocity solo'
+              } requires ${expectedBackups} <backup> for ${voicesUsed.size} voices (found ${backupCount})`
             );
           }
         } else if (backupCount !== 1) {

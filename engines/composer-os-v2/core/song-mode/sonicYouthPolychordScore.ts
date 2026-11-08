@@ -10,11 +10,30 @@ import {
   disjointTertianSplits,
   type TertianTriad,
 } from '../hexatonic/tertianTriadUniverse';
+import type { Transposition } from '../instruments/instrumentTypes';
+import { soundingToWritten } from '../instruments/writtenPitch';
 import { canonicalPitchSet } from '../pentatonic/pitch';
-import type { ChordEvent, PartModel, ScoreModel } from '../score-model/scoreModelTypes';
-import { addEvent, createMeasure, createScore } from '../score-model/scoreEventBuilder';
+import { applyOperator, type Motif } from '../motif-ops';
+import type {
+  ChordEvent,
+  NoteEvent,
+  PartModel,
+  RestEvent,
+  ScoreEvent,
+  ScoreModel,
+} from '../score-model/scoreModelTypes';
+import {
+  addEvent,
+  createMeasure,
+  createNote,
+  createRest,
+  createScore,
+} from '../score-model/scoreEventBuilder';
 import type { SYSixStringMidi } from '../sy-tuning/syTuningTypes';
 import { QUALITY_INTERVALS, type TriadQuality } from '../wwh/wwhTriadPair';
+
+/** Guitar lead-sheet convention: written = sounding +12; MusicXML octave-change −1. */
+const GUITAR_OCTAVE_TRANSPOSITION: Transposition = { diatonic: 0, chromatic: 0, octaveChange: -1 };
 
 /** Lee AAEEAA opens — 6→1. A2 A2 E3 E3 A3 A3. */
 export const SY_PROTO_LEE_AAEEAA_OPEN: SYSixStringMidi = [45, 45, 52, 52, 57, 57];
@@ -174,6 +193,63 @@ export function analyzeSyProtoCombinedPolychord(pair: SyProtoPolychordPair): SyP
     pitchClassCount,
     forte: pitchClassCount === 6 ? classifyPitchClassSet(unionPitchClasses).forte : null,
     alternativeDisjointSplits: disjointTertianSplits(unionPitchClasses),
+  };
+}
+
+/** Triad member when a PC lands on a declared parent (root → third → fifth order). */
+export type SyProtoTriadDegree = 'root' | 'third' | 'fifth';
+
+/**
+ * Pure Prototype 1 tone-role classification of one pitch against a declared polychord pair.
+ * Accepts MIDI or pitch class; membership is by pitch class only.
+ * Supports major / minor / diminished / augmented at any root via triadPitchClasses + QUALITY_INTERVALS.
+ */
+export type SyProtoPolychordToneRole = {
+  pitchClass: number;
+  /** Degree in Guitar 1's declared triad, or null if not a member. */
+  guitar1Degree: SyProtoTriadDegree | null;
+  /** Degree in Guitar 2's declared triad, or null if not a member. */
+  guitar2Degree: SyProtoTriadDegree | null;
+  /** Present in both declared parents. */
+  shared: boolean;
+  /** Present in neither declared parent (same as outside the combined field). */
+  outsideBoth: boolean;
+  /** Present in the combined PC union of both parents (≤6 notes). */
+  inCombinedField: boolean;
+};
+
+const TRIAD_DEGREES: readonly SyProtoTriadDegree[] = ['root', 'third', 'fifth'];
+
+function triadDegreeForPc(triad: SyProtoTriadInput, pc: number): SyProtoTriadDegree | null {
+  const pcs = triadPitchClasses(triad);
+  const target = normalizeRootPc(pc);
+  for (let i = 0; i < TRIAD_DEGREES.length; i++) {
+    if (pcs[i] === target) return TRIAD_DEGREES[i]!;
+  }
+  return null;
+}
+
+/**
+ * Classify a pitch against Guitar 1 / Guitar 2 triad membership, shared vs outside, and union field.
+ * Pure: no score, grip, or export side effects.
+ */
+export function classifySyProtoPolychordToneRole(
+  pitch: number,
+  pair: SyProtoPolychordPair
+): SyProtoPolychordToneRole {
+  const pitchClass = normalizeRootPc(pitch);
+  const guitar1Degree = triadDegreeForPc(pair.guitar1, pitchClass);
+  const guitar2Degree = triadDegreeForPc(pair.guitar2, pitchClass);
+  const inGuitar1 = guitar1Degree !== null;
+  const inGuitar2 = guitar2Degree !== null;
+  const inCombinedField = inGuitar1 || inGuitar2;
+  return {
+    pitchClass,
+    guitar1Degree,
+    guitar2Degree,
+    shared: inGuitar1 && inGuitar2,
+    outsideBoth: !inCombinedField,
+    inCombinedField,
   };
 }
 
@@ -425,5 +501,310 @@ export function buildSonicYouthPolychordProgressionScore(
     bars,
     guitar1OpenPitches: g1Open,
     guitar2OpenPitches: g2Open,
+  };
+}
+
+/** Prototype 1 fixed polychord: Guitar 1 C major, Guitar 2 F♯ minor. */
+export const SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR: SyProtoPolychordPair = {
+  guitar1: { rootPc: 0, quality: 'major' },
+  guitar2: { rootPc: 6, quality: 'minor' },
+};
+
+/** Design cell G4–F♯4–C♯5–C5 (cross-triad semitones + C–F♯ tritone frame). */
+export const SY_PROTO1_MOTIF_MIDI: readonly number[] = [67, 66, 73, 72];
+
+export type SyProtoProto1MelodicEvent = NoteEvent | RestEvent;
+
+export type SyProtoProto1ToneRoleReceipt = {
+  midi: number;
+  guitar: 'guitar1' | 'guitar2';
+  bar: number;
+  role: SyProtoPolychordToneRole;
+};
+
+export type SyProtoProto1MelodicDialogueResult = {
+  pair: SyProtoPolychordPair;
+  combinedField: readonly number[];
+  motifMidi: readonly number[];
+  answerMidi: readonly number[];
+  /** Per-bar melody/rest events for Guitar 1 (voice 1 when active); length 4. */
+  guitar1MelodicEventsByBar: readonly (readonly SyProtoProto1MelodicEvent[])[];
+  /** Per-bar melody/rest events for Guitar 2 (voice 1 when active); length 4. */
+  guitar2MelodicEventsByBar: readonly (readonly SyProtoProto1MelodicEvent[])[];
+  toneRoleReceipts: readonly SyProtoProto1ToneRoleReceipt[];
+  /**
+   * Prototype 1 score: upper melody = voice 1 (stems up); lower triad = voice 2 (stems down)
+   * in active bars. Melody-free bars keep the triad as the sole voice (voice 1).
+   */
+  score: ScoreModel;
+  chordBars: SonicYouthPolychordProgressionResult;
+};
+
+/** Upper melody layer — odd voice → exporter stem up. */
+const PROTO1_MELODY_VOICE = 1;
+/** Lower sustained triad under active melody — even voice → exporter stem down. */
+const PROTO1_CHORD_VOICE = 2;
+
+function proto1CombinedField(pair: SyProtoPolychordPair): readonly number[] {
+  return analyzeSyProtoCombinedPolychord(pair).unionPitchClasses;
+}
+
+function assertPitchInCombinedField(midi: number, pair: SyProtoPolychordPair, label: string): void {
+  const role = classifySyProtoPolychordToneRole(midi, pair);
+  if (!role.inCombinedField) {
+    throw new Error(`${label}: MIDI ${midi} (pc ${role.pitchClass}) outside combined polychord field`);
+  }
+}
+
+/**
+ * Invert Prototype 1 motif inside the combined six-note field (motif-ops invert-in-field).
+ * Axis = first sounding pitch (G4).
+ */
+function proto1AnswerMidiFromMotif(
+  motifMidi: readonly number[],
+  field: readonly number[]
+): { answerMidi: number[]; motifId: string } {
+  const motif: Motif = {
+    id: 'sy_proto1_m1',
+    field: [...field],
+    events: motifMidi.map((midi, i) => ({
+      onset: i,
+      duration: 1,
+      midi,
+    })),
+  };
+  const { motif: inverted } = applyOperator(motif, 'invert-in-field');
+  const answerMidi: number[] = [];
+  for (const event of inverted.events) {
+    if (event.midi === null) continue;
+    answerMidi.push(event.midi);
+  }
+  if (answerMidi.length !== motifMidi.length) {
+    throw new Error('Prototype 1 answer lost motif pitch count after invert-in-field');
+  }
+  return { answerMidi, motifId: inverted.id };
+}
+
+/**
+ * Bars 1–2 G1 statement: distinctive 4-note cell with rests + rhythmic variation.
+ * Bars 3–4: no melody events (idle triad keeps a single chord voice only).
+ */
+function proto1Guitar1MelodicBars(
+  motifMidi: readonly number[]
+): SyProtoProto1MelodicEvent[][] {
+  const [n0, n1, n2, n3] = motifMidi;
+  return [
+    // Bar 1: G4 q · rest ⅛ · F♯4 ⅛ · rest q · C♯5 q — first three motif notes
+    [
+      createNote(n0!, 0, 1, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createRest(1, 0.5, PROTO1_MELODY_VOICE),
+      createNote(n1!, 1.5, 0.5, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+      createRest(2, 1, PROTO1_MELODY_VOICE),
+      createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+    ],
+    // Bar 2: rest ½ · C5 ½ — fourth motif note; delayed entry
+    [
+      createRest(0, 2, PROTO1_MELODY_VOICE),
+      createNote(n3!, 2, 2, PROTO1_MELODY_VOICE, 'sy_proto1_m1'),
+    ],
+    [],
+    [],
+  ];
+}
+
+/**
+ * Bars 1–2: no melody events (G2 idle while G1 states — single chord voice).
+ * Bars 3–4: answer with invert-in-field pitches, different rhythm.
+ */
+function proto1Guitar2MelodicBars(
+  answerMidi: readonly number[],
+  answerMotifId: string
+): SyProtoProto1MelodicEvent[][] {
+  const [a0, a1, a2, a3] = answerMidi;
+  return [
+    [],
+    [],
+    // Bar 3: rest ⅛ · answer0 ⅛ · rest ⅛ · answer1 q · rest ⅛ · answer2 q
+    [
+      createRest(0, 0.5, PROTO1_MELODY_VOICE),
+      createNote(a0!, 0.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+      createRest(1, 0.5, PROTO1_MELODY_VOICE),
+      createNote(a1!, 1.5, 1, PROTO1_MELODY_VOICE, answerMotifId),
+      createRest(2.5, 0.5, PROTO1_MELODY_VOICE),
+      createNote(a2!, 3, 1, PROTO1_MELODY_VOICE, answerMotifId),
+    ],
+    // Bar 4: rest q · answer3 dotted-half
+    [
+      createRest(0, 1, PROTO1_MELODY_VOICE),
+      createNote(a3!, 1, 3, PROTO1_MELODY_VOICE, answerMotifId),
+    ],
+  ];
+}
+
+function collectToneRoleReceipts(
+  pair: SyProtoPolychordPair,
+  guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
+  guitar2Bars: readonly (readonly SyProtoProto1MelodicEvent[])[]
+): SyProtoProto1ToneRoleReceipt[] {
+  const out: SyProtoProto1ToneRoleReceipt[] = [];
+  const pushBar = (
+    bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
+    guitar: 'guitar1' | 'guitar2'
+  ) => {
+    bars.forEach((events, i) => {
+      const bar = i + 1;
+      for (const event of events) {
+        if (event.kind !== 'note') continue;
+        const role = classifySyProtoPolychordToneRole(event.pitch, pair);
+        out.push({ midi: event.pitch, guitar, bar, role });
+      }
+    });
+  };
+  pushBar(guitar1Bars, 'guitar1');
+  pushBar(guitar2Bars, 'guitar2');
+  return out;
+}
+
+function overlayMelodyOnChordScore(
+  chordBars: SonicYouthPolychordProgressionResult,
+  guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
+  guitar2Bars: readonly (readonly SyProtoProto1MelodicEvent[])[]
+): ScoreModel {
+  const g1 = chordBars.score.parts.find((p) => p.id === 'guitar');
+  const g2 = chordBars.score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2 || g1.measures.length !== 4 || g2.measures.length !== 4) {
+    throw new Error('Prototype 1 expects a 4-bar dual-guitar chord score from existing builder');
+  }
+
+  const overlay = (part: PartModel, melodicBars: readonly (readonly SyProtoProto1MelodicEvent[])[]): PartModel => ({
+    ...part,
+    measures: part.measures.map((measure, i) => {
+      const melody = melodicBars[i] ?? [];
+      const hasMelody = melody.length > 0;
+      const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
+      for (const event of measure.events) {
+        if (
+          hasMelody &&
+          (event.kind === 'note' || event.kind === 'rest' || event.kind === 'chord')
+        ) {
+          addEvent(m, { ...event, voice: PROTO1_CHORD_VOICE });
+        } else {
+          addEvent(m, event);
+        }
+      }
+      for (const event of melody) addEvent(m, event as ScoreEvent);
+      return m;
+    }),
+  });
+
+  const score = createScore('Sonic Youth Prototype 1 polychord melodic dialogue', [
+    overlay(g1, guitar1Bars),
+    overlay(g2, guitar2Bars),
+  ], {
+    tempo: chordBars.score.tempo ?? 96,
+  });
+  if (chordBars.score.partMeasureWordsMarkings) {
+    score.partMeasureWordsMarkings = chordBars.score.partMeasureWordsMarkings;
+  }
+  if (chordBars.score.exportStaffTuningByPartId) {
+    score.exportStaffTuningByPartId = chordBars.score.exportStaffTuningByPartId;
+  }
+  return applyGuitarWrittenOctaveNotation(score);
+}
+
+/**
+ * Store written MIDI (sounding +12) on guitar note/chord events and attach
+ * exporter `exportPartTranspose` octave-change −1 so concert pitch is unchanged.
+ * Durations, voices, part names, and tuning metadata stay intact.
+ */
+function applyGuitarWrittenOctaveNotation(score: ScoreModel): ScoreModel {
+  const t = GUITAR_OCTAVE_TRANSPOSITION;
+  const shiftEvent = (event: ScoreEvent): ScoreEvent => {
+    if (event.kind === 'note') {
+      const written = soundingToWritten(event.pitch, t);
+      return {
+        ...event,
+        pitch: written.midi,
+        spelling: { step: written.step, alter: written.alter },
+      };
+    }
+    if (event.kind === 'chord') {
+      return {
+        ...event,
+        pitches: event.pitches.map((midi) => soundingToWritten(midi, t).midi),
+      };
+    }
+    return event;
+  };
+
+  return {
+    ...score,
+    parts: score.parts.map((part) => ({
+      ...part,
+      measures: part.measures.map((measure) => ({
+        ...measure,
+        events: measure.events.map(shiftEvent),
+      })),
+    })),
+    exportPartTranspose: {
+      ...score.exportPartTranspose,
+      guitar: t,
+      guitar_2: t,
+    },
+  };
+}
+
+/**
+ * Prototype 1 — four-bar call/response melodic dialogue over fixed C + F♯m.
+ * Chord grips from existing progression builder. Active bars: melody voice 1, triad voice 2.
+ * Idle bars: triad alone as voice 1 (no invented second layer).
+ */
+export function buildSonicYouthProto1MelodicDialogue(
+  options?: SonicYouthPolychordTuningOptions
+): SyProtoProto1MelodicDialogueResult {
+  const pair = SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR;
+  const combinedField = proto1CombinedField(pair);
+  if (combinedField.length !== 6) {
+    throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
+  }
+
+  const motifMidi = [...SY_PROTO1_MOTIF_MIDI];
+  for (const midi of motifMidi) {
+    assertPitchInCombinedField(midi, pair, 'Prototype 1 motif');
+  }
+
+  const { answerMidi, motifId: answerMotifId } = proto1AnswerMidiFromMotif(motifMidi, combinedField);
+  for (const midi of answerMidi) {
+    assertPitchInCombinedField(midi, pair, 'Prototype 1 answer');
+  }
+
+  const guitar1MelodicEventsByBar = proto1Guitar1MelodicBars(motifMidi);
+  const guitar2MelodicEventsByBar = proto1Guitar2MelodicBars(answerMidi, answerMotifId);
+  const toneRoleReceipts = collectToneRoleReceipts(
+    pair,
+    guitar1MelodicEventsByBar,
+    guitar2MelodicEventsByBar
+  );
+
+  const chordBars = buildSonicYouthPolychordProgressionScore(
+    [pair, pair, pair, pair],
+    options
+  );
+  const score = overlayMelodyOnChordScore(
+    chordBars,
+    guitar1MelodicEventsByBar,
+    guitar2MelodicEventsByBar
+  );
+
+  return {
+    pair,
+    combinedField,
+    motifMidi,
+    answerMidi,
+    guitar1MelodicEventsByBar,
+    guitar2MelodicEventsByBar,
+    toneRoleReceipts,
+    score,
+    chordBars,
   };
 }
