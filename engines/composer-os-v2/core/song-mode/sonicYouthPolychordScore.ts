@@ -120,16 +120,23 @@ export type SyProto1HarmonyMode = 'fixed' | 'adaptive';
  * `seed` omitted → verified fixed motif + invert-in-field answer.
  * `harmonicVariant` omitted or `'A'` → verified Proto 1 harmony; `'B'` → bar-4 G2 transform (fixed mode only).
  * `harmonyMode` omitted or `'fixed'` → verified C/F♯m × 4; `'adaptive'` → {@link planSyProto1PolychordBars}.
+ * Optional `polychordBars` → exact user-selected pairs (roots/qualities) per bar; overrides planner / fixed defaults.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
   seed?: number;
-  /** Harmonic A/B. Default `'A'` (unchanged C/F♯m). Research-only; ignored when `harmonyMode: 'adaptive'`. */
+  /** Harmonic A/B. Default `'A'` (unchanged C/F♯m). Research-only; ignored when `harmonyMode: 'adaptive'` or user `polychordBars`. */
   harmonicVariant?: SyProto1HarmonicVariant;
   /** Default `'fixed'`. Adaptive uses seeded polychord planner + per-bar field mapping. */
   harmonyMode?: SyProto1HarmonyMode;
-  /** Adaptive bar count (default 8). Ignored in fixed mode (always 4). */
+  /** Adaptive bar count (default 8). Ignored in fixed mode (always 4) and when `polychordBars` is supplied. */
   barCount?: number;
+  /**
+   * Optional user-defined dual-guitar pairs (one per bar).
+   * When non-empty, exact `rootPc` + `quality` drive grips, chord symbols, and sounding notes.
+   * Omitted / empty → legacy fixed or adaptive pair source.
+   */
+  polychordBars?: readonly SyProtoPolychordPair[];
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -1108,6 +1115,57 @@ export const SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR: SyProtoPolychordPair = {
   guitar2: { rootPc: 6, quality: 'minor' },
 };
 
+const SY_PROTO1_TRIAD_QUALITIES: readonly SyProtoTriadQuality[] = [
+  'major',
+  'minor',
+  'diminished',
+  'augmented',
+];
+
+/**
+ * Normalize optional user `polychordBars`.
+ * `null` = omit (legacy pair source). Throws on malformed entries.
+ */
+export function normalizeSyProto1UserPolychordBars(
+  bars: readonly SyProtoPolychordPair[] | undefined | null
+): SyProtoPolychordPair[] | null {
+  if (bars == null) return null;
+  if (!Array.isArray(bars) || bars.length === 0) return null;
+  const allowed = new Set<string>(SY_PROTO1_TRIAD_QUALITIES);
+  const out: SyProtoPolychordPair[] = [];
+  for (let i = 0; i < bars.length; i++) {
+    const bar = bars[i];
+    if (bar == null || typeof bar !== 'object') {
+      throw new Error(`polychordBars[${i}]: expected { guitar1, guitar2 }`);
+    }
+    for (const g of ['guitar1', 'guitar2'] as const) {
+      const triad = bar[g];
+      if (triad == null || typeof triad !== 'object') {
+        throw new Error(`polychordBars[${i}].${g}: expected { rootPc, quality }`);
+      }
+      if (typeof triad.rootPc !== 'number' || !Number.isFinite(triad.rootPc)) {
+        throw new Error(`polychordBars[${i}].${g}.rootPc must be a finite number`);
+      }
+      if (!allowed.has(String(triad.quality))) {
+        throw new Error(
+          `polychordBars[${i}].${g}.quality must be major|minor|diminished|augmented`
+        );
+      }
+    }
+    out.push({
+      guitar1: {
+        rootPc: normalizeRootPc(bar.guitar1.rootPc),
+        quality: bar.guitar1.quality,
+      },
+      guitar2: {
+        rootPc: normalizeRootPc(bar.guitar2.rootPc),
+        quality: bar.guitar2.quality,
+      },
+    });
+  }
+  return out;
+}
+
 /** Qualities preferred for Proto1 polychord planning (SY rock colour). */
 const SY_PROTO1_PLAN_QUALITIES: readonly SyProtoTriadQuality[] = [
   'major',
@@ -1957,8 +2015,9 @@ function applyGuitarWrittenOctaveNotation(score: ScoreModel): ScoreModel {
  * Default `harmonyMode: 'fixed'` = verified 4-bar C + F♯m (compat).
  * `harmonyMode: 'adaptive'` = seeded {@link planSyProto1PolychordBars} (default 8 bars),
  * motif/answer mapped into each bar's combined field; rhythms tiled from Proto1 cycle.
+ * Optional `polychordBars` = exact user pairs (overrides planner / fixed defaults); maps melody into those fields.
  * Chord grips via {@link buildSonicYouthPolychordProgressionScore}; custom tunings pass through.
- * Optional `harmonicVariant: 'B'` remains fixed-mode research only (unchanged helper).
+ * Optional `harmonicVariant: 'B'` remains fixed-mode research only (ignored when user pairs supplied).
  */
 export function buildSonicYouthProto1MelodicDialogue(
   options?: SonicYouthProto1MelodicDialogueOptions
@@ -1966,8 +2025,10 @@ export function buildSonicYouthProto1MelodicDialogue(
   const harmonyMode: SyProto1HarmonyMode =
     options?.harmonyMode === 'adaptive' ? 'adaptive' : 'fixed';
   const seed = options?.seed;
+  const userPairs = normalizeSyProto1UserPolychordBars(options?.polychordBars ?? null);
+  const mapIntoBarFields = userPairs != null || harmonyMode === 'adaptive';
   const harmonicVariant: SyProto1HarmonicVariant =
-    harmonyMode === 'fixed' && options?.harmonicVariant === 'B' ? 'B' : 'A';
+    userPairs == null && harmonyMode === 'fixed' && options?.harmonicVariant === 'B' ? 'B' : 'A';
 
   const tuningOpts: SonicYouthPolychordTuningOptions | undefined =
     options == null
@@ -1982,26 +2043,28 @@ export function buildSonicYouthProto1MelodicDialogue(
       : undefined;
 
   const pairs: SyProtoPolychordPair[] =
-    harmonyMode === 'adaptive'
-      ? planSyProto1PolychordBars(
-          seed === undefined ? 1 : seed,
-          options?.barCount !== undefined && Number.isFinite(options.barCount)
-            ? Math.max(1, Math.floor(options.barCount))
-            : 8
-        )
-      : [
-          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
-          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
-          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
-          SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
-        ];
+    userPairs != null
+      ? userPairs
+      : harmonyMode === 'adaptive'
+        ? planSyProto1PolychordBars(
+            seed === undefined ? 1 : seed,
+            options?.barCount !== undefined && Number.isFinite(options.barCount)
+              ? Math.max(1, Math.floor(options.barCount))
+              : 8
+          )
+        : [
+            SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+            SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+            SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+            SY_PROTO1_C_MAJOR_FSHARP_MINOR_PAIR,
+          ];
 
   const pair = pairs[0]!;
   const combinedField = proto1CombinedField(pair);
-  if (harmonyMode === 'fixed' && combinedField.length !== 6) {
+  if (!mapIntoBarFields && combinedField.length !== 6) {
     throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
   }
-  if (harmonyMode === 'adaptive' && combinedField.length < 4) {
+  if (mapIntoBarFields && combinedField.length < 4) {
     throw new Error(
       `Prototype 1 adaptive expected combined field of at least 4 pcs, got ${combinedField.length}`
     );
@@ -2013,27 +2076,23 @@ export function buildSonicYouthProto1MelodicDialogue(
   let answerMotifId: string;
 
   if (seed === undefined) {
-    motifMidi =
-      harmonyMode === 'adaptive'
-        ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
-        : [...SY_PROTO1_MOTIF_MIDI];
+    motifMidi = mapIntoBarFields
+      ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
+      : [...SY_PROTO1_MOTIF_MIDI];
     motifId = 'sy_proto1_m1';
     const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
-    answerMidi =
-      harmonyMode === 'adaptive'
-        ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
-        : answer.answerMidi;
+    answerMidi = mapIntoBarFields
+      ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+      : answer.answerMidi;
     answerMotifId = answer.motifId;
   } else {
-    const seedBaseMidi =
-      harmonyMode === 'adaptive'
-        ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
-        : [...SY_PROTO1_MOTIF_MIDI];
+    const seedBaseMidi = mapIntoBarFields
+      ? proto1MapMidiSequenceIntoField(SY_PROTO1_MOTIF_MIDI, combinedField)
+      : [...SY_PROTO1_MOTIF_MIDI];
     const seededMotif = proto1SeededMotifMidi(seedBaseMidi, combinedField, seed);
-    motifMidi =
-      harmonyMode === 'adaptive'
-        ? proto1MapMidiSequenceIntoField(seededMotif.motifMidi, combinedField)
-        : seededMotif.motifMidi;
+    motifMidi = mapIntoBarFields
+      ? proto1MapMidiSequenceIntoField(seededMotif.motifMidi, combinedField)
+      : seededMotif.motifMidi;
     motifId = seededMotif.motifId;
     try {
       const answer = proto1SeededAnswerMidiFromMotif(
@@ -2042,17 +2101,15 @@ export function buildSonicYouthProto1MelodicDialogue(
         motifId,
         proto1SeededAnswerOp(seed)
       );
-      answerMidi =
-        harmonyMode === 'adaptive'
-          ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
-          : answer.answerMidi;
+      answerMidi = mapIntoBarFields
+        ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+        : answer.answerMidi;
       answerMotifId = answer.motifId;
     } catch {
       const answer = proto1AnswerMidiFromMotif(motifMidi, combinedField);
-      answerMidi =
-        harmonyMode === 'adaptive'
-          ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
-          : answer.answerMidi;
+      answerMidi = mapIntoBarFields
+        ? proto1MapMidiSequenceIntoField(answer.answerMidi, combinedField)
+        : answer.answerMidi;
       answerMotifId = answer.motifId;
     }
   }
@@ -2074,7 +2131,7 @@ export function buildSonicYouthProto1MelodicDialogue(
       : proto1Guitar2MelodicBarsSeeded(answerMidi, answerMotifId, seed);
   let guitar1MelodicEventsByBar = proto1TileMelodicBars(cycleG1, pairs.length);
   let guitar2MelodicEventsByBar = proto1TileMelodicBars(cycleG2, pairs.length);
-  if (harmonyMode === 'adaptive') {
+  if (mapIntoBarFields) {
     guitar1MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar1MelodicEventsByBar, pairs);
     guitar2MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar2MelodicEventsByBar, pairs);
   }

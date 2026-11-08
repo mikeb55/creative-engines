@@ -33,6 +33,7 @@ import type { ReharmLockedEvent } from '../harmony/reharmSequenceTypes';
 import {
   buildSonicYouthPolychordProgressionScore,
   buildSonicYouthProto1MelodicDialogue,
+  normalizeSyProto1UserPolychordBars,
   resolveSyProto1SelectedCandidate,
   type SonicYouthPolychordTuningOptions,
   type SonicYouthProto1MelodicDialogueOptions,
@@ -45,6 +46,8 @@ import {
   type SyProtoTriadInput,
   type SyProtoProto1MelodicDialogueResult,
 } from './sonicYouthPolychordScore';
+
+export { normalizeSyProto1UserPolychordBars };
 
 export type { ReharmLockedEvent };
 
@@ -367,8 +370,9 @@ export type GenerateSonicYouthPolychordMusicXmlOptions = {
 
 /**
  * TunePainter / browser Proto1 options.
- * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount to the Proto1 builder.
+ * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount, polychordBars to the Proto1 builder.
  * `harmonyMode` default `'fixed'`; `'adaptive'` uses seeded polychord planner.
+ * Optional `polychordBars` → exact user pairs (roots/qualities) per bar.
  */
 export type GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions =
   SonicYouthProto1MelodicDialogueOptions & {
@@ -456,15 +460,16 @@ export type GenerateSonicYouthProto1MelodicDialogueMusicXmlResult = {
 /**
  * Browser entry: Sonic Youth Proto1 melodic dialogue → MusicXML + in-memory candidates.
  * No explicit `seed` → {@link resolveSyProto1SelectedCandidate} (best of 1–4 ScoreModel).
- * Explicit `seed` → that dialogue only (custom tunings / modes unchanged).
+ * Explicit `seed` → that dialogue only (custom tunings / modes / polychordBars unchanged).
  * Defaults: `harmonyMode: 'fixed'`, `harmonicVariant: 'A'`.
+ * Optional `polychordBars` → exact user pairs; omitted → legacy fixed/adaptive pair source.
  * No GUI — options-only surface for TunePainter.
  */
 export function generateSonicYouthProto1MelodicDialogueMusicXml(
   options?: GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions
 ): GenerateSonicYouthProto1MelodicDialogueMusicXmlResult {
   const { bpm: bpmOpt, ...dialogueOpts } = options ?? {};
-  // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount.
+  // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount / polychordBars.
   let built: SyProtoProto1MelodicDialogueResult;
   let selectedSeed: number;
   let candidates: readonly GenerateSonicYouthProto1ApiCandidate[];
