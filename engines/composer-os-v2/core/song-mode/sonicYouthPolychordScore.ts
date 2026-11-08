@@ -30,13 +30,14 @@ import type { MelodicNote } from '../gce/gce_melody_eval';
 import { scoreModelToMelodicLine } from '../gce/scoreModelToMelodicLine';
 import { applyOperator, type Motif, type OperatorId, type OperatorParams } from '../motif-ops';
 import { mulberry32 } from '../remix/vaultSeedMix';
-import type {
-  ChordEvent,
-  NoteEvent,
-  PartModel,
-  RestEvent,
-  ScoreEvent,
-  ScoreModel,
+import {
+  DIVISIONS,
+  type ChordEvent,
+  type NoteEvent,
+  type PartModel,
+  type RestEvent,
+  type ScoreEvent,
+  type ScoreModel,
 } from '../score-model/scoreModelTypes';
 import {
   addEvent,
@@ -232,6 +233,564 @@ export function analyzeSyProtoCombinedPolychord(pair: SyProtoPolychordPair): SyP
     pitchClassCount,
     forte: pitchClassCount === 6 ? classifyPitchClassSet(unionPitchClasses).forte : null,
     alternativeDisjointSplits: disjointTertianSplits(unionPitchClasses),
+  };
+}
+
+/**
+ * One bar of dual-guitar harmony facts from existing chord events only.
+ * Symbols stay per-guitar (never collapsed to a slash token). No quality scores.
+ */
+export type SyProtoBarDualGuitarHarmony = {
+  /** 1-based measure index from the score (falls back to array position + 1). */
+  bar: number;
+  guitar1ChordSymbol: string | null;
+  guitar2ChordSymbol: string | null;
+  /** Canonical PC union of Guitar 1 + Guitar 2 chord-event pitches this bar. */
+  combinedPitchClasses: readonly number[];
+};
+
+function chordEventsInMeasure(
+  measure: { events: readonly ScoreEvent[] } | undefined
+): ChordEvent[] {
+  if (!measure) return [];
+  return measure.events.filter((e): e is ChordEvent => e.kind === 'chord');
+}
+
+function firstChordSymbol(events: readonly ChordEvent[]): string | null {
+  for (const e of events) {
+    if (e.chordSymbol === undefined) continue;
+    return e.chordSymbol;
+  }
+  return null;
+}
+
+function pitchClassesFromChordEvents(events: readonly ChordEvent[]): number[] {
+  const pcs: number[] = [];
+  for (const e of events) {
+    for (const midi of e.pitches) pcs.push(midi);
+  }
+  return canonicalPitchSet(pcs);
+}
+
+/**
+ * Pure read-only helper: bar-by-bar Guitar 1 / Guitar 2 chord symbols plus
+ * combined pitch-class set, taken from existing `kind: 'chord'` events.
+ * Does not invent slash-chord labels, does not score quality, does not touch GCE.
+ */
+export function extractSyProtoDualGuitarHarmonyByBar(
+  score: ScoreModel
+): SyProtoBarDualGuitarHarmony[] {
+  const g1 = score.parts.find((p) => p.id === 'guitar');
+  const g2 = score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2) return [];
+
+  const barCount = Math.min(g1.measures.length, g2.measures.length);
+  const out: SyProtoBarDualGuitarHarmony[] = [];
+  for (let i = 0; i < barCount; i++) {
+    const m1 = g1.measures[i];
+    const m2 = g2.measures[i];
+    const c1 = chordEventsInMeasure(m1);
+    const c2 = chordEventsInMeasure(m2);
+    out.push({
+      bar: m1?.index ?? m2?.index ?? i + 1,
+      guitar1ChordSymbol: firstChordSymbol(c1),
+      guitar2ChordSymbol: firstChordSymbol(c2),
+      combinedPitchClasses: canonicalPitchSet([
+        ...pitchClassesFromChordEvents(c1),
+        ...pitchClassesFromChordEvents(c2),
+      ]),
+    });
+  }
+  return out;
+}
+
+/**
+ * One bar of G1↔G2 melodic interaction (melody notes only; chord-grip events excluded).
+ * Timing from ScoreModel `startBeat` / `duration` (beats → ticks via {@link DIVISIONS}).
+ */
+export type SyProtoBarMelodicInteraction = {
+  /** 1-based measure index from the score (falls back to array position + 1). */
+  bar: number;
+  guitar1MelodicNoteCount: number;
+  guitar2MelodicNoteCount: number;
+  /** Shared melodic onset count (same start tick on both guitars). */
+  simultaneousMelodicAttacks: number;
+  /** Sum of pairwise melodic overlap spans, in ScoreModel ticks (`beats * DIVISIONS`). */
+  overlappingMelodicDurationTicks: number;
+  /** Absolute MIDI intervals (semitones) for each overlapping G1×G2 melodic note pair. */
+  overlapPitchIntervalsSemitones: readonly number[];
+};
+
+type SyProtoMelodicSpan = {
+  startBeat: number;
+  endBeat: number;
+  pitch: number;
+  startTick: number;
+};
+
+/** Melodic note only — excludes sustained chord-grip `kind: 'chord'` stacks. */
+function melodicNoteEventsInMeasure(
+  measure: { events: readonly ScoreEvent[] } | undefined
+): NoteEvent[] {
+  if (!measure) return [];
+  return measure.events.filter((e): e is NoteEvent => e.kind === 'note');
+}
+
+function melodicSpansFromNotes(notes: readonly NoteEvent[]): SyProtoMelodicSpan[] {
+  return notes.map((n) => {
+    const startBeat = n.startBeat;
+    const endBeat = n.startBeat + n.duration;
+    return {
+      startBeat,
+      endBeat,
+      pitch: n.pitch,
+      startTick: Math.round(startBeat * DIVISIONS),
+    };
+  });
+}
+
+/**
+ * Pure read-only helper: per-bar G1/G2 melodic interaction from ScoreModel note timing.
+ * Chord-grip events excluded. No GCE / generation / MusicXML changes.
+ */
+export function measureSyProtoDualGuitarMelodicInteractionByBar(
+  score: ScoreModel
+): SyProtoBarMelodicInteraction[] {
+  const g1 = score.parts.find((p) => p.id === 'guitar');
+  const g2 = score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2) return [];
+
+  const barCount = Math.min(g1.measures.length, g2.measures.length);
+  const out: SyProtoBarMelodicInteraction[] = [];
+  for (let i = 0; i < barCount; i++) {
+    const m1 = g1.measures[i];
+    const m2 = g2.measures[i];
+    const spans1 = melodicSpansFromNotes(melodicNoteEventsInMeasure(m1));
+    const spans2 = melodicSpansFromNotes(melodicNoteEventsInMeasure(m2));
+
+    const g1Onsets = new Set(spans1.map((s) => s.startTick));
+    let simultaneousMelodicAttacks = 0;
+    for (const s of spans2) {
+      if (g1Onsets.has(s.startTick)) {
+        simultaneousMelodicAttacks += 1;
+        g1Onsets.delete(s.startTick);
+      }
+    }
+
+    let overlappingBeats = 0;
+    const overlapPitchIntervalsSemitones: number[] = [];
+    for (const a of spans1) {
+      for (const b of spans2) {
+        const overlap = Math.min(a.endBeat, b.endBeat) - Math.max(a.startBeat, b.startBeat);
+        if (overlap <= 0) continue;
+        overlappingBeats += overlap;
+        overlapPitchIntervalsSemitones.push(Math.abs(a.pitch - b.pitch));
+      }
+    }
+
+    out.push({
+      bar: m1?.index ?? m2?.index ?? i + 1,
+      guitar1MelodicNoteCount: spans1.length,
+      guitar2MelodicNoteCount: spans2.length,
+      simultaneousMelodicAttacks,
+      overlappingMelodicDurationTicks: Math.round(overlappingBeats * DIVISIONS),
+      overlapPitchIntervalsSemitones,
+    });
+  }
+  return out;
+}
+
+/** One guitar, one bar — attacks / IOIs / rhythm fingerprint (melody notes only). */
+export type SyProtoGuitarBarRhythm = {
+  bar: number;
+  /** Attack onsets in beats within the bar (`NoteEvent.startBeat`). */
+  attackBeats: readonly number[];
+  /** Attack onsets in ScoreModel ticks (`beat * DIVISIONS`). */
+  attackTicks: readonly number[];
+  /** Successive inter-onset intervals in beats (length = attacks − 1). */
+  interOnsetIntervalsBeats: readonly number[];
+  /** Successive IOIs in ticks. */
+  interOnsetIntervalsTicks: readonly number[];
+  /** Duration sequence quantized to sixteenth units (`round(duration * 4)`). */
+  durationPatternSixteenths: readonly number[];
+  /** Onset grid fingerprint: quantized attack beats joined (rhythm pattern id). */
+  onsetPatternId: string;
+  /** Duration-grid fingerprint (rhythmic cell id). */
+  durationPatternId: string;
+};
+
+export type SyProtoRhythmMotifRelationKind = 'exact_repeat' | 'retrograde' | 'rotation';
+
+/** Repeated or transformed rhythmic motif link between two bars of one guitar. */
+export type SyProtoRhythmMotifRelation = {
+  kind: SyProtoRhythmMotifRelationKind;
+  guitar: 'guitar1' | 'guitar2';
+  fromBar: number;
+  toBar: number;
+  /** For `rotation` only — cyclic IOI shift amount (≥1). */
+  rotationShift?: number;
+};
+
+export type SyProtoDualGuitarRhythmicAnalysis = {
+  guitar1ByBar: readonly SyProtoGuitarBarRhythm[];
+  guitar2ByBar: readonly SyProtoGuitarBarRhythm[];
+  motifRelations: readonly SyProtoRhythmMotifRelation[];
+  /** Variation of each guitar's onset patterns across the observed bars (Proto1 = 4). */
+  variation: {
+    barCount: number;
+    guitar1UniqueOnsetPatternCount: number;
+    guitar2UniqueOnsetPatternCount: number;
+    guitar1OnsetPatternIds: readonly string[];
+    guitar2OnsetPatternIds: readonly string[];
+    /** 0 = all bars share one pattern; 1 = every bar unique (empty bars ignored in ratio denom). */
+    guitar1VariationRatio: number;
+    guitar2VariationRatio: number;
+  };
+};
+
+function quantizeBeatSixteenth(beat: number): number {
+  return Math.round(beat * 4) / 4;
+}
+
+function syProtoBarRhythmFromNotes(
+  bar: number,
+  notes: readonly NoteEvent[]
+): SyProtoGuitarBarRhythm {
+  const sorted = [...notes].sort((a, b) => a.startBeat - b.startBeat || a.duration - b.duration);
+  const attackBeats = sorted.map((n) => quantizeBeatSixteenth(n.startBeat));
+  const attackTicks = attackBeats.map((b) => Math.round(b * DIVISIONS));
+  const interOnsetIntervalsBeats: number[] = [];
+  for (let i = 1; i < attackBeats.length; i++) {
+    interOnsetIntervalsBeats.push(
+      Math.round((attackBeats[i]! - attackBeats[i - 1]!) * 1000) / 1000
+    );
+  }
+  const interOnsetIntervalsTicks = interOnsetIntervalsBeats.map((b) => Math.round(b * DIVISIONS));
+  const durationPatternSixteenths = sorted.map((n) => Math.max(1, Math.round(n.duration * 4)));
+  const onsetPatternId = attackBeats.length === 0 ? '∅' : attackBeats.join(',');
+  const durationPatternId =
+    durationPatternSixteenths.length === 0 ? '∅' : durationPatternSixteenths.join(',');
+  return {
+    bar,
+    attackBeats,
+    attackTicks,
+    interOnsetIntervalsBeats,
+    interOnsetIntervalsTicks,
+    durationPatternSixteenths,
+    onsetPatternId,
+    durationPatternId,
+  };
+}
+
+function ioisEqual(a: readonly number[], b: readonly number[], eps = 1e-6): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i]! - b[i]!) > eps) return false;
+  }
+  return true;
+}
+
+function rotatedIois(iois: readonly number[], shift: number): number[] {
+  if (iois.length === 0) return [];
+  const n = iois.length;
+  const s = ((shift % n) + n) % n;
+  return [...iois.slice(s), ...iois.slice(0, s)];
+}
+
+function collectSyProtoRhythmMotifRelations(
+  guitar: 'guitar1' | 'guitar2',
+  bars: readonly SyProtoGuitarBarRhythm[]
+): SyProtoRhythmMotifRelation[] {
+  const out: SyProtoRhythmMotifRelation[] = [];
+  for (let i = 0; i < bars.length; i++) {
+    for (let j = i + 1; j < bars.length; j++) {
+      const a = bars[i]!;
+      const b = bars[j]!;
+      if (a.onsetPatternId === '∅' || b.onsetPatternId === '∅') continue;
+
+      if (a.onsetPatternId === b.onsetPatternId || a.durationPatternId === b.durationPatternId) {
+        out.push({ kind: 'exact_repeat', guitar, fromBar: a.bar, toBar: b.bar });
+        continue;
+      }
+
+      const aIoi = a.interOnsetIntervalsBeats;
+      const bIoi = b.interOnsetIntervalsBeats;
+      if (aIoi.length >= 2 && ioisEqual(aIoi, [...bIoi].reverse())) {
+        out.push({ kind: 'retrograde', guitar, fromBar: a.bar, toBar: b.bar });
+        continue;
+      }
+
+      if (aIoi.length >= 2 && aIoi.length === bIoi.length) {
+        let foundRot = false;
+        for (let shift = 1; shift < aIoi.length; shift++) {
+          if (ioisEqual(rotatedIois(aIoi, shift), bIoi)) {
+            out.push({
+              kind: 'rotation',
+              guitar,
+              fromBar: a.bar,
+              toBar: b.bar,
+              rotationShift: shift,
+            });
+            foundRot = true;
+            break;
+          }
+        }
+        if (foundRot) continue;
+      }
+    }
+  }
+  return out;
+}
+
+function syProtoRhythmVariationRatio(patternIds: readonly string[]): number {
+  const active = patternIds.filter((id) => id !== '∅');
+  if (active.length <= 1) return 0;
+  const unique = new Set(active).size;
+  return (unique - 1) / (active.length - 1);
+}
+
+/**
+ * Pure read-only rhythmic analysis of G1/G2 melodic events.
+ * Attacks, IOIs, per-guitar patterns, repeated/transformed motifs, four-bar variation.
+ * Excludes sustained chord-grip events. No GCE scoring.
+ */
+export function analyzeSyProtoDualGuitarRhythm(
+  score: ScoreModel
+): SyProtoDualGuitarRhythmicAnalysis {
+  const g1 = score.parts.find((p) => p.id === 'guitar');
+  const g2 = score.parts.find((p) => p.id === 'guitar_2');
+  if (!g1 || !g2) {
+    return {
+      guitar1ByBar: [],
+      guitar2ByBar: [],
+      motifRelations: [],
+      variation: {
+        barCount: 0,
+        guitar1UniqueOnsetPatternCount: 0,
+        guitar2UniqueOnsetPatternCount: 0,
+        guitar1OnsetPatternIds: [],
+        guitar2OnsetPatternIds: [],
+        guitar1VariationRatio: 0,
+        guitar2VariationRatio: 0,
+      },
+    };
+  }
+
+  const barCount = Math.min(g1.measures.length, g2.measures.length);
+  const guitar1ByBar: SyProtoGuitarBarRhythm[] = [];
+  const guitar2ByBar: SyProtoGuitarBarRhythm[] = [];
+  for (let i = 0; i < barCount; i++) {
+    const m1 = g1.measures[i];
+    const m2 = g2.measures[i];
+    const bar = m1?.index ?? m2?.index ?? i + 1;
+    guitar1ByBar.push(syProtoBarRhythmFromNotes(bar, melodicNoteEventsInMeasure(m1)));
+    guitar2ByBar.push(syProtoBarRhythmFromNotes(bar, melodicNoteEventsInMeasure(m2)));
+  }
+
+  const motifRelations = [
+    ...collectSyProtoRhythmMotifRelations('guitar1', guitar1ByBar),
+    ...collectSyProtoRhythmMotifRelations('guitar2', guitar2ByBar),
+  ];
+
+  const guitar1OnsetPatternIds = guitar1ByBar.map((b) => b.onsetPatternId);
+  const guitar2OnsetPatternIds = guitar2ByBar.map((b) => b.onsetPatternId);
+
+  return {
+    guitar1ByBar,
+    guitar2ByBar,
+    motifRelations,
+    variation: {
+      barCount,
+      guitar1UniqueOnsetPatternCount: new Set(guitar1OnsetPatternIds.filter((id) => id !== '∅')).size,
+      guitar2UniqueOnsetPatternCount: new Set(guitar2OnsetPatternIds.filter((id) => id !== '∅')).size,
+      guitar1OnsetPatternIds,
+      guitar2OnsetPatternIds,
+      guitar1VariationRatio: syProtoRhythmVariationRatio(guitar1OnsetPatternIds),
+      guitar2VariationRatio: syProtoRhythmVariationRatio(guitar2OnsetPatternIds),
+    },
+  };
+}
+
+/** Fixed Proto 1 seed set for cross-seed evidence comparison. */
+export const SY_PROTO1_COMPARISON_SEEDS = [1, 2, 3, 4] as const;
+
+export type SyProto1ComparisonSeed = (typeof SY_PROTO1_COMPARISON_SEEDS)[number];
+
+/**
+ * In-memory evidence pack for one Proto 1 seed — harmony, melodic overlap, rhythm.
+ * No invented quality scores or ranks. GCE harmony/arrangement stay NOT MEASURED.
+ */
+export type SyProto1SeedComparisonRecord = {
+  seed: SyProto1ComparisonSeed;
+  harmonyByBar: readonly SyProtoBarDualGuitarHarmony[];
+  melodicInteractionByBar: readonly SyProtoBarMelodicInteraction[];
+  rhythm: SyProtoDualGuitarRhythmicAnalysis;
+  /** Preserved Proto1 GCE reporting posture (no overall / PASS-FAIL while unmeasured). */
+  gceReporting: {
+    harmonyAndLanguage: 'NOT MEASURED';
+    arrangementAndOrchestration: 'NOT MEASURED';
+    overallScore: null;
+    passFail: null;
+  };
+};
+
+const SY_PROTO1_COMPARISON_GCE_REPORTING: SyProto1SeedComparisonRecord['gceReporting'] = {
+  harmonyAndLanguage: 'NOT MEASURED',
+  arrangementAndOrchestration: 'NOT MEASURED',
+  overallScore: null,
+  passFail: null,
+};
+
+/**
+ * Pure helper: build Proto 1 dialogues for seeds 1–4 and pack per-seed evidence
+ * from {@link extractSyProtoDualGuitarHarmonyByBar},
+ * {@link measureSyProtoDualGuitarMelodicInteractionByBar},
+ * and {@link analyzeSyProtoDualGuitarRhythm}.
+ * No quality scores or ranking. Does not modify GCE evaluation formulas.
+ */
+export function compareSyProto1Seeds1to4(
+  options?: Omit<SonicYouthProto1MelodicDialogueOptions, 'seed'>
+): readonly SyProto1SeedComparisonRecord[] {
+  return SY_PROTO1_COMPARISON_SEEDS.map((seed) => {
+    const dialogue = buildSonicYouthProto1MelodicDialogue({ ...options, seed });
+    const score = dialogue.score;
+    return {
+      seed,
+      harmonyByBar: extractSyProtoDualGuitarHarmonyByBar(score),
+      melodicInteractionByBar: measureSyProtoDualGuitarMelodicInteractionByBar(score),
+      rhythm: analyzeSyProtoDualGuitarRhythm(score),
+      gceReporting: SY_PROTO1_COMPARISON_GCE_REPORTING,
+    };
+  });
+}
+
+/** One in-memory Proto1 seed candidate (dialogue ScoreModel retained). */
+export type SyProto1SeedCandidate = {
+  seed: SyProto1ComparisonSeed;
+  dialogue: SyProtoProto1MelodicDialogueResult;
+};
+
+/**
+ * Build all four Proto1 seed dialogues in memory (seeds 1–4).
+ * Composition path unchanged — thin map over {@link buildSonicYouthProto1MelodicDialogue}.
+ */
+export function buildSyProto1SeedCandidates1to4(
+  options?: Omit<SonicYouthProto1MelodicDialogueOptions, 'seed'>
+): readonly SyProto1SeedCandidate[] {
+  return SY_PROTO1_COMPARISON_SEEDS.map((seed) => ({
+    seed,
+    dialogue: buildSonicYouthProto1MelodicDialogue({ ...options, seed }),
+  }));
+}
+
+type SyProto1SeedSelectionMetrics = {
+  seed: SyProto1ComparisonSeed;
+  /** Retrograde + rotation motif links (exact repeats excluded). */
+  motifDevelop: number;
+  rhythmVariety: number;
+  overlapBars: number;
+  overlapTicks: number;
+  simultaneous: number;
+  motifTotal: number;
+  meanOverlapInterval: number;
+};
+
+function syProto1SeedSelectionMetrics(
+  record: SyProto1SeedComparisonRecord
+): SyProto1SeedSelectionMetrics {
+  const motifDevelop = record.rhythm.motifRelations.filter(
+    (m) => m.kind === 'retrograde' || m.kind === 'rotation'
+  ).length;
+  const motifTotal = record.rhythm.motifRelations.length;
+  const rhythmVariety =
+    record.rhythm.variation.guitar1VariationRatio +
+    record.rhythm.variation.guitar2VariationRatio +
+    record.rhythm.variation.guitar1UniqueOnsetPatternCount +
+    record.rhythm.variation.guitar2UniqueOnsetPatternCount;
+  let overlapTicks = 0;
+  let simultaneous = 0;
+  let overlapBars = 0;
+  const intervals: number[] = [];
+  for (const bar of record.melodicInteractionByBar) {
+    overlapTicks += bar.overlappingMelodicDurationTicks;
+    simultaneous += bar.simultaneousMelodicAttacks;
+    if (bar.overlappingMelodicDurationTicks > 0) overlapBars += 1;
+    intervals.push(...bar.overlapPitchIntervalsSemitones);
+  }
+  const meanOverlapInterval =
+    intervals.length === 0 ? 0 : intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  return {
+    seed: record.seed,
+    motifDevelop,
+    rhythmVariety,
+    overlapBars,
+    overlapTicks,
+    simultaneous,
+    motifTotal,
+    meanOverlapInterval,
+  };
+}
+
+/**
+ * Deterministic best-of-four from {@link compareSyProto1Seeds1to4} evidence.
+ * Prefers motivic development, rhythmic variety, then guitar interaction.
+ * Rejects invented GCE overall / passFail. Tie-break: lowest seed.
+ * Does not alter composition or GCE formulas.
+ */
+export function selectSyProto1BestSeedFromComparison(
+  records: readonly SyProto1SeedComparisonRecord[]
+): SyProto1ComparisonSeed {
+  if (records.length === 0) {
+    throw new Error('selectSyProto1BestSeedFromComparison: empty comparison records');
+  }
+  for (const record of records) {
+    if (record.gceReporting.overallScore !== null || record.gceReporting.passFail !== null) {
+      throw new Error(
+        `selectSyProto1BestSeedFromComparison: invalid GCE overall on seed ${record.seed}`
+      );
+    }
+  }
+  const ranked = records.map(syProto1SeedSelectionMetrics).sort((a, b) => {
+    if (a.motifDevelop !== b.motifDevelop) return b.motifDevelop - a.motifDevelop;
+    if (a.rhythmVariety !== b.rhythmVariety) return b.rhythmVariety - a.rhythmVariety;
+    if (a.overlapBars !== b.overlapBars) return b.overlapBars - a.overlapBars;
+    if (a.overlapTicks !== b.overlapTicks) return b.overlapTicks - a.overlapTicks;
+    if (a.simultaneous !== b.simultaneous) return b.simultaneous - a.simultaneous;
+    if (a.motifTotal !== b.motifTotal) return b.motifTotal - a.motifTotal;
+    if (a.meanOverlapInterval !== b.meanOverlapInterval) {
+      return b.meanOverlapInterval - a.meanOverlapInterval;
+    }
+    return a.seed - b.seed;
+  });
+  return ranked[0]!.seed;
+}
+
+export type SyProto1SelectedCandidateResult = {
+  selectedSeed: SyProto1ComparisonSeed;
+  dialogue: SyProtoProto1MelodicDialogueResult;
+  candidates: readonly SyProto1SeedCandidate[];
+  comparison: readonly SyProto1SeedComparisonRecord[];
+};
+
+/**
+ * Auto-select Proto1 among seeds 1–4: keep all candidates in memory, reuse
+ * {@link compareSyProto1Seeds1to4} + {@link selectSyProto1BestSeedFromComparison}.
+ */
+export function resolveSyProto1SelectedCandidate(
+  options?: Omit<SonicYouthProto1MelodicDialogueOptions, 'seed'>
+): SyProto1SelectedCandidateResult {
+  const candidates = buildSyProto1SeedCandidates1to4(options);
+  const comparison = compareSyProto1Seeds1to4(options);
+  const selectedSeed = selectSyProto1BestSeedFromComparison(comparison);
+  const selected = candidates.find((c) => c.seed === selectedSeed);
+  if (!selected) {
+    throw new Error(`resolveSyProto1SelectedCandidate: missing candidate for seed ${selectedSeed}`);
+  }
+  return {
+    selectedSeed,
+    dialogue: selected.dialogue,
+    candidates,
+    comparison,
   };
 }
 
@@ -955,6 +1514,7 @@ function proto1SeededAnswerOp(seed: number): Proto1PitchOp {
 /**
  * Bars 1–2 G1 statement: distinctive 4-note cell with rests + rhythmic variation.
  * Bars 3–4: no melody events (idle triad keeps a single chord voice only).
+ * Verified no-seed rhythm — do not alter.
  */
 function proto1Guitar1MelodicBars(
   motifMidi: readonly number[],
@@ -983,6 +1543,7 @@ function proto1Guitar1MelodicBars(
 /**
  * Bar 1: idle (G1 alone). Bar 2: enter under G1’s delayed C5 — genuine overlap.
  * Bars 3–4: continue invert-in-field answer with different rhythm.
+ * Verified no-seed rhythm — do not alter.
  */
 function proto1Guitar2MelodicBars(
   answerMidi: readonly number[],
@@ -1012,6 +1573,189 @@ function proto1Guitar2MelodicBars(
       createNote(a3!, 1, 3, PROTO1_MELODY_VOICE, answerMotifId),
     ],
   ];
+}
+
+/** Seed → one of four fixed Proto1 rhythm profiles (seeds 1–4 are pairwise distinct). */
+function proto1SeededRhythmProfileIndex(seed: number): 0 | 1 | 2 | 3 {
+  return ((((seed - 1) % 4) + 4) % 4) as 0 | 1 | 2 | 3;
+}
+
+/**
+ * Seeded G1 rhythm: same 4 motif pitches, varied attacks/durations.
+ * Bars 3–4 stay empty. Each profile keeps a bar-2 sustain for G2 overlap.
+ */
+function proto1Guitar1MelodicBarsSeeded(
+  motifMidi: readonly number[],
+  motifId: string,
+  seed: number
+): SyProtoProto1MelodicEvent[][] {
+  const [n0, n1, n2, n3] = motifMidi;
+  const profile = proto1SeededRhythmProfileIndex(seed);
+  switch (profile) {
+    case 0:
+      // Seed 1: pickup → offbeat cell; n3 from beat 1
+      return [
+        [
+          createRest(0, 0.5, PROTO1_MELODY_VOICE),
+          createNote(n0!, 0.5, 1, PROTO1_MELODY_VOICE, motifId),
+          createRest(1.5, 0.5, PROTO1_MELODY_VOICE),
+          createNote(n1!, 2, 0.5, PROTO1_MELODY_VOICE, motifId),
+          createNote(n2!, 2.5, 1.5, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [
+          createRest(0, 1, PROTO1_MELODY_VOICE),
+          createNote(n3!, 1, 3, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [],
+        [],
+      ];
+    case 1:
+      // Seed 2: compressed front, gap, late n2; n3 early in bar 2
+      return [
+        [
+          createNote(n0!, 0, 0.5, PROTO1_MELODY_VOICE, motifId),
+          createNote(n1!, 0.5, 1.5, PROTO1_MELODY_VOICE, motifId),
+          createRest(2, 1, PROTO1_MELODY_VOICE),
+          createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [
+          createRest(0, 0.5, PROTO1_MELODY_VOICE),
+          createNote(n3!, 0.5, 2, PROTO1_MELODY_VOICE, motifId),
+          createRest(2.5, 1.5, PROTO1_MELODY_VOICE),
+        ],
+        [],
+        [],
+      ];
+    case 2:
+      // Seed 3: long–short–short; late n3 under G2
+      return [
+        [
+          createNote(n0!, 0, 2, PROTO1_MELODY_VOICE, motifId),
+          createRest(2, 0.5, PROTO1_MELODY_VOICE),
+          createNote(n1!, 2.5, 0.5, PROTO1_MELODY_VOICE, motifId),
+          createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [
+          createRest(0, 2.5, PROTO1_MELODY_VOICE),
+          createNote(n3!, 2.5, 1.5, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [],
+        [],
+      ];
+    case 3:
+      // Seed 4: even quarters; n3 occupies first half of bar 2
+      return [
+        [
+          createNote(n0!, 0, 1, PROTO1_MELODY_VOICE, motifId),
+          createRest(1, 1, PROTO1_MELODY_VOICE),
+          createNote(n1!, 2, 1, PROTO1_MELODY_VOICE, motifId),
+          createNote(n2!, 3, 1, PROTO1_MELODY_VOICE, motifId),
+        ],
+        [
+          createNote(n3!, 0, 2, PROTO1_MELODY_VOICE, motifId),
+          createRest(2, 2, PROTO1_MELODY_VOICE),
+        ],
+        [],
+        [],
+      ];
+  }
+}
+
+/**
+ * Seeded G2 rhythm: same answer pitches / note count; varied entry + durations.
+ * Bar 1 idle; bar 2 always overlaps G1's bar-2 melody.
+ */
+function proto1Guitar2MelodicBarsSeeded(
+  answerMidi: readonly number[],
+  answerMotifId: string,
+  seed: number
+): SyProtoProto1MelodicEvent[][] {
+  const [a0, a1, a2, a3] = answerMidi;
+  const profile = proto1SeededRhythmProfileIndex(seed);
+  switch (profile) {
+    case 0:
+      // Seed 1: enter beat 0.5
+      return [
+        [],
+        [
+          createRest(0, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a0!, 0.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a1!, 1, 3, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createNote(a2!, 0, 1, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(1, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a3!, 1.5, 1.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(3, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a2!, 3.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createRest(0, 2, PROTO1_MELODY_VOICE),
+          createNote(a3!, 2, 2, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+      ];
+    case 1:
+      // Seed 2: enter on downbeat
+      return [
+        [],
+        [
+          createNote(a0!, 0, 1.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a1!, 1.5, 2.5, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createRest(0, 1, PROTO1_MELODY_VOICE),
+          createNote(a2!, 1, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a3!, 1.5, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(2, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a2!, 2.5, 1.5, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createRest(0, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a3!, 0.5, 3.5, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+      ];
+    case 2:
+      // Seed 3: late entry (beat 2) under delayed G1 n3
+      return [
+        [],
+        [
+          createRest(0, 2, PROTO1_MELODY_VOICE),
+          createNote(a0!, 2, 1, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a1!, 3, 1, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createNote(a2!, 0, 0.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(0.5, 1, PROTO1_MELODY_VOICE),
+          createNote(a3!, 1.5, 1, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(2.5, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a2!, 3, 1, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createRest(0, 1.5, PROTO1_MELODY_VOICE),
+          createNote(a3!, 1.5, 2.5, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+      ];
+    case 3:
+      // Seed 4: enter beat 1 against early G1 n3
+      return [
+        [],
+        [
+          createRest(0, 1, PROTO1_MELODY_VOICE),
+          createNote(a0!, 1, 1, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a1!, 2, 2, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createRest(0, 0.5, PROTO1_MELODY_VOICE),
+          createNote(a2!, 0.5, 1.5, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a3!, 2, 1, PROTO1_MELODY_VOICE, answerMotifId),
+          createNote(a2!, 3, 1, PROTO1_MELODY_VOICE, answerMotifId),
+        ],
+        [
+          createNote(a3!, 0, 3, PROTO1_MELODY_VOICE, answerMotifId),
+          createRest(3, 1, PROTO1_MELODY_VOICE),
+        ],
+      ];
+  }
 }
 
 function collectToneRoleReceipts(
@@ -1320,8 +2064,14 @@ export function buildSonicYouthProto1MelodicDialogue(
     assertPitchInCombinedField(midi, pair, 'Prototype 1 answer');
   }
 
-  const cycleG1 = proto1Guitar1MelodicBars(motifMidi, motifId);
-  const cycleG2 = proto1Guitar2MelodicBars(answerMidi, answerMotifId);
+  const cycleG1 =
+    seed === undefined
+      ? proto1Guitar1MelodicBars(motifMidi, motifId)
+      : proto1Guitar1MelodicBarsSeeded(motifMidi, motifId, seed);
+  const cycleG2 =
+    seed === undefined
+      ? proto1Guitar2MelodicBars(answerMidi, answerMotifId)
+      : proto1Guitar2MelodicBarsSeeded(answerMidi, answerMotifId, seed);
   let guitar1MelodicEventsByBar = proto1TileMelodicBars(cycleG1, pairs.length);
   let guitar2MelodicEventsByBar = proto1TileMelodicBars(cycleG2, pairs.length);
   if (harmonyMode === 'adaptive') {
@@ -1470,22 +2220,55 @@ export type SyProto1GceStructuralLimitation = {
   reason: string;
 };
 
+/** Categories existing GCE scorers cannot interpret on two-guitar polychord Proto 1. */
+export const SY_PROTO1_NOT_MEASURED_GCE_CATEGORIES: readonly GceCategory[] = [
+  'harmonyAndLanguage',
+  'arrangementAndOrchestration',
+] as const;
+
+export type SyProto1GceNotMeasured = {
+  category: GceCategory;
+  status: 'NOT MEASURED';
+  reason: string;
+};
+
+/** Per-category report: numeric measurement or explicit NOT MEASURED. */
+export type SyProto1GceCategoryReport = number | 'NOT MEASURED';
+
 export type SyProto1MelodicDialogueGceResult = {
   /** Echo of options.seed when provided; undefined for verified no-seed Proto 1. */
   seed?: number;
-  /** Ten GCE V2 category scores (0–10), unchanged formulas. */
-  categoryScores: Record<GceCategory, number>;
-  /** Weighted overall from evaluateGce (unchanged weights). */
-  overallScore: number;
-  /** Explicit short-form / four-bar caveats — scores still reported. */
+  /**
+   * Ten GCE V2 category slots. Harmony + Arrangement are `'NOT MEASURED'`;
+   * other categories retain actual measured scores (unchanged formulas).
+   */
+  categoryScores: Record<GceCategory, SyProto1GceCategoryReport>;
+  /** Measured categories only (excludes NOT MEASURED slots). */
+  measuredCategoryScores: Partial<Record<GceCategory, number>>;
+  /** Explicit NOT MEASURED receipts for polychord-uninterpretable categories. */
+  notMeasuredCategories: readonly SyProto1GceNotMeasured[];
+  /**
+   * Weighted overall — suppressed (`null`) while any required category is NOT MEASURED.
+   * Canonical weights/formulas unchanged; overall simply not reported incomplete.
+   */
+  overallScore: number | null;
+  /**
+   * PASS/FAIL — suppressed (`null`) while any required category is NOT MEASURED.
+   * Nested `gce.pass` / `gce.finalScore` are diagnostic only in that case.
+   */
+  passFail: 'PASS' | 'FAIL' | null;
+  /** Explicit short-form / four-bar caveats — measured scores still reported. */
   structurallyLimitedCategories: readonly SyProto1GceStructuralLimitation[];
-  /** Full evaluator receipt (pass/threshold/weakest/etc.). */
+  /** Full evaluator receipt (diagnostic; overall/pass not authoritative when unmeasured). */
   gce: GceEvaluationResult;
   dialogue: SyProtoProto1MelodicDialogueResult;
 };
 
 const PROTO1_SHORT_FORM_LIMIT_REASON =
   'Four-bar Proto 1 fragment: category is structurally limited on short-form material; interpret with caution (not automatic craft failure).';
+
+const PROTO1_NOT_MEASURED_REASON =
+  'Existing GCE scorers cannot interpret the two-guitar polychord representation.';
 
 /**
  * Proto1 GCE chord strip: declared parents as slash polychord tokens (G1/G2).
@@ -1642,8 +2425,11 @@ function scoreProto1DualGuitarRhythmicIdentity(score: ScoreModel): {
 
 /**
  * Pure in-memory GCE V2 evaluation of one Proto 1 dialogue (optional seed).
- * Builds via {@link buildSonicYouthProto1MelodicDialogue}; harmony strip adapted
- * to C/F♯m; Arr/RI overridden for guitar + guitar_2 using shared scorers.
+ * Builds via {@link buildSonicYouthProto1MelodicDialogue}.
+ * Reporting: harmonyAndLanguage + arrangementAndOrchestration are NOT MEASURED
+ * (polychord unscorable by current GCE scorers); overall + PASS/FAIL suppressed
+ * while those slots are unmeasured. Other categories retain actual measurements;
+ * four-bar structural limits remain explicit. RI still dual-guitar merged.
  */
 export function evaluateSonicYouthProto1MelodicDialogueGce(
   options?: SonicYouthProto1MelodicDialogueOptions
@@ -1662,15 +2448,36 @@ export function evaluateSonicYouthProto1MelodicDialogueGce(
     metadata: { songwriterStyleId: 'sonic_youth' },
   });
 
-  const arr = scoreProto1DualGuitarArrangement(dialogue.score);
   const ri = scoreProto1DualGuitarRhythmicIdentity(dialogue.score);
-  let gce = applyProto1CategoryOverride(gceBase, 'arrangementAndOrchestration', arr.score);
-  gce = applyProto1CategoryOverride(gce, 'rhythmicIdentity', ri.score);
+  const gce = applyProto1CategoryOverride(gceBase, 'rhythmicIdentity', ri.score);
 
-  const categoryScores = {} as Record<GceCategory, number>;
+  const notMeasuredSet = new Set<GceCategory>(SY_PROTO1_NOT_MEASURED_GCE_CATEGORIES);
+  const categoryScores = {} as Record<GceCategory, SyProto1GceCategoryReport>;
+  const measuredCategoryScores: Partial<Record<GceCategory, number>> = {};
   for (const cat of GCE_CATEGORY_ORDER) {
-    categoryScores[cat] = gce.categories[cat].score;
+    if (notMeasuredSet.has(cat)) {
+      categoryScores[cat] = 'NOT MEASURED';
+      continue;
+    }
+    const score = gce.categories[cat].score;
+    categoryScores[cat] = score;
+    measuredCategoryScores[cat] = score;
   }
+
+  const notMeasuredCategories: SyProto1GceNotMeasured[] =
+    SY_PROTO1_NOT_MEASURED_GCE_CATEGORIES.map((category) => ({
+      category,
+      status: 'NOT MEASURED' as const,
+      reason: PROTO1_NOT_MEASURED_REASON,
+    }));
+
+  const hasUnmeasuredRequired = notMeasuredCategories.length > 0;
+  const overallScore = hasUnmeasuredRequired ? null : gce.finalScore;
+  const passFail: 'PASS' | 'FAIL' | null = hasUnmeasuredRequired
+    ? null
+    : gce.pass
+      ? 'PASS'
+      : 'FAIL';
 
   const structurallyLimitedCategories: SyProto1GceStructuralLimitation[] =
     SY_PROTO1_STRUCTURALLY_LIMITED_GCE_CATEGORIES.map((category) => ({
@@ -1682,7 +2489,10 @@ export function evaluateSonicYouthProto1MelodicDialogueGce(
   return {
     ...(options?.seed !== undefined ? { seed: options.seed } : {}),
     categoryScores,
-    overallScore: gce.finalScore,
+    measuredCategoryScores,
+    notMeasuredCategories,
+    overallScore,
+    passFail,
     structurallyLimitedCategories,
     gce,
     dialogue,

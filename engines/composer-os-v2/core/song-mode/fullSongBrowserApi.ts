@@ -33,12 +33,17 @@ import type { ReharmLockedEvent } from '../harmony/reharmSequenceTypes';
 import {
   buildSonicYouthPolychordProgressionScore,
   buildSonicYouthProto1MelodicDialogue,
+  resolveSyProto1SelectedCandidate,
   type SonicYouthPolychordTuningOptions,
   type SonicYouthProto1MelodicDialogueOptions,
   type SyProto1HarmonicVariant,
   type SyProto1HarmonyMode,
+  type SyProto1SeedCandidate,
+  type SyProto1SeedComparisonRecord,
+  type SyProto1ComparisonSeed,
   type SyProtoPolychordPair,
   type SyProtoTriadInput,
+  type SyProtoProto1MelodicDialogueResult,
 } from './sonicYouthPolychordScore';
 
 export type { ReharmLockedEvent };
@@ -344,8 +349,12 @@ export type {
   SonicYouthProto1MelodicDialogueOptions,
   SyProto1HarmonicVariant,
   SyProto1HarmonyMode,
+  SyProto1SeedCandidate,
+  SyProto1SeedComparisonRecord,
+  SyProto1ComparisonSeed,
   SyProtoPolychordPair,
   SyProtoTriadInput,
+  SyProtoProto1MelodicDialogueResult,
 };
 
 export type GenerateSonicYouthPolychordMusicXmlOptions = {
@@ -424,19 +433,56 @@ export function generateSonicYouthPolychordMusicXml(
   return xml;
 }
 
+/** In-memory Proto1 candidate retained by the browser generation API. */
+export type GenerateSonicYouthProto1ApiCandidate = {
+  seed: number;
+  dialogue: SyProtoProto1MelodicDialogueResult;
+};
+
 /**
- * Browser entry: Sonic Youth Proto1 melodic dialogue → MusicXML string.
- * Forwards `harmonyMode` / `harmonicVariant` / seed / custom tunings / `barCount`
- * to {@link buildSonicYouthProto1MelodicDialogue}.
+ * Proto1 MusicXML generation result.
+ * `xml` is the exported MusicXML; auto-select keeps all four seed candidates in memory.
+ */
+export type GenerateSonicYouthProto1MelodicDialogueMusicXmlResult = {
+  xml: string;
+  /** Seed whose ScoreModel was exported. */
+  selectedSeed: number;
+  /** Auto path: seeds 1–4. Explicit seed path: single requested candidate. */
+  candidates: readonly GenerateSonicYouthProto1ApiCandidate[];
+  /** Present when auto-select ran (no explicit seed). */
+  comparison: readonly SyProto1SeedComparisonRecord[] | null;
+};
+
+/**
+ * Browser entry: Sonic Youth Proto1 melodic dialogue → MusicXML + in-memory candidates.
+ * No explicit `seed` → {@link resolveSyProto1SelectedCandidate} (best of 1–4 ScoreModel).
+ * Explicit `seed` → that dialogue only (custom tunings / modes unchanged).
  * Defaults: `harmonyMode: 'fixed'`, `harmonicVariant: 'A'`.
  * No GUI — options-only surface for TunePainter.
  */
 export function generateSonicYouthProto1MelodicDialogueMusicXml(
   options?: GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions
-): string {
+): GenerateSonicYouthProto1MelodicDialogueMusicXmlResult {
   const { bpm: bpmOpt, ...dialogueOpts } = options ?? {};
   // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount.
-  const built = buildSonicYouthProto1MelodicDialogue(dialogueOpts);
+  let built: SyProtoProto1MelodicDialogueResult;
+  let selectedSeed: number;
+  let candidates: readonly GenerateSonicYouthProto1ApiCandidate[];
+  let comparison: readonly SyProto1SeedComparisonRecord[] | null;
+
+  if (dialogueOpts.seed !== undefined) {
+    built = buildSonicYouthProto1MelodicDialogue(dialogueOpts);
+    selectedSeed = dialogueOpts.seed;
+    candidates = [{ seed: selectedSeed, dialogue: built }];
+    comparison = null;
+  } else {
+    const resolved = resolveSyProto1SelectedCandidate(dialogueOpts);
+    built = resolved.dialogue;
+    selectedSeed = resolved.selectedSeed;
+    candidates = resolved.candidates;
+    comparison = resolved.comparison;
+  }
+
   applySyElectricGuitarIdentity(built.score);
   const bpm =
     bpmOpt !== undefined && Number.isFinite(bpmOpt)
@@ -451,6 +497,6 @@ export function generateSonicYouthProto1MelodicDialogueMusicXml(
       }`
     );
   }
-  return xml;
+  return { xml, selectedSeed, candidates, comparison };
 }
 
