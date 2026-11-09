@@ -39,6 +39,8 @@ import {
   type SonicYouthProto1MelodicDialogueOptions,
   type SyProto1HarmonicVariant,
   type SyProto1HarmonyMode,
+  type SyProto1MelodicRhythmSlot,
+  type SyProto1MelodicRhythmSlots,
   type SyProto1SeedCandidate,
   type SyProto1SeedComparisonRecord,
   type SyProto1ComparisonSeed,
@@ -352,6 +354,8 @@ export type {
   SonicYouthProto1MelodicDialogueOptions,
   SyProto1HarmonicVariant,
   SyProto1HarmonyMode,
+  SyProto1MelodicRhythmSlot,
+  SyProto1MelodicRhythmSlots,
   SyProto1SeedCandidate,
   SyProto1SeedComparisonRecord,
   SyProto1ComparisonSeed,
@@ -370,9 +374,11 @@ export type GenerateSonicYouthPolychordMusicXmlOptions = {
 
 /**
  * TunePainter / browser Proto1 options.
- * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount, polychordBars to the Proto1 builder.
+ * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount, polychordBars,
+ * melodicRhythmSlots to the Proto1 builder / four-seed selection pipeline.
  * `harmonyMode` default `'fixed'`; `'adaptive'` uses seeded polychord planner.
  * Optional `polychordBars` → exact user pairs (roots/qualities) per bar.
+ * Optional `melodicRhythmSlots` → independent G1/G2 note/rest timing (unchanged); omitted → legacy rhythms.
  */
 export type GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions =
   SonicYouthProto1MelodicDialogueOptions & {
@@ -460,16 +466,19 @@ export type GenerateSonicYouthProto1MelodicDialogueMusicXmlResult = {
 /**
  * Browser entry: Sonic Youth Proto1 melodic dialogue → MusicXML + in-memory candidates.
  * No explicit `seed` → {@link resolveSyProto1SelectedCandidate} (best of 1–4 ScoreModel).
- * Explicit `seed` → that dialogue only (custom tunings / modes / polychordBars unchanged).
+ * Explicit `seed` → that dialogue only (custom tunings / modes / polychordBars / melodicRhythmSlots unchanged).
  * Defaults: `harmonyMode: 'fixed'`, `harmonicVariant: 'A'`.
  * Optional `polychordBars` → exact user pairs; omitted → legacy fixed/adaptive pair source.
+ * Optional `melodicRhythmSlots` → forwarded unchanged to Proto1 + seed selection; G1/G2 timing independent.
+ * No slots → identical legacy behaviour. Invalid slots throw (no MusicXML).
  * No GUI — options-only surface for TunePainter.
  */
 export function generateSonicYouthProto1MelodicDialogueMusicXml(
   options?: GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions
 ): GenerateSonicYouthProto1MelodicDialogueMusicXmlResult {
   const { bpm: bpmOpt, ...dialogueOpts } = options ?? {};
-  // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount / polychordBars.
+  // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount /
+  // polychordBars / melodicRhythmSlots (forwarded unchanged to builder / four-seed path).
   let built: SyProtoProto1MelodicDialogueResult;
   let selectedSeed: number;
   let candidates: readonly GenerateSonicYouthProto1ApiCandidate[];

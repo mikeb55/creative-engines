@@ -1,11 +1,25 @@
 /**
  * Single-staff exact-duration MusicXML. Piano grand-staff export does not call this.
  * Durations are already sounding ticks. time-modification is not applied again.
+ * ChordEvent grips (no pianoExact) emit via the same pitch-stack pattern as eventsToXml.
  */
 
-import type { MeasureModel, NoteEvent, PartModel, PianoExactTiming, RestEvent } from '../score-model/scoreModelTypes';
+import type {
+  ChordEvent,
+  MeasureModel,
+  NoteEvent,
+  PartModel,
+  PianoExactTiming,
+  RestEvent,
+} from '../score-model/scoreModelTypes';
 import { PIANO_V11_EXPORT_PPQ, integralTicks } from '../piano/pianoExactTiming';
 import { midiToPitch, noteXmlPitchedFragment, noteXmlRestFragment, pitchPartsForExport } from './musicXmlNoteFragment';
+import {
+  beatSpanToTicks,
+  decomposeTicksToStandardParts,
+  tickSpecForLength,
+  typeAndDotsXml,
+} from './musicXmlTickEncoding';
 
 function exactTicks(exact: PianoExactTiming, label: string): { start: number; duration: number } {
   const start = integralTicks(exact.onsetQ, PIANO_V11_EXPORT_PPQ);
@@ -53,6 +67,74 @@ function tieXml(exact: PianoExactTiming, note: NoteEvent): { sound: string; nota
   return { sound, notations };
 }
 
+function eventOnsetTicks(event: NoteEvent | RestEvent | ChordEvent, measureIndex: number): number {
+  if (event.kind === 'chord') {
+    return beatSpanToTicks(event.startBeat, event.startBeat + event.duration).start;
+  }
+  return exactTicks(event.pianoExact!, `${event.kind} bar ${measureIndex}`).start;
+}
+
+/**
+ * Legacy eventsToXml ChordEvent pitch-stack serialization (no &lt;harmony&gt;).
+ * Beat-1 chordSymbol stays on the exporter front-matter path.
+ */
+function chordEventPitchStackXml(
+  chordEv: ChordEvent,
+  voice: number,
+  durationParts: number[],
+  preferFlats: boolean,
+  stemXml: string,
+): string {
+  const firstTicks = durationParts[0]!;
+  const typeDots = typeAndDotsXml(tickSpecForLength(firstTicks));
+  let xml = '';
+  for (let pi = 0; pi < chordEv.pitches.length; pi++) {
+    const mid = chordEv.pitches[pi]!;
+    const { step, alter, octave } = midiToPitch(mid, preferFlats);
+    const alterEl = alter !== 0 ? `<alter>${alter}</alter>` : '';
+    const pitchXml = `<pitch><step>${step}</step>${alterEl}<octave>${octave}</octave></pitch>`;
+    if (pi === 0) {
+      const n = durationParts.length;
+      for (let i = 0; i < n; i++) {
+        const t = durationParts[i]!;
+        const spec = tickSpecForLength(t);
+        const tie =
+          n <= 1
+            ? ''
+            : i === 0
+              ? '<tie type="start"/>'
+              : i === n - 1
+                ? '<tie type="stop"/>'
+                : '<tie type="stop"/><tie type="start"/>';
+        xml += noteXmlPitchedFragment({
+          dynamicsAttr: '',
+          chordXml: '',
+          pitchXml,
+          durationTicks: t,
+          tieXml: tie,
+          voice,
+          typeAndDotsXml: typeAndDotsXml(spec),
+          stemXml,
+          notationsXml: '',
+        });
+      }
+    } else {
+      xml += noteXmlPitchedFragment({
+        dynamicsAttr: '',
+        chordXml: '<chord/>',
+        pitchXml,
+        durationTicks: firstTicks,
+        tieXml: '',
+        voice,
+        typeAndDotsXml: typeDots,
+        stemXml,
+        notationsXml: '',
+      });
+    }
+  }
+  return xml;
+}
+
 export function measureUsesExactStaff(measure: MeasureModel): boolean {
   return measure.events.some((event) => (event.kind === 'note' || event.kind === 'rest') && !!event.pianoExact);
 }
@@ -63,10 +145,19 @@ export function exactSingleStaffEventsToXml(
   preferFlats: boolean,
   measureCapacity: number,
 ): string {
-  const byVoice = new Map<number, (NoteEvent | RestEvent)[]>();
+  const byVoice = new Map<number, (NoteEvent | RestEvent | ChordEvent)[]>();
   for (const event of measure.events) {
+    if (event.kind === 'chord') {
+      const voice = event.voice ?? 1;
+      const list = byVoice.get(voice) ?? [];
+      list.push(event);
+      byVoice.set(voice, list);
+      continue;
+    }
     if (event.kind !== 'note' && event.kind !== 'rest') continue;
-    if (!event.pianoExact) throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} mixes exact and legacy timing`);
+    if (!event.pianoExact) {
+      throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} mixes exact and legacy timing`);
+    }
     const voice = event.voice ?? 1;
     const list = byVoice.get(voice) ?? [];
     list.push(event);
@@ -77,9 +168,27 @@ export function exactSingleStaffEventsToXml(
   for (let layer = 0; layer < voices.length; layer += 1) {
     const voice = voices[layer]!;
     if (layer > 0) xml += `        <backup><duration>${measureCapacity}</duration></backup>\n`;
-    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort((a, b) => exactTicks(a.pianoExact!, 'onset').start - exactTicks(b.pianoExact!, 'onset').start);
+    const stemXml = voices.length > 1 ? (voice % 2 === 1 ? '<stem>up</stem>' : '<stem>down</stem>') : '';
+    const voiceEvents = [...(byVoice.get(voice) ?? [])].sort(
+      (a, b) => eventOnsetTicks(a, measure.index) - eventOnsetTicks(b, measure.index),
+    );
     let cursor = 0;
     for (const event of voiceEvents) {
+      if (event.kind === 'chord') {
+        const span = beatSpanToTicks(event.startBeat, event.startBeat + event.duration, measureCapacity);
+        const start = span.start;
+        const duration = span.end - span.start;
+        if (start !== cursor) {
+          throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} gap at tick ${cursor}`);
+        }
+        if (duration < 1) {
+          throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} empty chord span`);
+        }
+        const parts = decomposeTicksToStandardParts(duration, measureCapacity);
+        xml += chordEventPitchStackXml(event, voice, parts, preferFlats, stemXml);
+        cursor += duration;
+        continue;
+      }
       const ticks = exactTicks(event.pianoExact!, `${event.kind} bar ${measure.index}`);
       if (ticks.start !== cursor) {
         throw new Error(`MusicXML export: part ${part.id} measure ${measure.index} voice ${voice} gap at tick ${cursor}`);
@@ -110,7 +219,7 @@ export function exactSingleStaffEventsToXml(
             tieXml: ties.sound,
             voice,
             typeAndDotsXml: typeAndDots,
-            stemXml: voices.length > 1 ? (voice % 2 === 1 ? '<stem>up</stem>' : '<stem>down</stem>') : '',
+            stemXml,
             notationsXml: index === 0 ? ties.notations : '',
           });
         }

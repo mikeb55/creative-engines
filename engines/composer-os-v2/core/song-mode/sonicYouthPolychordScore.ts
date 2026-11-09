@@ -31,10 +31,24 @@ import { scoreModelToMelodicLine } from '../gce/scoreModelToMelodicLine';
 import { applyOperator, type Motif, type OperatorId, type OperatorParams } from '../motif-ops';
 import { mulberry32 } from '../remix/vaultSeedMix';
 import {
+  floatsAgree,
+  integralTicks,
+  PIANO_V11_EXPORT_PPQ,
+  q,
+  qAdd,
+  qCmp,
+  qEq,
+  qToNumber,
+  spellStraight,
+} from '../piano/pianoExactTiming';
+import {
+  BEATS_PER_MEASURE,
   DIVISIONS,
   type ChordEvent,
+  type ExactQuarter,
   type NoteEvent,
   type PartModel,
+  type PianoExactTiming,
   type RestEvent,
   type ScoreEvent,
   type ScoreModel,
@@ -116,11 +130,32 @@ export type SyProto1HarmonicVariant = 'A' | 'B';
 export type SyProto1HarmonyMode = 'fixed' | 'adaptive';
 
 /**
+ * User melodic rhythm slot — timing only (pianoExact onsetQ/durationQ).
+ * Pitches are generated into `note` slots; rests stay silent.
+ */
+export type SyProto1MelodicRhythmSlot = {
+  kind: 'note' | 'rest';
+  onsetQ: ExactQuarter;
+  durationQ: ExactQuarter;
+};
+
+/**
+ * Optional independent G1/G2 per-bar rhythm slots.
+ * Omitted guitar → existing seeded / verified rhythm for that guitar.
+ * Empty bar list entry → idle (no melodic voice), same as legacy empty bars.
+ */
+export type SyProto1MelodicRhythmSlots = {
+  guitar1?: readonly (readonly SyProto1MelodicRhythmSlot[])[];
+  guitar2?: readonly (readonly SyProto1MelodicRhythmSlot[])[];
+};
+
+/**
  * Proto 1 dialogue options. Tuning fields match polychord builders.
  * `seed` omitted → verified fixed motif + invert-in-field answer.
  * `harmonicVariant` omitted or `'A'` → verified Proto 1 harmony; `'B'` → bar-4 G2 transform (fixed mode only).
  * `harmonyMode` omitted or `'fixed'` → verified C/F♯m × 4; `'adaptive'` → {@link planSyProto1PolychordBars}.
  * Optional `polychordBars` → exact user-selected pairs (roots/qualities) per bar; overrides planner / fixed defaults.
+ * Optional `melodicRhythmSlots` → user G1/G2 note/rest timing; pitches fill note slots without altering timing.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
@@ -137,6 +172,11 @@ export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOp
    * Omitted / empty → legacy fixed or adaptive pair source.
    */
   polychordBars?: readonly SyProtoPolychordPair[];
+  /**
+   * Optional user melodic rhythms (independent G1/G2).
+   * Non-empty bars must cover exactly {@link BEATS_PER_MEASURE} quarters; invalid durations throw (no repair).
+   */
+  melodicRhythmSlots?: SyProto1MelodicRhythmSlots;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -2010,12 +2050,133 @@ function applyGuitarWrittenOctaveNotation(score: ScoreModel): ScoreModel {
   };
 }
 
+const PROTO1_BAR_SPAN_Q: ExactQuarter = q(BEATS_PER_MEASURE, 1);
+
+function proto1NormalizeExactQuarter(value: ExactQuarter, label: string): ExactQuarter {
+  if (!Number.isInteger(value.n) || !Number.isInteger(value.d) || value.d === 0) {
+    throw new Error(`${label}: invalid ExactQuarter ${value.n}/${value.d}`);
+  }
+  return q(value.n, value.d);
+}
+
+function proto1PianoExactFromSlot(
+  onsetQ: ExactQuarter,
+  durationQ: ExactQuarter,
+  logicalEventId: string,
+  label: string
+): PianoExactTiming {
+  const onset = proto1NormalizeExactQuarter(onsetQ, `${label} onset`);
+  const duration = proto1NormalizeExactQuarter(durationQ, `${label} duration`);
+  if (qCmp(onset, q(0, 1)) < 0) {
+    throw new Error(`${label}: onset must be >= 0 (got ${onset.n}/${onset.d})`);
+  }
+  if (qCmp(duration, q(0, 1)) <= 0) {
+    throw new Error(`${label}: duration must be > 0 (got ${duration.n}/${duration.d})`);
+  }
+  if (integralTicks(onset, PIANO_V11_EXPORT_PPQ) === null) {
+    throw new Error(`${label}: onset ${onset.n}/${onset.d} not integral at PPQ ${PIANO_V11_EXPORT_PPQ}`);
+  }
+  if (integralTicks(duration, PIANO_V11_EXPORT_PPQ) === null) {
+    throw new Error(`${label}: duration ${duration.n}/${duration.d} not integral at PPQ ${PIANO_V11_EXPORT_PPQ}`);
+  }
+  const spelled = spellStraight(duration);
+  if (spelled.length !== 1) {
+    throw new Error(
+      `${label}: duration ${duration.n}/${duration.d} is not a single written value (no silent tie-split repair)`
+    );
+  }
+  const written = spelled[0]!;
+  return {
+    onsetQ: onset,
+    durationQ: duration,
+    writtenType: written.type,
+    dots: written.dots,
+    logicalEventId,
+  };
+}
+
+/**
+ * Realize user rhythm slots into melodic events.
+ * Note slots consume pitches in order (cycle if exhausted); rests keep timing only.
+ * Non-empty bars must cover exactly one 4/4 bar with contiguous onsets — no gap/overlap/pad repair.
+ */
+function proto1MelodicBarsFromRhythmSlots(
+  slotsByBar: readonly (readonly SyProto1MelodicRhythmSlot[])[],
+  pitches: readonly number[],
+  motifId: string,
+  label: string
+): SyProtoProto1MelodicEvent[][] {
+  if (pitches.length === 0) {
+    throw new Error(`${label}: cannot fill note slots without pitches`);
+  }
+  let pitchIndex = 0;
+  return slotsByBar.map((slots, barIndex) => {
+    const barLabel = `${label} bar ${barIndex + 1}`;
+    if (slots.length === 0) return [];
+
+    let cursor = q(0, 1);
+    const events: SyProtoProto1MelodicEvent[] = [];
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i]!;
+      const slotLabel = `${barLabel} slot ${i + 1}`;
+      if (slot.kind !== 'note' && slot.kind !== 'rest') {
+        throw new Error(`${slotLabel}: kind must be 'note' or 'rest'`);
+      }
+      const exact = proto1PianoExactFromSlot(
+        slot.onsetQ,
+        slot.durationQ,
+        `sy_proto1_${label}_b${barIndex + 1}_s${i + 1}`,
+        slotLabel
+      );
+      if (!qEq(exact.onsetQ, cursor)) {
+        throw new Error(
+          `${slotLabel}: onset ${exact.onsetQ.n}/${exact.onsetQ.d} != cursor ${cursor.n}/${cursor.d} (no gap/overlap repair)`
+        );
+      }
+      const startBeat = qToNumber(exact.onsetQ);
+      const duration = qToNumber(exact.durationQ);
+      if (!floatsAgree(startBeat, exact.onsetQ) || !floatsAgree(duration, exact.durationQ)) {
+        throw new Error(`${slotLabel}: float timing drifted from exact rationals`);
+      }
+      if (slot.kind === 'rest') {
+        events.push({
+          kind: 'rest',
+          startBeat,
+          duration,
+          voice: PROTO1_MELODY_VOICE,
+          pianoExact: exact,
+        });
+      } else {
+        const pitch = pitches[pitchIndex % pitches.length]!;
+        pitchIndex += 1;
+        events.push({
+          kind: 'note',
+          pitch,
+          startBeat,
+          duration,
+          voice: PROTO1_MELODY_VOICE,
+          motifRef: motifId,
+          pianoExact: exact,
+        });
+      }
+      cursor = qAdd(cursor, exact.durationQ);
+    }
+    if (!qEq(cursor, PROTO1_BAR_SPAN_Q)) {
+      throw new Error(
+        `${barLabel}: duration sum ${cursor.n}/${cursor.d} != ${PROTO1_BAR_SPAN_Q.n}/${PROTO1_BAR_SPAN_Q.d} (no silent repair)`
+      );
+    }
+    return events;
+  });
+}
+
 /**
  * Prototype 1 — call/response melodic dialogue over dual-guitar polychords.
  * Default `harmonyMode: 'fixed'` = verified 4-bar C + F♯m (compat).
  * `harmonyMode: 'adaptive'` = seeded {@link planSyProto1PolychordBars} (default 8 bars),
  * motif/answer mapped into each bar's combined field; rhythms tiled from Proto1 cycle.
  * Optional `polychordBars` = exact user pairs (overrides planner / fixed defaults); maps melody into those fields.
+ * Optional `melodicRhythmSlots` = user G1/G2 note/rest timing (pitches fill note slots; invalid bar durations throw).
  * Chord grips via {@link buildSonicYouthPolychordProgressionScore}; custom tunings pass through.
  * Optional `harmonicVariant: 'B'` remains fixed-mode research only (ignored when user pairs supplied).
  */
@@ -2121,16 +2282,52 @@ export function buildSonicYouthProto1MelodicDialogue(
     assertPitchInCombinedField(midi, pair, 'Prototype 1 answer');
   }
 
-  const cycleG1 =
-    seed === undefined
-      ? proto1Guitar1MelodicBars(motifMidi, motifId)
-      : proto1Guitar1MelodicBarsSeeded(motifMidi, motifId, seed);
-  const cycleG2 =
-    seed === undefined
-      ? proto1Guitar2MelodicBars(answerMidi, answerMotifId)
-      : proto1Guitar2MelodicBarsSeeded(answerMidi, answerMotifId, seed);
-  let guitar1MelodicEventsByBar = proto1TileMelodicBars(cycleG1, pairs.length);
-  let guitar2MelodicEventsByBar = proto1TileMelodicBars(cycleG2, pairs.length);
+  const userRhythm = options?.melodicRhythmSlots;
+  const userG1Slots = userRhythm?.guitar1;
+  const userG2Slots = userRhythm?.guitar2;
+
+  let guitar1MelodicEventsByBar: SyProtoProto1MelodicEvent[][];
+  if (userG1Slots != null) {
+    if (userG1Slots.length !== pairs.length) {
+      throw new Error(
+        `Prototype 1 melodicRhythmSlots.guitar1 length ${userG1Slots.length} != bar count ${pairs.length}`
+      );
+    }
+    guitar1MelodicEventsByBar = proto1MelodicBarsFromRhythmSlots(
+      userG1Slots,
+      motifMidi,
+      motifId,
+      'guitar1'
+    );
+  } else {
+    const cycleG1 =
+      seed === undefined
+        ? proto1Guitar1MelodicBars(motifMidi, motifId)
+        : proto1Guitar1MelodicBarsSeeded(motifMidi, motifId, seed);
+    guitar1MelodicEventsByBar = proto1TileMelodicBars(cycleG1, pairs.length);
+  }
+
+  let guitar2MelodicEventsByBar: SyProtoProto1MelodicEvent[][];
+  if (userG2Slots != null) {
+    if (userG2Slots.length !== pairs.length) {
+      throw new Error(
+        `Prototype 1 melodicRhythmSlots.guitar2 length ${userG2Slots.length} != bar count ${pairs.length}`
+      );
+    }
+    guitar2MelodicEventsByBar = proto1MelodicBarsFromRhythmSlots(
+      userG2Slots,
+      answerMidi,
+      answerMotifId,
+      'guitar2'
+    );
+  } else {
+    const cycleG2 =
+      seed === undefined
+        ? proto1Guitar2MelodicBars(answerMidi, answerMotifId)
+        : proto1Guitar2MelodicBarsSeeded(answerMidi, answerMotifId, seed);
+    guitar2MelodicEventsByBar = proto1TileMelodicBars(cycleG2, pairs.length);
+  }
+
   if (mapIntoBarFields) {
     guitar1MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar1MelodicEventsByBar, pairs);
     guitar2MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar2MelodicEventsByBar, pairs);
