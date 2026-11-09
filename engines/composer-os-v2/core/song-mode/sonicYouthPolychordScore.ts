@@ -1455,6 +1455,8 @@ const PROTO1_CHORD_VOICE = 2;
 /** Sounding melody band for Proto 1 (fretted, above open-string floor). */
 const PROTO1_MELODY_MIDI_MIN = 60;
 const PROTO1_MELODY_MIDI_MAX = 84;
+/** Max melodic leap (semitones) for user-rhythm continuity picks — keeps guitar lines playable. */
+const PROTO1_USER_RHYTHM_MAX_LEAP = 12;
 
 type Proto1PitchOp = { op: OperatorId; params?: OperatorParams };
 
@@ -1951,6 +1953,122 @@ function proto1MapMelodicBarsIntoPairs(
   });
 }
 
+/**
+ * User-rhythm-only field remap: snap into each bar's combined field while
+ * preferring MIDI near the previous sounding note (voice continuity).
+ * Onsets/durations/rests unchanged. Legacy no-slots path keeps {@link proto1MapMelodicBarsIntoPairs}.
+ */
+function proto1MapMelodicBarsIntoPairsContinuity(
+  bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
+  pairs: readonly SyProtoPolychordPair[],
+  seed: number | undefined
+): SyProtoProto1MelodicEvent[][] {
+  let prevMidi: number | null = null;
+  let noteIndex = 0;
+  return bars.map((events, i) => {
+    const pair = pairs[i] ?? pairs[pairs.length - 1]!;
+    const field = proto1CombinedField(pair);
+    const candidates = proto1UserRhythmFieldMidiCandidates(field);
+    return events.map((event) => {
+      if (event.kind !== 'note') return proto1CloneMelodicEvent(event);
+      const pitch =
+        candidates.length === 0
+          ? proto1SnapMidiToField(event.pitch, field)
+          : proto1PickUserRhythmContinuityPitch(
+              candidates,
+              prevMidi,
+              noteIndex,
+              seed,
+              event.pitch
+            );
+      noteIndex += 1;
+      prevMidi = pitch;
+      return { ...event, pitch };
+    });
+  });
+}
+
+/** Melody-band MIDI for every PC in `field` (or motif pitches). */
+function proto1UserRhythmFieldMidiCandidates(field: readonly number[]): number[] {
+  const pcs = new Set<number>();
+  for (const m of field) pcs.add(normalizeRootPc(m));
+  const out: number[] = [];
+  for (let m = PROTO1_MELODY_MIDI_MIN; m <= PROTO1_MELODY_MIDI_MAX; m++) {
+    if (pcs.has(normalizeRootPc(m))) out.push(m);
+  }
+  return out;
+}
+
+/**
+ * Pick next user-rhythm pitch: prefer small motion from `prevMidi` within candidates;
+ * ~20% seed-driven leaps capped at {@link PROTO1_USER_RHYTHM_MAX_LEAP}; avoid stale unisons.
+ * `hintMidi` biases first note / ties toward motif intent.
+ */
+function proto1PickUserRhythmContinuityPitch(
+  candidates: readonly number[],
+  prevMidi: number | null,
+  noteIndex: number,
+  seed: number | undefined,
+  hintMidi?: number
+): number {
+  if (candidates.length === 0) {
+    throw new Error('proto1PickUserRhythmContinuityPitch: empty candidates');
+  }
+  if (prevMidi == null) {
+    if (hintMidi != null) {
+      let best = candidates[0]!;
+      let bestAbs = Math.abs(best - hintMidi);
+      for (const c of candidates) {
+        const abs = Math.abs(c - hintMidi);
+        if (abs < bestAbs) {
+          bestAbs = abs;
+          best = c;
+        }
+      }
+      return best;
+    }
+    if (seed === undefined) return candidates[0]!;
+    return candidates[((seed % candidates.length) + candidates.length) % candidates.length]!;
+  }
+
+  const withinLeap = candidates.filter(
+    (c) => Math.abs(c - prevMidi) <= PROTO1_USER_RHYTHM_MAX_LEAP
+  );
+  // Always have a pick: if field forces a larger jump, take absolute nearest.
+  const pool = withinLeap.length > 0 ? withinLeap : candidates;
+
+  const ranked = [...pool].sort((a, b) => {
+    const da = Math.abs(a - prevMidi);
+    const db = Math.abs(b - prevMidi);
+    if (da !== db) return da - db;
+    if (hintMidi != null) {
+      const ha = Math.abs(a - hintMidi);
+      const hb = Math.abs(b - hintMidi);
+      if (ha !== hb) return ha - hb;
+    }
+    return a - b;
+  });
+
+  const rng = mulberry32((((seed ?? 0) >>> 0) + noteIndex * 9973 + 0x51eed) >>> 0);
+  // Occasional leap (~20%) among farther tones still inside the playable leap cap.
+  if (rng() < 0.2) {
+    const leapPool = ranked.filter((p) => {
+      const d = Math.abs(p - prevMidi);
+      return d >= 5 && d <= PROTO1_USER_RHYTHM_MAX_LEAP;
+    });
+    if (leapPool.length > 0) {
+      return leapPool[Math.floor(rng() * leapPool.length) % leapPool.length]!;
+    }
+  }
+
+  if (ranked[0] === prevMidi) {
+    const step = ranked.find((p) => p !== prevMidi && Math.abs(p - prevMidi) <= 7);
+    if (step != null) return step;
+    if (ranked.length > 1) return ranked[1]!;
+  }
+  return ranked[0]!;
+}
+
 function overlayMelodyOnChordScore(
   chordBars: SonicYouthPolychordProgressionResult,
   guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
@@ -2097,19 +2215,27 @@ function proto1PianoExactFromSlot(
 
 /**
  * Realize user rhythm slots into melodic events.
- * Note slots consume pitches in order (cycle if exhausted); rests keep timing only.
+ * Note slots pick chord-field pitches with voice continuity across bars
+ * (near previous note; occasional seed-driven leaps); rests keep timing only.
  * Non-empty bars must cover exactly one 4/4 bar with contiguous onsets — no gap/overlap/pad repair.
  */
 function proto1MelodicBarsFromRhythmSlots(
   slotsByBar: readonly (readonly SyProto1MelodicRhythmSlot[])[],
   pitches: readonly number[],
   motifId: string,
-  label: string
+  label: string,
+  seed?: number
 ): SyProtoProto1MelodicEvent[][] {
   if (pitches.length === 0) {
     throw new Error(`${label}: cannot fill note slots without pitches`);
   }
-  let pitchIndex = 0;
+  const candidates = proto1UserRhythmFieldMidiCandidates(pitches);
+  if (candidates.length === 0) {
+    throw new Error(`${label}: no melody-band candidates from pitch pool`);
+  }
+  let prevMidi: number | null = null;
+  let noteIndex = 0;
+  let motifHintIndex = 0;
   return slotsByBar.map((slots, barIndex) => {
     const barLabel = `${label} bar ${barIndex + 1}`;
     if (slots.length === 0) return [];
@@ -2147,8 +2273,17 @@ function proto1MelodicBarsFromRhythmSlots(
           pianoExact: exact,
         });
       } else {
-        const pitch = pitches[pitchIndex % pitches.length]!;
-        pitchIndex += 1;
+        const hint = pitches[motifHintIndex % pitches.length]!;
+        motifHintIndex += 1;
+        const pitch = proto1PickUserRhythmContinuityPitch(
+          candidates,
+          prevMidi,
+          noteIndex,
+          seed,
+          hint
+        );
+        noteIndex += 1;
+        prevMidi = pitch;
         events.push({
           kind: 'note',
           pitch,
@@ -2297,7 +2432,8 @@ export function buildSonicYouthProto1MelodicDialogue(
       userG1Slots,
       motifMidi,
       motifId,
-      'guitar1'
+      'guitar1',
+      seed
     );
   } else {
     const cycleG1 =
@@ -2318,7 +2454,8 @@ export function buildSonicYouthProto1MelodicDialogue(
       userG2Slots,
       answerMidi,
       answerMotifId,
-      'guitar2'
+      'guitar2',
+      seed
     );
   } else {
     const cycleG2 =
@@ -2329,8 +2466,15 @@ export function buildSonicYouthProto1MelodicDialogue(
   }
 
   if (mapIntoBarFields) {
-    guitar1MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar1MelodicEventsByBar, pairs);
-    guitar2MelodicEventsByBar = proto1MapMelodicBarsIntoPairs(guitar2MelodicEventsByBar, pairs);
+    // User-rhythm voices: continuity snap. No-slots legacy: exact prior PC snap.
+    guitar1MelodicEventsByBar =
+      userG1Slots != null
+        ? proto1MapMelodicBarsIntoPairsContinuity(guitar1MelodicEventsByBar, pairs, seed)
+        : proto1MapMelodicBarsIntoPairs(guitar1MelodicEventsByBar, pairs);
+    guitar2MelodicEventsByBar =
+      userG2Slots != null
+        ? proto1MapMelodicBarsIntoPairsContinuity(guitar2MelodicEventsByBar, pairs, seed)
+        : proto1MapMelodicBarsIntoPairs(guitar2MelodicEventsByBar, pairs);
   }
 
   const toneRoleReceipts = collectToneRoleReceipts(
