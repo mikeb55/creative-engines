@@ -150,12 +150,29 @@ export type SyProto1MelodicRhythmSlots = {
 };
 
 /**
+ * Chord-grip rhythm slot — same timing shape as melodic slots.
+ * `note` → triad ChordEvent attack; `rest` → silent rest in the chord voice.
+ */
+export type SyProto1ChordRhythmSlot = SyProto1MelodicRhythmSlot;
+
+/**
+ * Optional independent G1/G2 per-bar chord-grip rhythms.
+ * Omitted guitar → legacy whole-note triad for that guitar.
+ * Empty bar list entry → keep legacy whole-note triad for that bar.
+ */
+export type SyProto1ChordRhythmSlots = {
+  guitar1?: readonly (readonly SyProto1ChordRhythmSlot[])[];
+  guitar2?: readonly (readonly SyProto1ChordRhythmSlot[])[];
+};
+
+/**
  * Proto 1 dialogue options. Tuning fields match polychord builders.
  * `seed` omitted → verified fixed motif + invert-in-field answer.
  * `harmonicVariant` omitted or `'A'` → verified Proto 1 harmony; `'B'` → bar-4 G2 transform (fixed mode only).
  * `harmonyMode` omitted or `'fixed'` → verified C/F♯m × 4; `'adaptive'` → {@link planSyProto1PolychordBars}.
  * Optional `polychordBars` → exact user-selected pairs (roots/qualities) per bar; overrides planner / fixed defaults.
  * Optional `melodicRhythmSlots` → user G1/G2 note/rest timing; pitches fill note slots without altering timing.
+ * Optional `chordRhythmSlots` → user G1/G2 chord-grip note/rest timing; omit → whole-note grips.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
@@ -177,6 +194,11 @@ export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOp
    * Non-empty bars must cover exactly {@link BEATS_PER_MEASURE} quarters; invalid durations throw (no repair).
    */
   melodicRhythmSlots?: SyProto1MelodicRhythmSlots;
+  /**
+   * Optional user chord-grip rhythms (independent G1/G2).
+   * Non-empty bars must cover exactly {@link BEATS_PER_MEASURE} quarters; invalid durations throw (no repair).
+   */
+  chordRhythmSlots?: SyProto1ChordRhythmSlots;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -2069,6 +2091,141 @@ function proto1PickUserRhythmContinuityPitch(
   return ranked[0]!;
 }
 
+/**
+ * Realize one bar of chord-grip rhythm slots into ChordEvent / RestEvent.
+ * Note → existing triad grip attack; rest → silence. Contiguous full-bar coverage required.
+ * Voice stays {@link PROTO1_CHORD_VOICE}-ready default (voice 1); overlay remaps under melody.
+ */
+function proto1ChordGripEventsFromRhythmSlots(
+  slots: readonly SyProto1ChordRhythmSlot[],
+  pitches: readonly number[],
+  chordSymbol: string | undefined,
+  barLabel: string,
+  voice = 1
+): ScoreEvent[] {
+  if (slots.length === 0) return [];
+  if (pitches.length === 0) {
+    throw new Error(`${barLabel}: cannot fill chord note slots without grip pitches`);
+  }
+  let cursor = q(0, 1);
+  const events: ScoreEvent[] = [];
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i]!;
+    const slotLabel = `${barLabel} slot ${i + 1}`;
+    if (slot.kind !== 'note' && slot.kind !== 'rest') {
+      throw new Error(`${slotLabel}: kind must be 'note' or 'rest'`);
+    }
+    const exact = proto1PianoExactFromSlot(
+      slot.onsetQ,
+      slot.durationQ,
+      `sy_proto1_chord_${barLabel.replace(/\s+/g, '_')}_s${i + 1}`,
+      slotLabel
+    );
+    if (!qEq(exact.onsetQ, cursor)) {
+      throw new Error(
+        `${slotLabel}: onset ${exact.onsetQ.n}/${exact.onsetQ.d} != cursor ${cursor.n}/${cursor.d} (no gap/overlap repair)`
+      );
+    }
+    const startBeat = qToNumber(exact.onsetQ);
+    const duration = qToNumber(exact.durationQ);
+    if (!floatsAgree(startBeat, exact.onsetQ) || !floatsAgree(duration, exact.durationQ)) {
+      throw new Error(`${slotLabel}: float timing drifted from exact rationals`);
+    }
+    if (slot.kind === 'rest') {
+      events.push({
+        kind: 'rest',
+        startBeat,
+        duration,
+        voice,
+        pianoExact: exact,
+      });
+    } else {
+      events.push(chordAt([...pitches], startBeat, duration, voice, chordSymbol));
+    }
+    cursor = qAdd(cursor, exact.durationQ);
+  }
+  if (!qEq(cursor, PROTO1_BAR_SPAN_Q)) {
+    throw new Error(
+      `${barLabel}: duration sum ${cursor.n}/${cursor.d} != ${PROTO1_BAR_SPAN_Q.n}/${PROTO1_BAR_SPAN_Q.d} (no silent repair)`
+    );
+  }
+  return events;
+}
+
+/**
+ * Apply optional user chord-grip rhythms to a progression score.
+ * Omitted guitar / empty bar → leave legacy whole-note triad events untouched.
+ */
+function applyProto1ChordRhythmSlotsToProgression(
+  progression: SonicYouthPolychordProgressionResult,
+  chordRhythm: SyProto1ChordRhythmSlots | undefined
+): SonicYouthPolychordProgressionResult {
+  if (chordRhythm == null) return progression;
+  const barCount = progression.bars.length;
+  const applyGuitar = (
+    partId: 'guitar' | 'guitar_2',
+    slotsByBar: readonly (readonly SyProto1ChordRhythmSlot[])[] | undefined,
+    label: string
+  ): PartModel | null => {
+    if (slotsByBar == null) return null;
+    if (slotsByBar.length !== barCount) {
+      throw new Error(
+        `Prototype 1 chordRhythmSlots.${label} length ${slotsByBar.length} != bar count ${barCount}`
+      );
+    }
+    const part = progression.score.parts.find((p) => p.id === partId);
+    if (!part || part.measures.length !== barCount) {
+      throw new Error(`Prototype 1 chord rhythm: missing ${partId} measures`);
+    }
+    return {
+      ...part,
+      measures: part.measures.map((measure, i) => {
+        const slots = slotsByBar[i] ?? [];
+        if (slots.length === 0) {
+          // Empty bar entry → preserve legacy whole-note grip.
+          const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
+          for (const e of measure.events) addEvent(m, e);
+          return m;
+        }
+        const legacyChord = measure.events.find((e): e is ChordEvent => e.kind === 'chord');
+        const pitches = legacyChord?.pitches ?? [];
+        const chordSymbol =
+          legacyChord?.chordSymbol === null ? undefined : legacyChord?.chordSymbol ?? undefined;
+        const realized = proto1ChordGripEventsFromRhythmSlots(
+          slots,
+          pitches,
+          chordSymbol,
+          `${label} bar ${i + 1}`,
+          legacyChord?.voice ?? 1
+        );
+        const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
+        for (const e of realized) addEvent(m, e);
+        return m;
+      }),
+    };
+  };
+
+  const g1 = applyGuitar('guitar', chordRhythm.guitar1, 'guitar1');
+  const g2 = applyGuitar('guitar_2', chordRhythm.guitar2, 'guitar2');
+  if (g1 == null && g2 == null) return progression;
+
+  const parts = progression.score.parts.map((p) => {
+    if (p.id === 'guitar' && g1 != null) return g1;
+    if (p.id === 'guitar_2' && g2 != null) return g2;
+    return p;
+  });
+  const score = createScore(progression.score.title, parts, {
+    tempo: progression.score.tempo ?? 96,
+  });
+  if (progression.score.partMeasureWordsMarkings) {
+    score.partMeasureWordsMarkings = progression.score.partMeasureWordsMarkings;
+  }
+  if (progression.score.exportStaffTuningByPartId) {
+    score.exportStaffTuningByPartId = progression.score.exportStaffTuningByPartId;
+  }
+  return { ...progression, score };
+}
+
 function overlayMelodyOnChordScore(
   chordBars: SonicYouthPolychordProgressionResult,
   guitar1Bars: readonly (readonly SyProtoProto1MelodicEvent[])[],
@@ -2312,6 +2469,7 @@ function proto1MelodicBarsFromRhythmSlots(
  * motif/answer mapped into each bar's combined field; rhythms tiled from Proto1 cycle.
  * Optional `polychordBars` = exact user pairs (overrides planner / fixed defaults); maps melody into those fields.
  * Optional `melodicRhythmSlots` = user G1/G2 note/rest timing (pitches fill note slots; invalid bar durations throw).
+ * Optional `chordRhythmSlots` = user G1/G2 chord-grip note/rest timing (omit → whole-note grips; invalid bars throw).
  * Chord grips via {@link buildSonicYouthPolychordProgressionScore}; custom tunings pass through.
  * Optional `harmonicVariant: 'B'` remains fixed-mode research only (ignored when user pairs supplied).
  */
@@ -2483,7 +2641,11 @@ export function buildSonicYouthProto1MelodicDialogue(
     guitar2MelodicEventsByBar
   );
 
-  const chordBars = buildSonicYouthPolychordProgressionScore(pairs, tuningForProgression);
+  const chordBarsRaw = buildSonicYouthPolychordProgressionScore(pairs, tuningForProgression);
+  const chordBars = applyProto1ChordRhythmSlotsToProgression(
+    chordBarsRaw,
+    options?.chordRhythmSlots
+  );
   const score = overlayMelodyOnChordScore(
     chordBars,
     guitar1MelodicEventsByBar,

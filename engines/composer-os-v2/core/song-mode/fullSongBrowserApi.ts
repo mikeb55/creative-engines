@@ -352,6 +352,8 @@ export function packPassageReharmBrowser(
 export type {
   SonicYouthPolychordTuningOptions,
   SonicYouthProto1MelodicDialogueOptions,
+  SyProto1ChordRhythmSlot,
+  SyProto1ChordRhythmSlots,
   SyProto1HarmonicVariant,
   SyProto1HarmonyMode,
   SyProto1MelodicRhythmSlot,
@@ -375,10 +377,11 @@ export type GenerateSonicYouthPolychordMusicXmlOptions = {
 /**
  * TunePainter / browser Proto1 options.
  * Forwards seed, tunings, harmonicVariant, harmonyMode, barCount, polychordBars,
- * melodicRhythmSlots to the Proto1 builder / four-seed selection pipeline.
+ * melodicRhythmSlots, chordRhythmSlots to the Proto1 builder / four-seed selection pipeline.
  * `harmonyMode` default `'fixed'`; `'adaptive'` uses seeded polychord planner.
  * Optional `polychordBars` → exact user pairs (roots/qualities) per bar.
  * Optional `melodicRhythmSlots` → independent G1/G2 note/rest timing (unchanged); omitted → legacy rhythms.
+ * Optional `chordRhythmSlots` → independent G1/G2 chord-grip timing; omitted → whole-note grips.
  */
 export type GenerateSonicYouthProto1MelodicDialogueMusicXmlOptions =
   SonicYouthProto1MelodicDialogueOptions & {
@@ -470,6 +473,7 @@ export type GenerateSonicYouthProto1MelodicDialogueMusicXmlResult = {
  * Defaults: `harmonyMode: 'fixed'`, `harmonicVariant: 'A'`.
  * Optional `polychordBars` → exact user pairs; omitted → legacy fixed/adaptive pair source.
  * Optional `melodicRhythmSlots` → forwarded unchanged to Proto1 + seed selection; G1/G2 timing independent.
+ * Optional `chordRhythmSlots` → forwarded unchanged to Proto1 + seed selection; omit → whole-note grips.
  * No slots → identical legacy behaviour. Invalid slots throw (no MusicXML).
  * No GUI — options-only surface for TunePainter.
  */
@@ -478,7 +482,7 @@ export function generateSonicYouthProto1MelodicDialogueMusicXml(
 ): GenerateSonicYouthProto1MelodicDialogueMusicXmlResult {
   const { bpm: bpmOpt, ...dialogueOpts } = options ?? {};
   // dialogueOpts includes harmonyMode / harmonicVariant / seed / tunings / barCount /
-  // polychordBars / melodicRhythmSlots (forwarded unchanged to builder / four-seed path).
+  // polychordBars / melodicRhythmSlots / chordRhythmSlots (forwarded unchanged to builder / four-seed path).
   let built: SyProtoProto1MelodicDialogueResult;
   let selectedSeed: number;
   let candidates: readonly GenerateSonicYouthProto1ApiCandidate[];
