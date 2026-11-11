@@ -2840,10 +2840,17 @@ export function buildSonicYouthProto1MelodicDialogue(
   if (!mapIntoBarFields && combinedField.length !== 6) {
     throw new Error(`Prototype 1 expected 6-note combined field, got ${combinedField.length}`);
   }
-  if (mapIntoBarFields && combinedField.length < 4) {
-    throw new Error(
-      `Prototype 1 adaptive expected combined field of at least 4 pcs, got ${combinedField.length}`
-    );
+  // User polychordBars may declare identical / same-set parents (3-PC union).
+  // Adaptive planner path keeps the 4-PC floor (syProto1PlannerCandidates).
+  if (mapIntoBarFields) {
+    const minCombinedPcs = userPairs != null ? 3 : 4;
+    if (combinedField.length < minCombinedPcs) {
+      throw new Error(
+        userPairs != null
+          ? `Prototype 1 user polychord expected combined field of at least 3 pcs, got ${combinedField.length}`
+          : `Prototype 1 adaptive expected combined field of at least 4 pcs, got ${combinedField.length}`
+      );
+    }
   }
 
   let motifMidi: number[];
