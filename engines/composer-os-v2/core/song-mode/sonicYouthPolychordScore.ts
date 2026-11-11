@@ -123,6 +123,31 @@ export type SonicYouthPolychordTuningOptions = {
   guitar2Tuning?: readonly number[];
 };
 
+/**
+ * Proto1 fretboard-position preference for triad grips.
+ * `auto` / omitted → existing span/lowest (then prior min-move) behaviour.
+ * Preset bands use fretted frets only (open strings always allowed).
+ */
+export type SyProto1FretPositionPreset = 'auto' | 'low' | 'middle' | 'high';
+
+/** Custom inclusive fret window (0–15 typical); open strings still allowed. */
+export type SyProto1FretPositionCustom = {
+  mode: 'custom';
+  minFret: number;
+  maxFret: number;
+};
+
+export type SyProto1FretPosition = SyProto1FretPositionPreset | SyProto1FretPositionCustom;
+
+const SY_PROTO1_FRET_BAND: Record<
+  Exclude<SyProto1FretPositionPreset, 'auto'>,
+  { minFret: number; maxFret: number }
+> = {
+  low: { minFret: 0, maxFret: 4 },
+  middle: { minFret: 5, maxFret: 9 },
+  high: { minFret: 10, maxFret: 15 },
+};
+
 /** Proto1 harmonic surface: A = C/F♯m all bars; B = bar 4 G2 −1 semitone (C/Fm). */
 export type SyProto1HarmonicVariant = 'A' | 'B';
 
@@ -173,6 +198,7 @@ export type SyProto1ChordRhythmSlots = {
  * Optional `polychordBars` → exact user-selected pairs (roots/qualities) per bar; overrides planner / fixed defaults.
  * Optional `melodicRhythmSlots` → user G1/G2 note/rest timing; pitches fill note slots without altering timing.
  * Optional `chordRhythmSlots` → user G1/G2 chord-grip note/rest timing; omit → whole-note grips.
+ * Optional `guitar1FretPosition` / `guitar2FretPosition` → filter grips by fretted fret band; omit/`auto` → legacy.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
@@ -199,6 +225,10 @@ export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOp
    * Non-empty bars must cover exactly {@link BEATS_PER_MEASURE} quarters; invalid durations throw (no repair).
    */
   chordRhythmSlots?: SyProto1ChordRhythmSlots;
+  /** Guitar 1 fretboard band for triad grips. Omitted / `'auto'` → existing grip selection. */
+  guitar1FretPosition?: SyProto1FretPosition;
+  /** Guitar 2 fretboard band for triad grips. Omitted / `'auto'` → existing grip selection. */
+  guitar2FretPosition?: SyProto1FretPosition;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -951,7 +981,13 @@ function resolveOpenTuning(
 }
 
 /** Playable triad voicing on custom opens (MIDI sorted low→high). */
-type PlayableTriadGrip = { midis: number[]; span: number; lowest: number };
+type PlayableTriadGrip = {
+  midis: number[];
+  span: number;
+  lowest: number;
+  /** Actual frets from {@link solveGuitarGrip} (parallel to assigned strings). */
+  frets: number[];
+};
 
 function triadGripKey(midis: readonly number[]): string {
   return [...midis].sort((a, b) => a - b).join(',');
@@ -975,6 +1011,48 @@ function classicTriadGripRank(a: PlayableTriadGrip, b: PlayableTriadGrip): numbe
     if (d !== 0) return d;
   }
   return 0;
+}
+
+/**
+ * Resolve optional fret-position preference to an inclusive fretted-fret window.
+ * `undefined` / `'auto'` / invalid custom → null (no filter = legacy behaviour).
+ */
+function resolveSyProto1FretPositionRange(
+  position: SyProto1FretPosition | undefined
+): { minFret: number; maxFret: number } | null {
+  if (position == null || position === 'auto') return null;
+  if (position === 'low' || position === 'middle' || position === 'high') {
+    return SY_PROTO1_FRET_BAND[position];
+  }
+  if (typeof position === 'object' && position.mode === 'custom') {
+    const minFret = Math.floor(Number(position.minFret));
+    const maxFret = Math.floor(Number(position.maxFret));
+    if (
+      !Number.isFinite(minFret) ||
+      !Number.isFinite(maxFret) ||
+      minFret < 0 ||
+      maxFret < minFret
+    ) {
+      return null;
+    }
+    return { minFret, maxFret };
+  }
+  return null;
+}
+
+/**
+ * True when every fretted (non-open) fret lies in [minFret, maxFret].
+ * Open strings (fret 0) always allowed.
+ */
+function gripMatchesFretPositionRange(
+  grip: PlayableTriadGrip,
+  range: { minFret: number; maxFret: number }
+): boolean {
+  for (const fret of grip.frets) {
+    if (fret <= 0) continue;
+    if (fret < range.minFret || fret > range.maxFret) return false;
+  }
+  return true;
 }
 
 /**
@@ -1003,45 +1081,62 @@ function enumeratePlayableTriadGrips(
         const key = sorted.join(',');
         if (seen.has(key)) continue;
         seen.add(key);
-        out.push({ midis: sorted, span: solved.fretSpan, lowest: solved.lowestFret });
+        out.push({
+          midis: sorted,
+          span: solved.fretSpan,
+          lowest: solved.lowestFret,
+          frets: solved.frets.map((f) => f.fret),
+        });
       }
     }
   }
   return out;
 }
 
+function pickClassicTriadGrip(candidates: readonly PlayableTriadGrip[]): PlayableTriadGrip {
+  // Existing fallback: first minimal (span, lowest) in enumeration order.
+  let best: PlayableTriadGrip | null = null;
+  for (const c of candidates) {
+    if (
+      !best ||
+      c.span < best.span ||
+      (c.span === best.span && c.lowest < best.lowest)
+    ) {
+      best = c;
+    }
+  }
+  return best!;
+}
+
 /**
  * Pick playable triad grip. No prior → classic span/lowest fallback.
  * With prior → prefer a different voicing when available, else keep sole grip;
  * among pool, minimize register motion from prior (ties → classic rank).
+ * Optional fret position filters by actual fretted frets; empty band → classic fallback.
  */
 function pickPlayableTriadGrip(
   opens: readonly number[],
   pcs: readonly number[],
   guitarLabel: 'Guitar 1' | 'Guitar 2',
-  priorMidis?: readonly number[] | null
+  priorMidis?: readonly number[] | null,
+  fretPosition?: SyProto1FretPosition | null
 ): number[] {
   const candidates = enumeratePlayableTriadGrips(opens, pcs);
   if (candidates.length === 0) {
     throw new Error(`${guitarLabel} grip unavailable`);
   }
+  const range = resolveSyProto1FretPositionRange(fretPosition ?? undefined);
+  const inBand =
+    range == null ? candidates : candidates.filter((c) => gripMatchesFretPositionRange(c, range));
+  // Empty band → existing unfiltered fallback (never emit an invalid/empty pick).
+  const poolBase = inBand.length > 0 ? inBand : candidates;
+
   if (priorMidis == null || priorMidis.length === 0) {
-    // Existing fallback: first minimal (span, lowest) in enumeration order.
-    let best: PlayableTriadGrip | null = null;
-    for (const c of candidates) {
-      if (
-        !best ||
-        c.span < best.span ||
-        (c.span === best.span && c.lowest < best.lowest)
-      ) {
-        best = c;
-      }
-    }
-    return best!.midis.slice();
+    return pickClassicTriadGrip(poolBase).midis.slice();
   }
   const priorKey = triadGripKey(priorMidis);
-  const alts = candidates.filter((c) => c.midis.join(',') !== priorKey);
-  const pool = alts.length > 0 ? alts : candidates;
+  const alts = poolBase.filter((c) => c.midis.join(',') !== priorKey);
+  const pool = alts.length > 0 ? alts : poolBase;
   const ranked = [...pool].sort((a, b) => {
     const ca = triadGripMotionCost(priorMidis, a.midis);
     const cb = triadGripMotionCost(priorMidis, b.midis);
@@ -1055,14 +1150,15 @@ function solveTriadGripOnOpens(
   opens: readonly number[],
   triad: SyProtoTriadInput,
   guitarLabel: 'Guitar 1' | 'Guitar 2',
-  priorMidis?: readonly number[] | null
+  priorMidis?: readonly number[] | null,
+  fretPosition?: SyProto1FretPosition | null
 ): number[] {
   const pcs = triadPitchClasses(triad);
   if (new Set(pcs).size !== 3) {
     throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)} (degenerate triad)`);
   }
   try {
-    return pickPlayableTriadGrip(opens, pcs, guitarLabel, priorMidis);
+    return pickPlayableTriadGrip(opens, pcs, guitarLabel, priorMidis, fretPosition);
   } catch {
     throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)}`);
   }
@@ -1115,10 +1211,12 @@ export function syProtoCombinedPolychordNotationLabel(
   return `${g1Sym} + ${g2Sym}`;
 }
 
-/** Optional priors for min-move / alternate voicing (progression + repeated attacks). */
+/** Optional priors / fret bands for min-move / alternate voicing (progression + repeated attacks). */
 export type SonicYouthPolychordGripOptions = SonicYouthPolychordTuningOptions & {
   guitar1PriorPitches?: readonly number[];
   guitar2PriorPitches?: readonly number[];
+  guitar1FretPosition?: SyProto1FretPosition;
+  guitar2FretPosition?: SyProto1FretPosition;
 };
 
 /**
@@ -1126,6 +1224,7 @@ export type SonicYouthPolychordGripOptions = SonicYouthPolychordTuningOptions & 
  * Reference pair: D major (G1) + E major (G2).
  * Optional tunings → solveGuitarGrip({ openStrings }); default AAEEAA / ACCGG#C.
  * Optional prior grips → prefer alternate playable voicing with minimal pitch motion.
+ * Optional fret positions → filter by fretted frets; empty band falls back to classic pick.
  */
 export function buildSonicYouthOneBarPolychordScore(
   guitar1Triad: SyProtoTriadInput,
@@ -1138,13 +1237,15 @@ export function buildSonicYouthOneBarPolychordScore(
     g1Open,
     guitar1Triad,
     'Guitar 1',
-    options?.guitar1PriorPitches
+    options?.guitar1PriorPitches,
+    options?.guitar1FretPosition
   );
   const guitar2Pitches = solveTriadGripOnOpens(
     g2Open,
     guitar2Triad,
     'Guitar 2',
-    options?.guitar2PriorPitches
+    options?.guitar2PriorPitches,
+    options?.guitar2FretPosition
   );
   if (new Set(guitar1Pitches).size !== 3) {
     throw new Error(`Guitar 1 grip unavailable for ${triadLabel(guitar1Triad)}`);
@@ -1192,7 +1293,7 @@ export function buildSonicYouthOneBarPolychordScore(
  */
 export function buildSonicYouthPolychordProgressionScore(
   pairs: readonly SyProtoPolychordPair[],
-  options?: SonicYouthPolychordTuningOptions
+  options?: SonicYouthPolychordGripOptions
 ): SonicYouthPolychordProgressionResult {
   if (pairs.length === 0) {
     throw new Error('polychord progression requires at least one { guitar1, guitar2 } pair');
@@ -1200,9 +1301,15 @@ export function buildSonicYouthPolychordProgressionScore(
 
   const g1Open = resolveOpenTuning(options?.guitar1Tuning, SY_PROTO_LEE_AAEEAA_OPEN, 'Guitar 1');
   const g2Open = resolveOpenTuning(options?.guitar2Tuning, SY_PROTO_ACCGGSHARP_C_OPEN, 'Guitar 2');
-  const tuningOpts: SonicYouthPolychordTuningOptions = {
+  const tuningOpts: SonicYouthPolychordGripOptions = {
     guitar1Tuning: g1Open,
     guitar2Tuning: g2Open,
+    ...(options?.guitar1FretPosition != null
+      ? { guitar1FretPosition: options.guitar1FretPosition }
+      : {}),
+    ...(options?.guitar2FretPosition != null
+      ? { guitar2FretPosition: options.guitar2FretPosition }
+      : {}),
   };
 
   const bars: SonicYouthOneBarPolychordResult[] = [];
@@ -2212,7 +2319,8 @@ function proto1ChordGripEventsFromRhythmSlots(
   barLabel: string,
   guitarLabel: 'Guitar 1' | 'Guitar 2',
   priorMidis: readonly number[] | null,
-  voice = 1
+  voice = 1,
+  fretPosition?: SyProto1FretPosition | null
 ): { events: ScoreEvent[]; lastPitches: number[] | null } {
   if (slots.length === 0) return { events: [], lastPitches: priorMidis?.slice() ?? null };
   if (legacyPitches.length === 0) {
@@ -2259,7 +2367,7 @@ function proto1ChordGripEventsFromRhythmSlots(
       const pitches =
         prior == null
           ? [...legacyPitches].sort((a, b) => a - b)
-          : pickPlayableTriadGrip(opens, pcs, guitarLabel, prior);
+          : pickPlayableTriadGrip(opens, pcs, guitarLabel, prior, fretPosition);
       events.push(chordAt(pitches, startBeat, duration, voice, chordSymbol));
       prior = pitches;
       lastPitches = pitches;
@@ -2281,7 +2389,11 @@ function proto1ChordGripEventsFromRhythmSlots(
  */
 function applyProto1ChordRhythmSlotsToProgression(
   progression: SonicYouthPolychordProgressionResult,
-  chordRhythm: SyProto1ChordRhythmSlots | undefined
+  chordRhythm: SyProto1ChordRhythmSlots | undefined,
+  fretPositions?: {
+    guitar1?: SyProto1FretPosition;
+    guitar2?: SyProto1FretPosition;
+  }
 ): SonicYouthPolychordProgressionResult {
   if (chordRhythm == null) return progression;
   const barCount = progression.bars.length;
@@ -2290,7 +2402,8 @@ function applyProto1ChordRhythmSlotsToProgression(
     opens: readonly number[],
     slotsByBar: readonly (readonly SyProto1ChordRhythmSlot[])[] | undefined,
     label: string,
-    guitarLabel: 'Guitar 1' | 'Guitar 2'
+    guitarLabel: 'Guitar 1' | 'Guitar 2',
+    fretPosition?: SyProto1FretPosition
   ): PartModel | null => {
     if (slotsByBar == null) return null;
     if (slotsByBar.length !== barCount) {
@@ -2328,7 +2441,8 @@ function applyProto1ChordRhythmSlotsToProgression(
           `${label} bar ${i + 1}`,
           guitarLabel,
           prior,
-          legacyChord?.voice ?? 1
+          legacyChord?.voice ?? 1,
+          fretPosition
         );
         prior = realized.lastPitches;
         const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
@@ -2343,14 +2457,16 @@ function applyProto1ChordRhythmSlotsToProgression(
     progression.guitar1OpenPitches,
     chordRhythm.guitar1,
     'guitar1',
-    'Guitar 1'
+    'Guitar 1',
+    fretPositions?.guitar1
   );
   const g2 = applyGuitar(
     'guitar_2',
     progression.guitar2OpenPitches,
     chordRhythm.guitar2,
     'guitar2',
-    'Guitar 2'
+    'Guitar 2',
+    fretPositions?.guitar2
   );
   if (g1 == null && g2 == null) return progression;
 
@@ -2629,16 +2745,26 @@ export function buildSonicYouthProto1MelodicDialogue(
   const harmonicVariant: SyProto1HarmonicVariant =
     userPairs == null && harmonyMode === 'fixed' && options?.harmonicVariant === 'B' ? 'B' : 'A';
 
-  const tuningOpts: SonicYouthPolychordTuningOptions | undefined =
+  const gripOpts: SonicYouthPolychordGripOptions | undefined =
     options == null
       ? undefined
       : {
           ...(options.guitar1Tuning != null ? { guitar1Tuning: options.guitar1Tuning } : {}),
           ...(options.guitar2Tuning != null ? { guitar2Tuning: options.guitar2Tuning } : {}),
+          ...(options.guitar1FretPosition != null
+            ? { guitar1FretPosition: options.guitar1FretPosition }
+            : {}),
+          ...(options.guitar2FretPosition != null
+            ? { guitar2FretPosition: options.guitar2FretPosition }
+            : {}),
         };
   const tuningForProgression =
-    tuningOpts && (tuningOpts.guitar1Tuning != null || tuningOpts.guitar2Tuning != null)
-      ? tuningOpts
+    gripOpts &&
+    (gripOpts.guitar1Tuning != null ||
+      gripOpts.guitar2Tuning != null ||
+      gripOpts.guitar1FretPosition != null ||
+      gripOpts.guitar2FretPosition != null)
+      ? gripOpts
       : undefined;
 
   const pairs: SyProtoPolychordPair[] =
@@ -2789,7 +2915,15 @@ export function buildSonicYouthProto1MelodicDialogue(
   const chordBarsRaw = buildSonicYouthPolychordProgressionScore(pairs, tuningForProgression);
   const chordBars = applyProto1ChordRhythmSlotsToProgression(
     chordBarsRaw,
-    options?.chordRhythmSlots
+    options?.chordRhythmSlots,
+    {
+      ...(options?.guitar1FretPosition != null
+        ? { guitar1: options.guitar1FretPosition }
+        : {}),
+      ...(options?.guitar2FretPosition != null
+        ? { guitar2: options.guitar2FretPosition }
+        : {}),
+    }
   );
   const score = overlayMelodyOnChordScore(
     chordBars,
