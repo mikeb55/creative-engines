@@ -139,6 +139,14 @@ export type SyProto1FretPositionCustom = {
 
 export type SyProto1FretPosition = SyProto1FretPositionPreset | SyProto1FretPositionCustom;
 
+/**
+ * Proto1 repeated-attack grip voice-leading.
+ * Omitted → current hybrid (prefer alternate when available, else nearest).
+ * `'min-movement'` → nearest playable grip (may repeat prior).
+ * `'alternate'` → different playable grip when one exists.
+ */
+export type SyProto1VoiceLeadingMode = 'min-movement' | 'alternate';
+
 const SY_PROTO1_FRET_BAND: Record<
   Exclude<SyProto1FretPositionPreset, 'auto'>,
   { minFret: number; maxFret: number }
@@ -199,6 +207,7 @@ export type SyProto1ChordRhythmSlots = {
  * Optional `melodicRhythmSlots` → user G1/G2 note/rest timing; pitches fill note slots without altering timing.
  * Optional `chordRhythmSlots` → user G1/G2 chord-grip note/rest timing; omit → whole-note grips.
  * Optional `guitar1FretPosition` / `guitar2FretPosition` → filter grips by fretted fret band; omit/`auto` → legacy.
+ * Optional `guitar1VoiceLeading` / `guitar2VoiceLeading` → repeated-attack grip policy; omit → hybrid.
  */
 export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOptions & {
   /** Deterministic G1 motif + G2 answer variation via motif-ops. */
@@ -229,6 +238,10 @@ export type SonicYouthProto1MelodicDialogueOptions = SonicYouthPolychordTuningOp
   guitar1FretPosition?: SyProto1FretPosition;
   /** Guitar 2 fretboard band for triad grips. Omitted / `'auto'` → existing grip selection. */
   guitar2FretPosition?: SyProto1FretPosition;
+  /** Guitar 1 repeated-attack voice-leading. Omitted → hybrid (alternate when possible + min motion). */
+  guitar1VoiceLeading?: SyProto1VoiceLeadingMode;
+  /** Guitar 2 repeated-attack voice-leading. Omitted → hybrid (alternate when possible + min motion). */
+  guitar2VoiceLeading?: SyProto1VoiceLeadingMode;
 };
 
 export type SonicYouthPolychordProgressionResult = {
@@ -1108,10 +1121,24 @@ function pickClassicTriadGrip(candidates: readonly PlayableTriadGrip[]): Playabl
   return best!;
 }
 
+function rankByMinMovementFromPrior(
+  pool: readonly PlayableTriadGrip[],
+  priorMidis: readonly number[]
+): PlayableTriadGrip {
+  const ranked = [...pool].sort((a, b) => {
+    const ca = triadGripMotionCost(priorMidis, a.midis);
+    const cb = triadGripMotionCost(priorMidis, b.midis);
+    if (ca !== cb) return ca - cb;
+    return classicTriadGripRank(a, b);
+  });
+  return ranked[0]!;
+}
+
 /**
  * Pick playable triad grip. No prior → classic span/lowest fallback.
- * With prior → prefer a different voicing when available, else keep sole grip;
- * among pool, minimize register motion from prior (ties → classic rank).
+ * With prior + omitted voiceLeading → hybrid: prefer alternate when available, else nearest.
+ * `'min-movement'` → nearest playable (may repeat prior).
+ * `'alternate'` → different grip when one exists; else sole grip.
  * Optional fret position filters by actual fretted frets; empty band → classic fallback.
  */
 function pickPlayableTriadGrip(
@@ -1119,7 +1146,8 @@ function pickPlayableTriadGrip(
   pcs: readonly number[],
   guitarLabel: 'Guitar 1' | 'Guitar 2',
   priorMidis?: readonly number[] | null,
-  fretPosition?: SyProto1FretPosition | null
+  fretPosition?: SyProto1FretPosition | null,
+  voiceLeading?: SyProto1VoiceLeadingMode | null
 ): number[] {
   const candidates = enumeratePlayableTriadGrips(opens, pcs);
   if (candidates.length === 0) {
@@ -1136,14 +1164,11 @@ function pickPlayableTriadGrip(
   }
   const priorKey = triadGripKey(priorMidis);
   const alts = poolBase.filter((c) => c.midis.join(',') !== priorKey);
-  const pool = alts.length > 0 ? alts : poolBase;
-  const ranked = [...pool].sort((a, b) => {
-    const ca = triadGripMotionCost(priorMidis, a.midis);
-    const cb = triadGripMotionCost(priorMidis, b.midis);
-    if (ca !== cb) return ca - cb;
-    return classicTriadGripRank(a, b);
-  });
-  return ranked[0]!.midis.slice();
+  const mode = voiceLeading === 'min-movement' || voiceLeading === 'alternate' ? voiceLeading : null;
+  // null = hybrid (same pool rule as alternate); min-movement keeps prior eligible.
+  const pool =
+    mode === 'min-movement' ? poolBase : alts.length > 0 ? alts : poolBase;
+  return rankByMinMovementFromPrior(pool, priorMidis).midis.slice();
 }
 
 function solveTriadGripOnOpens(
@@ -1151,14 +1176,15 @@ function solveTriadGripOnOpens(
   triad: SyProtoTriadInput,
   guitarLabel: 'Guitar 1' | 'Guitar 2',
   priorMidis?: readonly number[] | null,
-  fretPosition?: SyProto1FretPosition | null
+  fretPosition?: SyProto1FretPosition | null,
+  voiceLeading?: SyProto1VoiceLeadingMode | null
 ): number[] {
   const pcs = triadPitchClasses(triad);
   if (new Set(pcs).size !== 3) {
     throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)} (degenerate triad)`);
   }
   try {
-    return pickPlayableTriadGrip(opens, pcs, guitarLabel, priorMidis, fretPosition);
+    return pickPlayableTriadGrip(opens, pcs, guitarLabel, priorMidis, fretPosition, voiceLeading);
   } catch {
     throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)}`);
   }
@@ -1211,19 +1237,21 @@ export function syProtoCombinedPolychordNotationLabel(
   return `${g1Sym} + ${g2Sym}`;
 }
 
-/** Optional priors / fret bands for min-move / alternate voicing (progression + repeated attacks). */
+/** Optional priors / fret bands / voice-leading for progression + repeated attacks. */
 export type SonicYouthPolychordGripOptions = SonicYouthPolychordTuningOptions & {
   guitar1PriorPitches?: readonly number[];
   guitar2PriorPitches?: readonly number[];
   guitar1FretPosition?: SyProto1FretPosition;
   guitar2FretPosition?: SyProto1FretPosition;
+  guitar1VoiceLeading?: SyProto1VoiceLeadingMode;
+  guitar2VoiceLeading?: SyProto1VoiceLeadingMode;
 };
 
 /**
  * One-bar dual-electric polychord (no bass).
  * Reference pair: D major (G1) + E major (G2).
  * Optional tunings → solveGuitarGrip({ openStrings }); default AAEEAA / ACCGG#C.
- * Optional prior grips → prefer alternate playable voicing with minimal pitch motion.
+ * Optional prior grips → voice-leading policy (omit = hybrid alternate + min motion).
  * Optional fret positions → filter by fretted frets; empty band falls back to classic pick.
  */
 export function buildSonicYouthOneBarPolychordScore(
@@ -1238,14 +1266,16 @@ export function buildSonicYouthOneBarPolychordScore(
     guitar1Triad,
     'Guitar 1',
     options?.guitar1PriorPitches,
-    options?.guitar1FretPosition
+    options?.guitar1FretPosition,
+    options?.guitar1VoiceLeading
   );
   const guitar2Pitches = solveTriadGripOnOpens(
     g2Open,
     guitar2Triad,
     'Guitar 2',
     options?.guitar2PriorPitches,
-    options?.guitar2FretPosition
+    options?.guitar2FretPosition,
+    options?.guitar2VoiceLeading
   );
   if (new Set(guitar1Pitches).size !== 3) {
     throw new Error(`Guitar 1 grip unavailable for ${triadLabel(guitar1Triad)}`);
@@ -1309,6 +1339,12 @@ export function buildSonicYouthPolychordProgressionScore(
       : {}),
     ...(options?.guitar2FretPosition != null
       ? { guitar2FretPosition: options.guitar2FretPosition }
+      : {}),
+    ...(options?.guitar1VoiceLeading != null
+      ? { guitar1VoiceLeading: options.guitar1VoiceLeading }
+      : {}),
+    ...(options?.guitar2VoiceLeading != null
+      ? { guitar2VoiceLeading: options.guitar2VoiceLeading }
       : {}),
   };
 
@@ -2320,7 +2356,8 @@ function proto1ChordGripEventsFromRhythmSlots(
   guitarLabel: 'Guitar 1' | 'Guitar 2',
   priorMidis: readonly number[] | null,
   voice = 1,
-  fretPosition?: SyProto1FretPosition | null
+  fretPosition?: SyProto1FretPosition | null,
+  voiceLeading?: SyProto1VoiceLeadingMode | null
 ): { events: ScoreEvent[]; lastPitches: number[] | null } {
   if (slots.length === 0) return { events: [], lastPitches: priorMidis?.slice() ?? null };
   if (legacyPitches.length === 0) {
@@ -2363,11 +2400,11 @@ function proto1ChordGripEventsFromRhythmSlots(
       });
     } else {
       // First attack with no prior → legacy progression grip (existing fallback).
-      // Later / cross-bar attacks → alternate playable voicing, min pitch motion.
+      // Later / cross-bar attacks → voice-leading policy (omit = hybrid).
       const pitches =
         prior == null
           ? [...legacyPitches].sort((a, b) => a - b)
-          : pickPlayableTriadGrip(opens, pcs, guitarLabel, prior, fretPosition);
+          : pickPlayableTriadGrip(opens, pcs, guitarLabel, prior, fretPosition, voiceLeading);
       events.push(chordAt(pitches, startBeat, duration, voice, chordSymbol));
       prior = pitches;
       lastPitches = pitches;
@@ -2390,9 +2427,11 @@ function proto1ChordGripEventsFromRhythmSlots(
 function applyProto1ChordRhythmSlotsToProgression(
   progression: SonicYouthPolychordProgressionResult,
   chordRhythm: SyProto1ChordRhythmSlots | undefined,
-  fretPositions?: {
-    guitar1?: SyProto1FretPosition;
-    guitar2?: SyProto1FretPosition;
+  gripPolicy?: {
+    guitar1FretPosition?: SyProto1FretPosition;
+    guitar2FretPosition?: SyProto1FretPosition;
+    guitar1VoiceLeading?: SyProto1VoiceLeadingMode;
+    guitar2VoiceLeading?: SyProto1VoiceLeadingMode;
   }
 ): SonicYouthPolychordProgressionResult {
   if (chordRhythm == null) return progression;
@@ -2403,7 +2442,8 @@ function applyProto1ChordRhythmSlotsToProgression(
     slotsByBar: readonly (readonly SyProto1ChordRhythmSlot[])[] | undefined,
     label: string,
     guitarLabel: 'Guitar 1' | 'Guitar 2',
-    fretPosition?: SyProto1FretPosition
+    fretPosition?: SyProto1FretPosition,
+    voiceLeading?: SyProto1VoiceLeadingMode
   ): PartModel | null => {
     if (slotsByBar == null) return null;
     if (slotsByBar.length !== barCount) {
@@ -2442,7 +2482,8 @@ function applyProto1ChordRhythmSlotsToProgression(
           guitarLabel,
           prior,
           legacyChord?.voice ?? 1,
-          fretPosition
+          fretPosition,
+          voiceLeading
         );
         prior = realized.lastPitches;
         const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
@@ -2458,7 +2499,8 @@ function applyProto1ChordRhythmSlotsToProgression(
     chordRhythm.guitar1,
     'guitar1',
     'Guitar 1',
-    fretPositions?.guitar1
+    gripPolicy?.guitar1FretPosition,
+    gripPolicy?.guitar1VoiceLeading
   );
   const g2 = applyGuitar(
     'guitar_2',
@@ -2466,7 +2508,8 @@ function applyProto1ChordRhythmSlotsToProgression(
     chordRhythm.guitar2,
     'guitar2',
     'Guitar 2',
-    fretPositions?.guitar2
+    gripPolicy?.guitar2FretPosition,
+    gripPolicy?.guitar2VoiceLeading
   );
   if (g1 == null && g2 == null) return progression;
 
@@ -2757,13 +2800,21 @@ export function buildSonicYouthProto1MelodicDialogue(
           ...(options.guitar2FretPosition != null
             ? { guitar2FretPosition: options.guitar2FretPosition }
             : {}),
+          ...(options.guitar1VoiceLeading != null
+            ? { guitar1VoiceLeading: options.guitar1VoiceLeading }
+            : {}),
+          ...(options.guitar2VoiceLeading != null
+            ? { guitar2VoiceLeading: options.guitar2VoiceLeading }
+            : {}),
         };
   const tuningForProgression =
     gripOpts &&
     (gripOpts.guitar1Tuning != null ||
       gripOpts.guitar2Tuning != null ||
       gripOpts.guitar1FretPosition != null ||
-      gripOpts.guitar2FretPosition != null)
+      gripOpts.guitar2FretPosition != null ||
+      gripOpts.guitar1VoiceLeading != null ||
+      gripOpts.guitar2VoiceLeading != null)
       ? gripOpts
       : undefined;
 
@@ -2918,10 +2969,16 @@ export function buildSonicYouthProto1MelodicDialogue(
     options?.chordRhythmSlots,
     {
       ...(options?.guitar1FretPosition != null
-        ? { guitar1: options.guitar1FretPosition }
+        ? { guitar1FretPosition: options.guitar1FretPosition }
         : {}),
       ...(options?.guitar2FretPosition != null
-        ? { guitar2: options.guitar2FretPosition }
+        ? { guitar2FretPosition: options.guitar2FretPosition }
+        : {}),
+      ...(options?.guitar1VoiceLeading != null
+        ? { guitar1VoiceLeading: options.guitar1VoiceLeading }
+        : {}),
+      ...(options?.guitar2VoiceLeading != null
+        ? { guitar2VoiceLeading: options.guitar2VoiceLeading }
         : {}),
     }
   );
