@@ -950,19 +950,48 @@ function resolveOpenTuning(
   return [raw[0]!, raw[1]!, raw[2]!, raw[3]!, raw[4]!, raw[5]!];
 }
 
-function solveTriadGripOnOpens(
-  opens: readonly number[],
-  triad: SyProtoTriadInput,
-  guitarLabel: 'Guitar 1' | 'Guitar 2'
-): number[] {
-  const pcs = triadPitchClasses(triad);
-  if (new Set(pcs).size !== 3) {
-    throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)} (degenerate triad)`);
+/** Playable triad voicing on custom opens (MIDI sorted low→high). */
+type PlayableTriadGrip = { midis: number[]; span: number; lowest: number };
+
+function triadGripKey(midis: readonly number[]): string {
+  return [...midis].sort((a, b) => a - b).join(',');
+}
+
+/** Register-ordered absolute motion between two 3-note grips. */
+function triadGripMotionCost(prior: readonly number[], next: readonly number[]): number {
+  const p = [...prior].sort((a, b) => a - b);
+  const n = [...next].sort((a, b) => a - b);
+  const len = Math.min(p.length, n.length);
+  let cost = 0;
+  for (let i = 0; i < len; i++) cost += Math.abs(p[i]! - n[i]!);
+  return cost;
+}
+
+function classicTriadGripRank(a: PlayableTriadGrip, b: PlayableTriadGrip): number {
+  if (a.span !== b.span) return a.span - b.span;
+  if (a.lowest !== b.lowest) return a.lowest - b.lowest;
+  for (let i = 0; i < a.midis.length; i++) {
+    const d = a.midis[i]! - b.midis[i]!;
+    if (d !== 0) return d;
   }
+  return 0;
+}
+
+/**
+ * Enumerate distinct playable 3-note grips for triad PCs on custom opens.
+ * Reuses {@link solveGuitarGrip}; frets must cover all three midis.
+ */
+function enumeratePlayableTriadGrips(
+  opens: readonly number[],
+  pcs: readonly number[]
+): PlayableTriadGrip[] {
+  const uniquePcs = [...new Set(pcs.map(normalizeRootPc))];
+  if (uniquePcs.length !== 3) return [];
   const lo = Math.min(...opens);
   const hi = Math.max(...opens) + 15;
-  const pools = pcs.map((pc) => midisForPcInRange(pc, lo, hi));
-  let best: { midis: number[]; span: number; lowest: number } | null = null;
+  const pools = uniquePcs.map((pc) => midisForPcInRange(pc, lo, hi));
+  const seen = new Set<string>();
+  const out: PlayableTriadGrip[] = [];
   for (const a of pools[0]!) {
     for (const b of pools[1]!) {
       for (const c of pools[2]!) {
@@ -970,21 +999,73 @@ function solveTriadGripOnOpens(
         if (new Set(midis).size !== 3) continue;
         const solved = solveGuitarGrip(midis, { openStrings: opens });
         if (!solved.feasible || solved.frets.length !== 3) continue;
-        const candidate = { midis, span: solved.fretSpan, lowest: solved.lowestFret };
-        if (
-          !best ||
-          candidate.span < best.span ||
-          (candidate.span === best.span && candidate.lowest < best.lowest)
-        ) {
-          best = candidate;
-        }
+        const sorted = midis.slice().sort((x, y) => x - y);
+        const key = sorted.join(',');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ midis: sorted, span: solved.fretSpan, lowest: solved.lowestFret });
       }
     }
   }
-  if (!best) {
+  return out;
+}
+
+/**
+ * Pick playable triad grip. No prior → classic span/lowest fallback.
+ * With prior → prefer a different voicing when available, else keep sole grip;
+ * among pool, minimize register motion from prior (ties → classic rank).
+ */
+function pickPlayableTriadGrip(
+  opens: readonly number[],
+  pcs: readonly number[],
+  guitarLabel: 'Guitar 1' | 'Guitar 2',
+  priorMidis?: readonly number[] | null
+): number[] {
+  const candidates = enumeratePlayableTriadGrips(opens, pcs);
+  if (candidates.length === 0) {
+    throw new Error(`${guitarLabel} grip unavailable`);
+  }
+  if (priorMidis == null || priorMidis.length === 0) {
+    // Existing fallback: first minimal (span, lowest) in enumeration order.
+    let best: PlayableTriadGrip | null = null;
+    for (const c of candidates) {
+      if (
+        !best ||
+        c.span < best.span ||
+        (c.span === best.span && c.lowest < best.lowest)
+      ) {
+        best = c;
+      }
+    }
+    return best!.midis.slice();
+  }
+  const priorKey = triadGripKey(priorMidis);
+  const alts = candidates.filter((c) => c.midis.join(',') !== priorKey);
+  const pool = alts.length > 0 ? alts : candidates;
+  const ranked = [...pool].sort((a, b) => {
+    const ca = triadGripMotionCost(priorMidis, a.midis);
+    const cb = triadGripMotionCost(priorMidis, b.midis);
+    if (ca !== cb) return ca - cb;
+    return classicTriadGripRank(a, b);
+  });
+  return ranked[0]!.midis.slice();
+}
+
+function solveTriadGripOnOpens(
+  opens: readonly number[],
+  triad: SyProtoTriadInput,
+  guitarLabel: 'Guitar 1' | 'Guitar 2',
+  priorMidis?: readonly number[] | null
+): number[] {
+  const pcs = triadPitchClasses(triad);
+  if (new Set(pcs).size !== 3) {
+    throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)} (degenerate triad)`);
+  }
+  try {
+    return pickPlayableTriadGrip(opens, pcs, guitarLabel, priorMidis);
+  } catch {
     throw new Error(`${guitarLabel} grip unavailable for ${triadLabel(triad)}`);
   }
-  return best.midis.slice().sort((x, y) => x - y);
 }
 
 function electricGuitarTriadPart(
@@ -1034,20 +1115,37 @@ export function syProtoCombinedPolychordNotationLabel(
   return `${g1Sym} + ${g2Sym}`;
 }
 
+/** Optional priors for min-move / alternate voicing (progression + repeated attacks). */
+export type SonicYouthPolychordGripOptions = SonicYouthPolychordTuningOptions & {
+  guitar1PriorPitches?: readonly number[];
+  guitar2PriorPitches?: readonly number[];
+};
+
 /**
  * One-bar dual-electric polychord (no bass).
  * Reference pair: D major (G1) + E major (G2).
  * Optional tunings → solveGuitarGrip({ openStrings }); default AAEEAA / ACCGG#C.
+ * Optional prior grips → prefer alternate playable voicing with minimal pitch motion.
  */
 export function buildSonicYouthOneBarPolychordScore(
   guitar1Triad: SyProtoTriadInput,
   guitar2Triad: SyProtoTriadInput,
-  options?: SonicYouthPolychordTuningOptions
+  options?: SonicYouthPolychordGripOptions
 ): SonicYouthOneBarPolychordResult {
   const g1Open = resolveOpenTuning(options?.guitar1Tuning, SY_PROTO_LEE_AAEEAA_OPEN, 'Guitar 1');
   const g2Open = resolveOpenTuning(options?.guitar2Tuning, SY_PROTO_ACCGGSHARP_C_OPEN, 'Guitar 2');
-  const guitar1Pitches = solveTriadGripOnOpens(g1Open, guitar1Triad, 'Guitar 1');
-  const guitar2Pitches = solveTriadGripOnOpens(g2Open, guitar2Triad, 'Guitar 2');
+  const guitar1Pitches = solveTriadGripOnOpens(
+    g1Open,
+    guitar1Triad,
+    'Guitar 1',
+    options?.guitar1PriorPitches
+  );
+  const guitar2Pitches = solveTriadGripOnOpens(
+    g2Open,
+    guitar2Triad,
+    'Guitar 2',
+    options?.guitar2PriorPitches
+  );
   if (new Set(guitar1Pitches).size !== 3) {
     throw new Error(`Guitar 1 grip unavailable for ${triadLabel(guitar1Triad)}`);
   }
@@ -1090,6 +1188,7 @@ export function buildSonicYouthOneBarPolychordScore(
  * Multi-bar dual-electric polychord progression (no bass).
  * Grip failure reports bar, guitar, and chord.
  * Optional tunings validated once (guitar-labelled); defaults AAEEAA / ACCGG#C.
+ * Adjacent bars reuse prior grips → alternate playable voicings with minimal pitch motion.
  */
 export function buildSonicYouthPolychordProgressionScore(
   pairs: readonly SyProtoPolychordPair[],
@@ -1110,17 +1209,25 @@ export function buildSonicYouthPolychordProgressionScore(
   const g1Measures = [];
   const g2Measures = [];
   const combinedWordsByBar: Record<number, string> = {};
+  let g1Prior: readonly number[] | undefined;
+  let g2Prior: readonly number[] | undefined;
 
   for (let i = 0; i < pairs.length; i++) {
     const bar = i + 1;
     const pair = pairs[i]!;
     let oneBar: SonicYouthOneBarPolychordResult;
     try {
-      oneBar = buildSonicYouthOneBarPolychordScore(pair.guitar1, pair.guitar2, tuningOpts);
+      oneBar = buildSonicYouthOneBarPolychordScore(pair.guitar1, pair.guitar2, {
+        ...tuningOpts,
+        ...(g1Prior != null ? { guitar1PriorPitches: g1Prior } : {}),
+        ...(g2Prior != null ? { guitar2PriorPitches: g2Prior } : {}),
+      });
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       throw new Error(`bar ${bar}: ${detail}`);
     }
+    g1Prior = oneBar.guitar1Pitches;
+    g2Prior = oneBar.guitar2Pitches;
     bars.push(oneBar);
     combinedWordsByBar[bar] = syProtoCombinedPolychordNotationLabel(
       pair,
@@ -2093,22 +2200,29 @@ function proto1PickUserRhythmContinuityPitch(
 
 /**
  * Realize one bar of chord-grip rhythm slots into ChordEvent / RestEvent.
- * Note → existing triad grip attack; rest → silence. Contiguous full-bar coverage required.
+ * Note → playable triad grip (same PCs); repeated attacks prefer alternate min-move voicings.
+ * Rest → silence. Contiguous full-bar coverage required. Onsets/durations unchanged.
  * Voice stays {@link PROTO1_CHORD_VOICE}-ready default (voice 1); overlay remaps under melody.
  */
 function proto1ChordGripEventsFromRhythmSlots(
   slots: readonly SyProto1ChordRhythmSlot[],
-  pitches: readonly number[],
+  opens: readonly number[],
+  legacyPitches: readonly number[],
   chordSymbol: string | undefined,
   barLabel: string,
+  guitarLabel: 'Guitar 1' | 'Guitar 2',
+  priorMidis: readonly number[] | null,
   voice = 1
-): ScoreEvent[] {
-  if (slots.length === 0) return [];
-  if (pitches.length === 0) {
+): { events: ScoreEvent[]; lastPitches: number[] | null } {
+  if (slots.length === 0) return { events: [], lastPitches: priorMidis?.slice() ?? null };
+  if (legacyPitches.length === 0) {
     throw new Error(`${barLabel}: cannot fill chord note slots without grip pitches`);
   }
+  const pcs = [...new Set(legacyPitches.map(normalizeRootPc))];
   let cursor = q(0, 1);
   const events: ScoreEvent[] = [];
+  let prior: readonly number[] | null = priorMidis;
+  let lastPitches: number[] | null = priorMidis?.slice() ?? null;
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i]!;
     const slotLabel = `${barLabel} slot ${i + 1}`;
@@ -2140,7 +2254,15 @@ function proto1ChordGripEventsFromRhythmSlots(
         pianoExact: exact,
       });
     } else {
-      events.push(chordAt([...pitches], startBeat, duration, voice, chordSymbol));
+      // First attack with no prior → legacy progression grip (existing fallback).
+      // Later / cross-bar attacks → alternate playable voicing, min pitch motion.
+      const pitches =
+        prior == null
+          ? [...legacyPitches].sort((a, b) => a - b)
+          : pickPlayableTriadGrip(opens, pcs, guitarLabel, prior);
+      events.push(chordAt(pitches, startBeat, duration, voice, chordSymbol));
+      prior = pitches;
+      lastPitches = pitches;
     }
     cursor = qAdd(cursor, exact.durationQ);
   }
@@ -2149,12 +2271,13 @@ function proto1ChordGripEventsFromRhythmSlots(
       `${barLabel}: duration sum ${cursor.n}/${cursor.d} != ${PROTO1_BAR_SPAN_Q.n}/${PROTO1_BAR_SPAN_Q.d} (no silent repair)`
     );
   }
-  return events;
+  return { events, lastPitches };
 }
 
 /**
  * Apply optional user chord-grip rhythms to a progression score.
  * Omitted guitar / empty bar → leave legacy whole-note triad events untouched.
+ * Repeated note attacks (and across bars) pick alternate playable voicings with min pitch motion.
  */
 function applyProto1ChordRhythmSlotsToProgression(
   progression: SonicYouthPolychordProgressionResult,
@@ -2164,8 +2287,10 @@ function applyProto1ChordRhythmSlotsToProgression(
   const barCount = progression.bars.length;
   const applyGuitar = (
     partId: 'guitar' | 'guitar_2',
+    opens: readonly number[],
     slotsByBar: readonly (readonly SyProto1ChordRhythmSlot[])[] | undefined,
-    label: string
+    label: string,
+    guitarLabel: 'Guitar 1' | 'Guitar 2'
   ): PartModel | null => {
     if (slotsByBar == null) return null;
     if (slotsByBar.length !== barCount) {
@@ -2177,36 +2302,56 @@ function applyProto1ChordRhythmSlotsToProgression(
     if (!part || part.measures.length !== barCount) {
       throw new Error(`Prototype 1 chord rhythm: missing ${partId} measures`);
     }
+    let prior: readonly number[] | null = null;
     return {
       ...part,
       measures: part.measures.map((measure, i) => {
         const slots = slotsByBar[i] ?? [];
+        const legacyChord = measure.events.find((e): e is ChordEvent => e.kind === 'chord');
         if (slots.length === 0) {
-          // Empty bar entry → preserve legacy whole-note grip.
+          // Empty bar entry → preserve legacy whole-note grip; still carry prior across bars.
+          if (legacyChord != null && legacyChord.pitches.length > 0) {
+            prior = [...legacyChord.pitches];
+          }
           const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
           for (const e of measure.events) addEvent(m, e);
           return m;
         }
-        const legacyChord = measure.events.find((e): e is ChordEvent => e.kind === 'chord');
         const pitches = legacyChord?.pitches ?? [];
         const chordSymbol =
           legacyChord?.chordSymbol === null ? undefined : legacyChord?.chordSymbol ?? undefined;
         const realized = proto1ChordGripEventsFromRhythmSlots(
           slots,
+          opens,
           pitches,
           chordSymbol,
           `${label} bar ${i + 1}`,
+          guitarLabel,
+          prior,
           legacyChord?.voice ?? 1
         );
+        prior = realized.lastPitches;
         const m = createMeasure(measure.index, measure.chord, measure.rehearsalMark);
-        for (const e of realized) addEvent(m, e);
+        for (const e of realized.events) addEvent(m, e);
         return m;
       }),
     };
   };
 
-  const g1 = applyGuitar('guitar', chordRhythm.guitar1, 'guitar1');
-  const g2 = applyGuitar('guitar_2', chordRhythm.guitar2, 'guitar2');
+  const g1 = applyGuitar(
+    'guitar',
+    progression.guitar1OpenPitches,
+    chordRhythm.guitar1,
+    'guitar1',
+    'Guitar 1'
+  );
+  const g2 = applyGuitar(
+    'guitar_2',
+    progression.guitar2OpenPitches,
+    chordRhythm.guitar2,
+    'guitar2',
+    'Guitar 2'
+  );
   if (g1 == null && g2 == null) return progression;
 
   const parts = progression.score.parts.map((p) => {
