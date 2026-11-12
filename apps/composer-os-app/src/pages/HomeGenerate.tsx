@@ -3107,6 +3107,12 @@ export function HomeGenerate({
   const [playbackSeq, setPlaybackSeq] = useState<PlaybackSequence | null>(null);
   const [playbackBeat, setPlaybackBeat] = useState<number>(0);
   const [lastGenerateMusicXml, setLastGenerateMusicXml] = useState<string | null>(null);
+  /** Last successfully submitted GenerateRequest body (Keep Composition). */
+  const [lastSubmittedGeneratePayload, setLastSubmittedGeneratePayload] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [keepCompositionMsg, setKeepCompositionMsg] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [recentSongModeRuns, setRecentSongModeRuns] = useState<SongModeRecentRun[]>([]);
   const [compareRunAId, setCompareRunAId] = useState('');
@@ -4083,11 +4089,12 @@ export function HomeGenerate({
             chordProgressionText: validated.chordProgressionText,
             mosaicSectionPlan: validated.mosaicSectionPlan,
           });
-          const r = (await enqueue({
+          const mosaicPayload: Record<string, unknown> = {
             ...body,
             duoVaultMotifEnabled,
             ...(exportScoreMidi ? { skipScoreMidiExport: false as const } : {}),
-          })) as GenResult;
+          };
+          const r = (await enqueue(mosaicPayload)) as GenResult;
           if (reharmApplyHarmonyUnlockRef.current) {
             reharmApplyHarmonyUnlockRef.current = false;
           }
@@ -4136,6 +4143,7 @@ export function HomeGenerate({
             });
           }
           const ok = !!r.success;
+          if (ok) setLastSubmittedGeneratePayload(mosaicPayload);
           if (!ok) {
             const errMsg =
               (r as { error?: string }).error ??
@@ -5067,6 +5075,7 @@ export function HomeGenerate({
           });
         }
         const ok = !!r.success;
+        if (ok) setLastSubmittedGeneratePayload(payloadToSend as Record<string, unknown>);
         if (!ok) {
           const errMsg =
             (r as { error?: string }).error ??
@@ -5472,6 +5481,268 @@ export function HomeGenerate({
     }
     triggerBrowserXmlDownload(xml, downloadName);
   }, [result?.xml, result?.filename, outputLabel, baseSeed]);
+
+  /**
+   * Keep Composition — save MusicXML + seed + submitted settings via Martino session IPC.
+   * Extra keys (`musicXml`, `generateSettings`, `keepComposition`) piggyback like `martinoConfig`;
+   * ComposerSessionV1 has no first-class fields for them (schema not expanded).
+   */
+  const handleKeepComposition = useCallback(async () => {
+    const xml = (lastGenerateMusicXml ?? result?.xml ?? '').trim();
+    if (!xml) {
+      setKeepCompositionMsg('No MusicXML to keep');
+      return;
+    }
+    if (!lastSubmittedGeneratePayload) {
+      setKeepCompositionMsg('No submitted settings to keep');
+      return;
+    }
+    const desktop = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    if (!desktop?.invokeApi) {
+      setKeepCompositionMsg('Keep requires Composer OS desktop');
+      return;
+    }
+    setKeepCompositionMsg('');
+    try {
+      const pick = (await desktop.invokeApi('composer-os-api:pick-session-save-path')) as {
+        ok?: boolean;
+        canceled?: boolean;
+        filepath?: string;
+      };
+      if (!pick?.ok || !pick.filepath) return;
+      const payload = lastSubmittedGeneratePayload;
+      const seedRaw = payload.seed ?? result?.runManifest?.seed ?? baseSeed;
+      const seed = typeof seedRaw === 'number' && Number.isFinite(seedRaw) ? seedRaw : Number(seedRaw);
+      if (!Number.isFinite(seed)) {
+        setKeepCompositionMsg('Keep failed: seed missing');
+        return;
+      }
+      const styleStack =
+        payload.styleStack && typeof payload.styleStack === 'object'
+          ? payload.styleStack
+          : MINIMAL_STYLE_STACK;
+      const presetFromPayload =
+        typeof payload.presetId === 'string' && payload.presetId ? payload.presetId : presetId;
+      const session = {
+        formatVersion: 3 as const,
+        savedAt: new Date().toISOString(),
+        presetId: presetFromPayload,
+        seed,
+        styleStack,
+        title:
+          (typeof payload.title === 'string' && payload.title.trim()) ||
+          (typeof payload.outputLabel === 'string' && payload.outputLabel.trim()) ||
+          undefined,
+        lastOutputPath: typeof result?.filepath === 'string' ? result.filepath : undefined,
+        // Keep extras (same piggyback pattern as martinoConfig; not in ComposerSessionV1 types).
+        keepComposition: true as const,
+        musicXml: xml,
+        generateSettings: payload,
+      };
+      const saved = (await desktop.invokeApi('composer-os-api:save-session', {
+        filepath: pick.filepath,
+        session,
+      })) as { ok?: boolean; error?: string };
+      if (saved?.ok) {
+        setKeepCompositionMsg('Composition kept');
+      } else {
+        setKeepCompositionMsg(saved?.error ? `Keep failed: ${saved.error}` : 'Keep failed');
+      }
+    } catch (e) {
+      setKeepCompositionMsg(e instanceof Error ? e.message : 'Keep failed');
+    }
+  }, [
+    baseSeed,
+    lastGenerateMusicXml,
+    lastSubmittedGeneratePayload,
+    presetId,
+    result?.filepath,
+    result?.runManifest?.seed,
+    result?.xml,
+  ]);
+
+  const restoreSupportedSettingsFromKeep = useCallback(
+    (session: Record<string, unknown>, settings: Record<string, unknown>) => {
+      const seedRaw = session.seed ?? settings.seed;
+      const seed = typeof seedRaw === 'number' && Number.isFinite(seedRaw) ? seedRaw : Number(seedRaw);
+      if (Number.isFinite(seed)) setBaseSeed(seed);
+
+      const presetRaw =
+        (typeof settings.presetId === 'string' && settings.presetId) ||
+        (typeof session.presetId === 'string' && session.presetId) ||
+        '';
+      if (presetRaw) setPresetId(presetRaw);
+
+      if (typeof settings.tonalCenter === 'string') setTonalCenter(settings.tonalCenter);
+      if (typeof settings.bpm === 'number' && Number.isFinite(settings.bpm) && settings.bpm > 0) {
+        setBpm(Math.floor(settings.bpm));
+      }
+      if (
+        typeof settings.totalBars === 'number' &&
+        Number.isFinite(settings.totalBars) &&
+        settings.totalBars > 0
+      ) {
+        setTotalBars(Math.floor(settings.totalBars));
+      }
+      if (typeof settings.variationId === 'string') setVariationId(settings.variationId);
+      if (
+        settings.creativeControlLevel === 'stable' ||
+        settings.creativeControlLevel === 'balanced' ||
+        settings.creativeControlLevel === 'surprise'
+      ) {
+        setCreativeControlLevel(settings.creativeControlLevel);
+      }
+      if (typeof settings.title === 'string') setScoreTitle(settings.title);
+      else if (typeof session.title === 'string') setScoreTitle(session.title);
+      if (typeof settings.outputLabel === 'string') setOutputLabel(settings.outputLabel);
+      if (typeof settings.chordProgressionText === 'string') {
+        setChordProgressionText(settings.chordProgressionText);
+      }
+      if (typeof settings.variationEnabled === 'boolean') setVariationEnabled(settings.variationEnabled);
+
+      const pairing =
+        settings.stylePairing && typeof settings.stylePairing === 'object'
+          ? (settings.stylePairing as Record<string, unknown>)
+          : null;
+      const primary =
+        (typeof settings.primarySongwriterStyle === 'string' && settings.primarySongwriterStyle.trim()) ||
+        (typeof pairing?.songwriterStyle === 'string' && pairing.songwriterStyle.trim()) ||
+        '';
+      if (primary) applyPrimarySongwriter(primary);
+      // applyPrimarySongwriter forces song_mode — re-apply kept preset when different.
+      if (presetRaw && presetRaw !== 'song_mode') setPresetId(presetRaw);
+      if (typeof pairing?.arrangerStyle === 'string' && pairing.arrangerStyle) {
+        setArrangerStyle(pairing.arrangerStyle);
+      }
+      if (typeof pairing?.era === 'string') setEra(pairing.era);
+
+      if (typeof settings.ensembleConfigId === 'string' && settings.ensembleConfigId) {
+        setEnsembleConfigId(settings.ensembleConfigId);
+      }
+      if (typeof settings.formId === 'string') setFormId(settings.formId);
+
+      const ecm =
+        settings.ecmMode ?? session.ecmMode;
+      if (
+        ecm === 'ECM_METHENY_QUARTET' ||
+        ecm === 'ECM_SCHNEIDER_CHAMBER' ||
+        ecm === 'ECM_WHEELER_CHAMBER'
+      ) {
+        setEcmMode(ecm);
+      }
+
+      // Keep harmonic extras (exact saved strings; after primary so HV is not clobbered).
+      if (typeof settings.harmonicVoice === 'string') {
+        setSlonimskyHarmonicVoice(settings.harmonicVoice);
+        if ((SLONIMSKY_GBD_WRITERS as readonly string[]).includes(settings.harmonicVoice)) {
+          setGbdWriterId(settings.harmonicVoice as SlonimskyGbdWriterId);
+        }
+      }
+      if (typeof settings.styleProfile === 'string') {
+        const keptStyleProfile = songModeStyleProfileFromSelectValue(settings.styleProfile);
+        if (keptStyleProfile) setSongModeStyleProfile(keptStyleProfile);
+      }
+    },
+    [applyPrimarySongwriter],
+  );
+
+  const handleOpenKeptComposition = useCallback(async () => {
+    const desktop = typeof window !== 'undefined' ? window.composerOsDesktop : undefined;
+    if (!desktop?.invokeApi) {
+      setKeepCompositionMsg('Open requires Composer OS desktop');
+      return;
+    }
+    setKeepCompositionMsg('');
+    try {
+      const pick = (await desktop.invokeApi('composer-os-api:pick-session-load-path')) as {
+        ok?: boolean;
+        canceled?: boolean;
+        filepath?: string;
+      };
+      if (!pick?.ok || !pick.filepath) return;
+      const loaded = (await desktop.invokeApi('composer-os-api:load-session', {
+        filepath: pick.filepath,
+      })) as { ok?: boolean; session?: Record<string, unknown>; errors?: string[] };
+      if (!loaded?.ok || !loaded.session) {
+        setKeepCompositionMsg(loaded?.errors?.join('; ') || 'Open failed');
+        return;
+      }
+      const session = loaded.session;
+      const musicXml = typeof session.musicXml === 'string' ? session.musicXml.trim() : '';
+      const settings =
+        session.generateSettings && typeof session.generateSettings === 'object'
+          ? (session.generateSettings as Record<string, unknown>)
+          : null;
+      const seedRaw = session.seed ?? settings?.seed;
+      const seed = typeof seedRaw === 'number' && Number.isFinite(seedRaw) ? seedRaw : Number(seedRaw);
+      if (!musicXml) {
+        setKeepCompositionMsg('Not a kept composition (missing MusicXML)');
+        return;
+      }
+      if (!settings) {
+        setKeepCompositionMsg('Not a kept composition (missing generateSettings)');
+        return;
+      }
+      if (!Number.isFinite(seed)) {
+        setKeepCompositionMsg('Not a kept composition (missing seed)');
+        return;
+      }
+
+      restoreSupportedSettingsFromKeep(session, settings);
+      setLastSubmittedGeneratePayload(settings);
+      setLastGenerateMusicXml(musicXml);
+
+      const presetForResult =
+        (typeof settings.presetId === 'string' && settings.presetId) ||
+        (typeof session.presetId === 'string' && session.presetId) ||
+        undefined;
+      const restored: GenResult = {
+        success: true,
+        xml: musicXml,
+        // No filepath — audition must use result.xml (kept MusicXML), not lastOutputPath disk.
+        filename:
+          typeof session.title === 'string' && session.title.trim()
+            ? `${session.title.trim()}.musicxml`
+            : undefined,
+        runManifest: {
+          seed,
+          presetId: presetForResult,
+        },
+      };
+      setResult(restored);
+      setError(null);
+
+      const bpm =
+        typeof settings.bpm === 'number' && Number.isFinite(settings.bpm) && settings.bpm > 0
+          ? Math.floor(settings.bpm)
+          : 120;
+      void auditionFromGenerateResult(restored, {
+        bpm,
+        timeSig: '4/4',
+        composerId: songwriterStyle,
+        seed,
+        autoPlay: false,
+        onSequence: (seq) => {
+          setPlaybackSeq(seq);
+          setPlaybackBeat(0);
+          setGridPlaybackBeat(0);
+          setIsPlaying(false);
+          setGridIsPlaying(false);
+        },
+      }).then((outcome) => {
+        if (outcome.loadedXml) {
+          setLastGenerateMusicXml(outcome.loadedXml);
+          publishGridFromXml(outcome.loadedXml, bpm, '4/4');
+        } else if (musicXml) {
+          publishGridFromXml(musicXml, bpm, '4/4');
+        }
+      });
+
+      setKeepCompositionMsg('Kept composition opened');
+    } catch (e) {
+      setKeepCompositionMsg(e instanceof Error ? e.message : 'Open failed');
+    }
+  }, [publishGridFromXml, restoreSupportedSettingsFromKeep, songwriterStyle]);
 
   const tritonicFloatOverText = useMemo(
     () =>
@@ -13323,7 +13594,7 @@ export function HomeGenerate({
             </>
           )}
 
-          <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
             {showDownloadGenerateXml ? (
               <button
                 type="button"
@@ -13332,6 +13603,29 @@ export function HomeGenerate({
               >
                 {isDesktopIpc() ? 'Save a copy…' : 'Download XML'}
               </button>
+            ) : null}
+            {showDownloadGenerateXml ? (
+              <button
+                type="button"
+                className="secondary"
+                data-testid="keep-composition"
+                disabled={loading || !lastSubmittedGeneratePayload}
+                onClick={() => void handleKeepComposition()}
+              >
+                Keep Composition
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="secondary"
+              data-testid="open-kept-composition"
+              disabled={loading}
+              onClick={() => void handleOpenKeptComposition()}
+            >
+              Open Kept Composition
+            </button>
+            {keepCompositionMsg ? (
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{keepCompositionMsg}</span>
             ) : null}
             {showDownloadGenerateXml ? (
               <button
