@@ -17,7 +17,7 @@ export const TRIAD_PAIR_SEARCH = {
 
 const NATURAL: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const DEGREES = ['root', 'third', 'fifth'] as const;
-const QUALITY_INTERVALS = {
+export const QUALITY_INTERVALS = {
   major: { third: 4, fifth: 7 },
   minor: { third: 3, fifth: 7 },
   augmented: { third: 4, fifth: 8 },
