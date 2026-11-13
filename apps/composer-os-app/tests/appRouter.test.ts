@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   hashForRoute,
+  NAV_GROUPS,
+  navGroupIdForRoute,
   normalizeRoutePath,
   pathForRoute,
   PRIMARY_NAV_ROUTES,
   routeFromLocation,
   routeFromPathname,
   routeNavLabel,
+  type AppRouteId,
 } from '../src/router/appRouter';
 
 describe('appRouter hash routes (Phase 1.5 S1 + file:// reload fix)', () => {
@@ -46,6 +49,28 @@ describe('appRouter hash routes (Phase 1.5 S1 + file:// reload fix)', () => {
     expect(routeFromPathname('/presets')).toBe('presets');
     expect(routeFromPathname('/')).toBe('home');
     expect(routeFromPathname('/nope')).toBe('home');
+  });
+
+  it('NAV_GROUPS covers all routes once under Compose·Develop·Arrange·Compare·Library', () => {
+    expect(NAV_GROUPS.map((g) => g.id)).toEqual([
+      'compose',
+      'develop',
+      'arrange',
+      'compare',
+      'library',
+    ]);
+    const flat = NAV_GROUPS.flatMap((g) => [...g.routes]);
+    expect(flat.length).toBe(new Set(flat).size);
+    expect(flat.length).toBe(22);
+    expect(navGroupIdForRoute('home')).toBe('compose');
+    expect(navGroupIdForRoute('practice')).toBe('develop');
+    expect(navGroupIdForRoute('arranger')).toBe('arrange');
+    expect(navGroupIdForRoute('evaluation')).toBe('compare');
+    expect(navGroupIdForRoute('presets')).toBe('library');
+    for (const id of flat) {
+      expect(pathForRoute(id as AppRouteId).startsWith('/')).toBe(true);
+      expect(routeNavLabel(id as AppRouteId).length).toBeGreaterThan(0);
+    }
   });
 
   it('normalizeRoutePath accepts hash and bare forms', () => {

@@ -192,6 +192,57 @@ export const PRIMARY_NAV_ROUTES: readonly AppRouteId[] = [
   'riffgen',
 ];
 
+export type NavGroupId = 'compose' | 'develop' | 'arrange' | 'compare' | 'library';
+
+export type NavGroup = {
+  id: NavGroupId;
+  label: string;
+  routes: readonly AppRouteId[];
+};
+
+/** Top-level nav groups — every AppRouteId appears exactly once. */
+export const NAV_GROUPS: readonly NavGroup[] = [
+  {
+    id: 'compose',
+    label: 'Compose',
+    routes: ['home', 'riffgen', 'composer-engines', 'wwh-v8', 'bhl', 'solo-piano'],
+  },
+  {
+    id: 'develop',
+    label: 'Develop',
+    routes: [
+      'develop',
+      'practice',
+      'long-line-practice',
+      'pentatonic',
+      'hexatonic',
+      'slonimsky-etudes',
+    ],
+  },
+  {
+    id: 'arrange',
+    label: 'Arrange',
+    routes: ['arranger', 'structure', 'ensemble', 'grid', 'piano-chamber'],
+  },
+  {
+    id: 'compare',
+    label: 'Compare',
+    routes: ['evaluation'],
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    routes: ['presets', 'outputs', 'guide', 'credits'],
+  },
+];
+
+export function navGroupIdForRoute(route: AppRouteId): NavGroupId {
+  for (const g of NAV_GROUPS) {
+    if (g.routes.includes(route)) return g.id;
+  }
+  return 'compose';
+}
+
 /** Known hash path segments for Electron did-fail-load recovery. */
 export const ROUTE_HASH_SEGMENTS: readonly string[] = PRIMARY_NAV_ROUTES.filter(
   (id) => id !== 'home'

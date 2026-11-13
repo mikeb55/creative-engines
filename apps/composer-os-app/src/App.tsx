@@ -19,11 +19,12 @@ import { RiffGenPage } from './pages/RiffGenPage';
 import { ArrangerTab } from './components/Arranger/ArrangerTab';
 import {
   ensureHashRoute,
+  NAV_GROUPS,
   navigateToRoute,
-  PRIMARY_NAV_ROUTES,
   routeFromLocation,
   routeNavLabel,
   type AppRouteId,
+  type NavGroupId,
 } from './router/appRouter';
 import { DiagnosticsPanel, type LastGenerationSummary } from './components/DiagnosticsPanel';
 import { api } from './services/api';
@@ -411,11 +412,24 @@ export default function App() {
   const [refreshOutputs, setRefreshOutputs] = useState(0);
   const [lastGeneration, setLastGeneration] = useState<LastGenerationSummary>({ status: 'none' });
   const [desktopDisplayTitle, setDesktopDisplayTitle] = useState<string | null>(null);
+  /** Compose open by default; active route's group always forced open in render. */
+  const [openNavGroups, setOpenNavGroups] = useState<ReadonlySet<NavGroupId>>(
+    () => new Set<NavGroupId>(['compose'])
+  );
   const embeddedStamp = parseEmbeddedUiStamp();
 
   const goToTab = useCallback((next: Tab) => {
     navigateToRoute(next);
     setTab(next);
+  }, []);
+
+  const toggleNavGroup = useCallback((gid: NavGroupId) => {
+    setOpenNavGroups((prev) => {
+      const nextSet = new Set(prev);
+      if (nextSet.has(gid)) nextSet.delete(gid);
+      else nextSet.add(gid);
+      return nextSet;
+    });
   }, []);
 
   useEffect(() => {
@@ -484,116 +498,52 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
           <VrbStatusIndicator onNavigate={() => goToTab('structure')} />
         </div>
-        <nav style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {PRIMARY_NAV_ROUTES.map((t) => (
-            <button
-              key={t}
-              className={tab === t ? '' : 'secondary'}
-              onClick={() => goToTab(t)}
-            >
-              {routeNavLabel(t)}
-            </button>
-          ))}
-          <button
-            className={tab === 'solo-piano' ? '' : 'secondary'}
-            onClick={() => goToTab('solo-piano')}
-            type="button"
-          >
-            Solo Piano
-          </button>
-          <button
-            className={tab === 'piano-chamber' ? '' : 'secondary'}
-            onClick={() => goToTab('piano-chamber')}
-            type="button"
-          >
-            Piano to chamber
-          </button>
-          <button
-            className={tab === 'composer-engines' ? '' : 'secondary'}
-            onClick={() => goToTab('composer-engines')}
-          >
-            Composer Engines
-          </button>
-          <button
-            className={tab === 'pentatonic' ? '' : 'secondary'}
-            onClick={() => goToTab('pentatonic')}
-            type="button"
-          >
-            Pentatonic
-          </button>
-          <button
-            className={tab === 'hexatonic' ? '' : 'secondary'}
-            onClick={() => goToTab('hexatonic')}
-            type="button"
-          >
-            Hexatonic
-          </button>
-          <button
-            className={tab === 'bhl' ? '' : 'secondary'}
-            onClick={() => goToTab('bhl')}
-            type="button"
-          >
-            BHL
-          </button>
-          <button
-            className={tab === 'practice' ? '' : 'secondary'}
-            onClick={() => goToTab('practice')}
-            type="button"
-          >
-            Practice &amp; Scales Studio
-          </button>
-          <button
-            className={tab === 'long-line-practice' ? '' : 'secondary'}
-            onClick={() => goToTab('long-line-practice')}
-            type="button"
-          >
-            Long-Line Practice
-          </button>
-          <button
-            className={tab === 'evaluation' ? '' : 'secondary'}
-            onClick={() => goToTab('evaluation')}
-            type="button"
-          >
-            Evaluation
-          </button>
-          <button
-            className={tab === 'develop' ? '' : 'secondary'}
-            onClick={() => goToTab('develop')}
-            type="button"
-          >
-            Development Studio
-          </button>
-          <button
-            className={tab === 'slonimsky-etudes' ? '' : 'secondary'}
-            onClick={() => goToTab('slonimsky-etudes')}
-            type="button"
-          >
-            Slonimsky Etudes
-          </button>
-          <button
-            className={tab === 'wwh-v8' ? '' : 'secondary'}
-            onClick={() => goToTab('wwh-v8')}
-            type="button"
-            title="Performance Composer"
-          >
-            Performance Composer
-          </button>
-          <button
-            className={tab === 'guide' ? '' : 'secondary'}
-            onClick={() => goToTab('guide')}
-            type="button"
-            title="How to use Composer OS"
-          >
-            Help
-          </button>
-          <button
-            className={tab === 'credits' ? '' : 'secondary'}
-            onClick={() => goToTab('credits')}
-            type="button"
-            title="Credits and how Composer OS is developed"
-          >
-            Credits
-          </button>
+        <nav
+          aria-label="Main"
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}
+        >
+          {NAV_GROUPS.map((group) => {
+            const activeInGroup = group.routes.includes(tab);
+            const open = activeInGroup || openNavGroups.has(group.id);
+            return (
+              <div key={group.id} data-nav-group={group.id} data-nav-open={open ? 'true' : 'false'}>
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-expanded={open}
+                  aria-controls={`nav-group-${group.id}`}
+                  onClick={() => toggleNavGroup(group.id)}
+                  style={{ fontWeight: activeInGroup ? 600 : undefined }}
+                >
+                  {open ? '▾' : '▸'} {group.label}
+                </button>
+                {open && (
+                  <div
+                    id={`nav-group-${group.id}`}
+                    style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      marginTop: '0.35rem',
+                      flexWrap: 'wrap',
+                      paddingLeft: '0.25rem',
+                    }}
+                  >
+                    {group.routes.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={tab === t ? '' : 'secondary'}
+                        onClick={() => goToTab(t)}
+                        title={routeNavLabel(t)}
+                      >
+                        {routeNavLabel(t)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
       </header>
 
