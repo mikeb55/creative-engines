@@ -6298,11 +6298,6 @@ export function HomeGenerate({
         </p>
       )}
 
-      {isDesktopIpc() ? (
-        <Suspense fallback={null}>
-          <LeadSheetInputDesktopPanel />
-        </Suspense>
-      ) : null}
 
       {!isDesktopIpc() ? (
         <div style={{ marginBottom: '1rem', maxWidth: 520 }}>
@@ -6353,6 +6348,36 @@ export function HomeGenerate({
         exportIntegrity={sharedStripExportIntegrity}
         tritonicFloatOver={tritonicFloatOverText}
       />
+
+      <details
+        data-testid="advanced-and-tools"
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 'min(1200px, 100%)',
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Advanced & Tools
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+      {isDesktopIpc() ? (
+        <Suspense fallback={null}>
+          <LeadSheetInputDesktopPanel />
+        </Suspense>
+      ) : null}
+
 
       <Suspense fallback={null}>
         <MosaicImportPanel
@@ -7456,6 +7481,1171 @@ export function HomeGenerate({
         </div>
       </details>
       ) : null}
+
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Chord Inspector
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <label
+            htmlFor="co-chord-inspector-input"
+            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+          >
+            Chord symbol
+          </label>
+          <input
+            id="co-chord-inspector-input"
+            type="text"
+            value={chordInspectorInput}
+            onChange={(e) => setChordInspectorInput(e.target.value)}
+            placeholder="e.g. Cmaj7, F#min9, Bb7#11"
+            autoComplete="off"
+            spellCheck={false}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: '0.88rem',
+              padding: '0.45rem 0.5rem',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginTop: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div role="group" aria-label="Chord inspector mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={chordInspectorMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setChordInspectorMode('solo')}
+                  aria-pressed={chordInspectorMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={chordInspectorMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setChordInspectorMode('melody')}
+                  aria-pressed={chordInspectorMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-bars"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Bars
+              </label>
+              <select
+                id="co-chord-inspector-bars"
+                value={chordInspectorBars}
+                onChange={(e) => setChordInspectorBars(Number(e.target.value) as 1 | 2 | 4)}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={4}>4</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-chord-inspector-riff-style"
+                value={chordInspectorRiffStyle}
+                onChange={(e) =>
+                  setChordInspectorRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-chord-inspector-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-chord-inspector-tuning"
+                value={chordInspectorTuningId}
+                onChange={(e) => setChordInspectorTuningId(e.target.value)}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setChordInspectorExportError(null);
+                const r = inspectChordSymbol(chordInspectorInput, chordInspectorTuningId);
+                if (!r) {
+                  setChordInspectorResult(null);
+                  setChordInspectorReharmPanelOpen(false);
+                  setChordInspectorParseError(
+                    'Could not parse chord or map it to the Tonality Vault. Check the symbol (e.g. Cmaj7, F#m9, Bb7#11).'
+                  );
+                  return;
+                }
+                setChordInspectorParseError(null);
+                setChordInspectorResult(r);
+                setChordInspectorReharmPanelOpen(false);
+              }}
+            >
+              Inspect Chord
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setChordInspectorExportError(null);
+                const xml = inspectChordToMusicXml(chordInspectorInput, {
+                  bars: chordInspectorBars,
+                  mode: chordInspectorMode,
+                  tuningId: chordInspectorTuningId,
+                  riffStyle: chordInspectorRiffStyle,
+                });
+                if (!xml) {
+                  setChordInspectorExportError(
+                    'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                  );
+                  return;
+                }
+                const base =
+                  chordInspectorInput
+                    .trim()
+                    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                    .replace(/\s+/g, '_')
+                    .replace(/^\.+|\.+$/g, '') || 'chord';
+                const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${base}.xml`;
+                a.rel = 'noopener';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Generate + Export MusicXML
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={chordInspectorAnalyticalBusy || !chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorAnalyticalError(null);
+                  setChordInspectorAnalyticalResult(null);
+                  const chords = chordsForAnalyticalInput(chordInspectorInput);
+                  if (chords.length === 0) {
+                    setChordInspectorAnalyticalError('Enter at least one chord symbol.');
+                    return;
+                  }
+                  setChordInspectorAnalyticalBusy(true);
+                  try {
+                    const r = await api.analyse({
+                      chords,
+                      key: tonalCenter.trim() || chordPasteKey || 'C',
+                    });
+                    if (!r.success) {
+                      setChordInspectorAnalyticalError(r.error);
+                      return;
+                    }
+                    setChordInspectorAnalyticalResult(r.result);
+                  } catch (e) {
+                    setChordInspectorAnalyticalError(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setChordInspectorAnalyticalBusy(false);
+                  }
+                })();
+              }}
+            >
+              {chordInspectorAnalyticalBusy ? 'Analysing…' : 'Analyse'}
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={!chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorSideExportMsg(null);
+                  const xml = inspectChordToMusicXml(chordInspectorInput, {
+                    bars: chordInspectorBars,
+                    mode: chordInspectorMode,
+                    tuningId: chordInspectorTuningId,
+                    riffStyle: chordInspectorRiffStyle,
+                  });
+                  if (!xml) {
+                    setChordInspectorSideExportMsg(
+                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                    );
+                    return;
+                  }
+                  const base =
+                    chordInspectorInput
+                      .trim()
+                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                      .replace(/\s+/g, '_')
+                      .replace(/^\.+|\.+$/g, '') || 'chord';
+                  const saved = await saveMusicXmlForSideExport(xml, base);
+                  if (!saved.ok) {
+                    setChordInspectorSideExportMsg(saved.error);
+                    return;
+                  }
+                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                  setChordInspectorSideExportMsg(
+                    r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                  );
+                })();
+              }}
+            >
+              Export PDF
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={!chordInspectorInput.trim()}
+              onClick={() => {
+                void (async () => {
+                  setChordInspectorSideExportMsg(null);
+                  const xml = inspectChordToMusicXml(chordInspectorInput, {
+                    bars: chordInspectorBars,
+                    mode: chordInspectorMode,
+                    tuningId: chordInspectorTuningId,
+                    riffStyle: chordInspectorRiffStyle,
+                  });
+                  if (!xml) {
+                    setChordInspectorSideExportMsg(
+                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
+                    );
+                    return;
+                  }
+                  const base =
+                    chordInspectorInput
+                      .trim()
+                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                      .replace(/\s+/g, '_')
+                      .replace(/^\.+|\.+$/g, '') || 'chord';
+                  const saved = await saveMusicXmlForSideExport(xml, base);
+                  if (!saved.ok) {
+                    setChordInspectorSideExportMsg(saved.error);
+                    return;
+                  }
+                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                  setChordInspectorSideExportMsg(
+                    r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                  );
+                })();
+              }}
+            >
+              Export Guitar Pro
+            </button>
+          </div>
+          {chordInspectorSideExportMsg && (
+            <p
+              style={{
+                marginTop: '0.5rem',
+                fontSize: '0.82rem',
+                color: chordInspectorSideExportMsg.includes('exported:')
+                  ? 'var(--text-muted)'
+                  : 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorSideExportMsg}
+            </p>
+          )}
+          {chordInspectorAnalyticalError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorAnalyticalError}
+            </div>
+          )}
+          {chordInspectorAnalyticalResult && !chordInspectorAnalyticalError && (
+            <div style={{ marginTop: '0.75rem', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Symbol</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Normalised</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Degree</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Function</th>
+                    <th style={{ padding: '0.35rem 0.5rem' }}>Tension</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chordInspectorAnalyticalResult.bars.map((row, i) => (
+                    <tr key={`analytical-${row.barIndex}-${i}-${row.symbol}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.symbol}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.normalised}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.scaleDegree ?? '—'}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.functionalHint ?? '—'}</td>
+                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.tension ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {chordInspectorAnalyticalResult.modulationSuggestions.length > 0 && (
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  {chordInspectorAnalyticalResult.modulationSuggestions.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              )}
+              {chordInspectorAnalyticalResult.warnings.length > 0 && (
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: '#ca8a04' }}>
+                  {chordInspectorAnalyticalResult.warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {chordInspectorParseError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorParseError}
+            </div>
+          )}
+          {chordInspectorExportError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {chordInspectorExportError}
+            </div>
+          )}
+          {chordInspectorResult && !chordInspectorParseError && (
+            <div
+              style={{
+                marginTop: '0.85rem',
+                fontSize: '0.88rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.45,
+              }}
+            >
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>Vault chord type id:</strong> {chordInspectorResult.vaultChordTypeId}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Melodic triad (pitch classes):</strong>{' '}
+                {chordInspectorResult.melodicTriad.join(', ')}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Primary tension note (PC):</strong> {chordInspectorResult.primaryTensionNote}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Quadratonic pitch classes:</strong>{' '}
+                {chordInspectorResult.quadratonicPitchClasses.join(', ')}
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>
+                <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
+              </p>
+              <div
+                style={{
+                  marginTop: '0.85rem',
+                  padding: '0.65rem 0.75rem',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-elevated, rgba(0,0,0,0.04))',
+                }}
+                role="region"
+                aria-label="Reharmonisation"
+              >
+                <p
+                  style={{
+                    margin: '0 0 0.5rem',
+                    fontSize: '0.8rem',
+                    color: 'var(--text)',
+                    fontWeight: 600,
+                  }}
+                >
+                  Reharm (Tonality Vault)
+                </p>
+                <button
+                  type="button"
+                  style={{ marginBottom: '0.65rem' }}
+                  onClick={() => {
+                    setChordInspectorReharmPanelOpen(true);
+                  }}
+                >
+                  Reharmonise
+                </button>
+                {chordInspectorReharmPanelOpen ? (
+                  <>
+                    <div style={{ marginBottom: '0.65rem' }}>
+                      <label
+                        htmlFor="co-chord-inspector-reharm-drift-slider"
+                        style={{ display: 'block', marginBottom: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}
+                      >
+                        Drift proximity (targets {emotionalDriftOptionLabel(sliderToTargetReharmDrift(chordInspectorReharmDriftSlider))})
+                      </label>
+                      <input
+                        id="co-chord-inspector-reharm-drift-slider"
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={chordInspectorReharmDriftSlider}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          const v = Math.min(1, Math.max(0, Math.round(raw * 10) / 10));
+                          setChordInspectorReharmDriftSlider(v);
+                        }}
+                        style={{ width: '100%', maxWidth: 360 }}
+                      />
+                      <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {chordInspectorReharmDriftSlider.toFixed(1)} · reorder by affinity to selected drift
+                      </p>
+                    </div>
+                    {chordInspectorReharmTopEight.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: '0.82rem' }}>No candidates (empty vault row or parse edge case).</p>
+                    ) : (
+                      <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem' }}>
+                        {chordInspectorReharmTopEight.map((c, i) => {
+                          const sym = formatChordInspectorSubstituteSymbol(c.substituteRootPc, c.substituteChordTypeId);
+                          const dom = dominantEmotionalDriftForChordType(c.substituteChordTypeId);
+                          return (
+                            <li
+                              key={`reharm-${c.substituteChordTypeId}-${c.strategy}-${i}`}
+                              style={{ marginBottom: '0.55rem' }}
+                            >
+                              <span style={{ color: 'var(--text)' }}>
+                                <strong>{sym}</strong>
+                              </span>
+                              <span style={{ marginLeft: '0.45rem', color: 'var(--text-muted)' }}>
+                                drift: {emotionalDriftOptionLabel(dom)}
+                              </span>
+                              <div style={{ marginTop: '0.35rem' }}>
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  onClick={() => setChordInspectorInput(sym)}
+                                >
+                                  Use this chord
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 'min(1200px, 100%)',
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          Reharm preview
+        </summary>
+        <ReharmPanel
+          chordProgressionText={chordProgressionText}
+          songFormBars={songFormBars}
+          baseSeed={baseSeed}
+          songwriterStyleId={songwriterStyle}
+          playbackBeat={playbackBeat}
+          playbackBeatsPerBar={playbackSeq?.beatsPerBar}
+          postGenHarmonyBars={
+            result?.success && result.parsedCustomProgressionBars?.length === songFormBars
+              ? result.parsedCustomProgressionBars
+              : null
+          }
+          postGenSeed={result?.runManifest?.seed ?? baseSeed}
+          styleTransferWayneHarmonyAuthoritative={
+            (result as { styleTransferWayneHarmonyAuthoritative?: boolean } | null)
+              ?.styleTransferWayneHarmonyAuthoritative
+          }
+          postGenMusicXml={lastGenerateMusicXml ?? result?.xml ?? null}
+          postGenTimeSig={
+            iRealParsedChart?.timeSignature
+              ? `${iRealParsedChart.timeSignature.num}/${iRealParsedChart.timeSignature.den}`
+              : '4/4'
+          }
+          onApplyBars={(bars) => {
+            setChordProgressionText(bars.join(' | '));
+            reharmApplyHarmonyUnlockRef.current = true;
+            if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) return;
+            void generate();
+          }}
+        />
+      </details>
+
+      <details
+        style={{
+          marginBottom: '1rem',
+          maxWidth: 560,
+          padding: '0.75rem 0.85rem',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: 'var(--text)',
+            listStylePosition: 'outside',
+          }}
+        >
+          PDF Lead Sheet Import (Beta)
+        </summary>
+        <div style={{ marginTop: '0.85rem' }}>
+          <input
+            ref={pdfFileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            aria-label="PDF lead sheet file"
+            disabled={pdfVaultBusy}
+            style={{ display: 'block', marginBottom: '0.65rem', fontSize: '0.85rem' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setPdfLeadSheetFile(f);
+              setPdfVaultOutput(null);
+              setPdfVaultParsedChart(null);
+              setPdfVaultError(null);
+              setPdfMusicXmlExportError(null);
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginBottom: '0.65rem',
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                htmlFor="co-pdf-page"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Page
+              </label>
+              <input
+                id="co-pdf-page"
+                type="number"
+                min={1}
+                value={pdfPageNumber}
+                onChange={(e) => setPdfPageNumber(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                disabled={pdfVaultBusy}
+                style={{
+                  width: '4.5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+            <div role="group" aria-label="PDF vault mode">
+              <span
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Mode
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className={pdfVaultMode === 'solo' ? undefined : 'secondary'}
+                  onClick={() => setPdfVaultMode('solo')}
+                  disabled={pdfVaultBusy}
+                  aria-pressed={pdfVaultMode === 'solo'}
+                >
+                  Solo
+                </button>
+                <button
+                  type="button"
+                  className={pdfVaultMode === 'melody' ? undefined : 'secondary'}
+                  onClick={() => setPdfVaultMode('melody')}
+                  disabled={pdfVaultBusy}
+                  aria-pressed={pdfVaultMode === 'melody'}
+                >
+                  Melody
+                </button>
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-tuning"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Tuning
+              </label>
+              <select
+                id="co-pdf-tuning"
+                value={pdfVaultTuningId}
+                onChange={(e) => setPdfVaultTuningId(e.target.value)}
+                disabled={pdfVaultBusy}
+              >
+                <option value="standard">standard</option>
+                <option value="dadgad">dadgad (DADGAD)</option>
+                <option value="open_d">open_d (Open D)</option>
+                <option value="open_g">open_g (Open G)</option>
+                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-riff-style"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Riff style
+              </label>
+              <select
+                id="co-pdf-riff-style"
+                value={pdfVaultRiffStyle}
+                onChange={(e) =>
+                  setPdfVaultRiffStyle(
+                    e.target.value as
+                      | 'bebop-placement'
+                      | 'quadratonic'
+                      | 'dyad-seesaw'
+                      | 'triad-pair-pendulum'
+                      | 'pedal-string'
+                  )
+                }
+                disabled={pdfVaultBusy}
+              >
+                <option value="bebop-placement">bebop-placement</option>
+                <option value="quadratonic">quadratonic</option>
+                <option value="dyad-seesaw">dyad-seesaw</option>
+                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
+                <option value="pedal-string">pedal-string</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-drift"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Emotional drift
+              </label>
+              <select
+                id="co-pdf-drift"
+                value={pdfVaultDrift}
+                onChange={(e) => setPdfVaultDrift(e.target.value as EmotionalDrift)}
+                disabled={pdfVaultBusy}
+              >
+                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="co-pdf-choruses"
+                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
+              >
+                Choruses
+              </label>
+              <input
+                id="co-pdf-choruses"
+                type="number"
+                min={1}
+                max={4}
+                step={1}
+                value={pdfVaultChorusCount}
+                onChange={(e) =>
+                  setPdfVaultChorusCount(Math.min(4, Math.max(1, Math.floor(Number(e.target.value) || 1))))
+                }
+                disabled={pdfVaultBusy}
+                style={{
+                  width: '5rem',
+                  padding: '0.35rem 0.45rem',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+          </div>
+          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
+            {VAULT_GENERATION_OPTIONS_HINT}
+          </p>
+          <div style={{ marginTop: '0.65rem' }}>
+            <button
+              type="button"
+              disabled={pdfVaultBusy}
+              onClick={() => {
+                void (async () => {
+                  setPdfVaultError(null);
+                  setPdfMusicXmlExportError(null);
+                  if (!pdfLeadSheetFile) {
+                    setPdfVaultError('Choose a PDF file first.');
+                    return;
+                  }
+                  setPdfVaultBusy(true);
+                  setPdfVaultOutput(null);
+                  setPdfVaultParsedChart(null);
+                  try {
+                    const ab = await pdfLeadSheetFile.arrayBuffer();
+                    const u8 = new Uint8Array(ab);
+                    const pdfBase64 = uint8ArrayToBase64(u8);
+                    const runSeed = Date.now();
+                    const pdfOpts: VaultGenerationOptions = {
+                      mode: pdfVaultMode,
+                      tuningId: pdfVaultTuningId,
+                      riffStyle: pdfVaultRiffStyle,
+                      drift: pdfVaultDrift,
+                      chorusCount: pdfVaultChorusCount,
+                      seed: runSeed,
+                      ...(presetId === 'song_mode'
+                        ? {
+                            duoIntent,
+                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                          }
+                        : {}),
+                    };
+                    const res = await api.generateFromPdf({
+                      pdfBase64,
+                      pageNumber: pdfPageNumber,
+                      mode: pdfVaultMode,
+                      tuningId: pdfVaultTuningId,
+                      riffStyle: pdfVaultRiffStyle,
+                      drift: pdfVaultDrift,
+                      chorusCount: pdfVaultChorusCount,
+                      seed: runSeed,
+                      ...(presetId === 'song_mode'
+                        ? {
+                            duoIntent,
+                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
+                          }
+                        : {}),
+                    });
+                    if (!res.output) {
+                      setPdfVaultError(
+                        res.error ??
+                          'PDF extraction failed or returned no chart. Check ANTHROPIC_API_KEY on the API server, page number, and lead sheet legibility.'
+                      );
+                      return;
+                    }
+                    setPdfVaultLastRunOptions(pdfOpts);
+                    setPdfVaultParsedChart(res.parsedChart ?? null);
+                    setPdfVaultOutput(res.output);
+                    setPdfVaultDual(null);
+                  } catch (e) {
+                    setPdfVaultError(
+                      e instanceof Error ? e.message : 'PDF import failed. Is the Composer OS API running?'
+                    );
+                  } finally {
+                    setPdfVaultBusy(false);
+                  }
+                })();
+              }}
+            >
+              {pdfVaultBusy ? 'Working…' : 'Extract & Generate'}
+            </button>
+          </div>
+          {pdfVaultError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.5rem 0.65rem',
+                borderRadius: 6,
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                fontSize: '0.85rem',
+                color: 'var(--error, #ef4444)',
+              }}
+            >
+              {pdfVaultError}
+            </div>
+          )}
+          {pdfVaultOutput && (
+            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
+                <strong>{pdfVaultOutput.title.trim() ? pdfVaultOutput.title : '(untitled)'}</strong>
+              </p>
+              <p style={{ margin: '0.25rem 0' }}>Key: {pdfVaultOutput.key ?? '—'}</p>
+              <p style={{ margin: '0.25rem 0' }}>Total bars: {pdfVaultOutput.bars}</p>
+              <p style={{ margin: '0.25rem 0' }}>
+                Mapped chords: {pdfVaultOutput.chordMappings.length} · Unmapped:{' '}
+                {pdfVaultOutput.unmappedChords.length}
+              </p>
+              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <strong>Vault seed:</strong> {pdfVaultOutput.seed ?? '—'}
+              </p>
+              {pdfVaultParsedChart?.measures?.length ? (
+                <ChorusArcStrip
+                  chorusCount={pdfVaultChorusCount}
+                  barsPerChorus={pdfVaultParsedChart.measures.length}
+                  output={pdfVaultOutput}
+                  locked={boolArrayToLength([], pdfVaultChorusCount)}
+                  regeneratingChorusIndex={vaultChorusRegenIx}
+                  onToggleLock={() => {}}
+                  onRegenerateChorus={
+                    pdfVaultLastRunOptions?.seed != null && pdfVaultParsedChart
+                      ? (chorusIndex, tensionOverride) =>
+                          void runVaultChorusTensionRegen(
+                            pdfVaultParsedChart,
+                            pdfVaultOutput,
+                            pdfVaultLastRunOptions,
+                            setPdfVaultOutput,
+                            chorusIndex,
+                            tensionOverride
+                          )
+                      : undefined
+                  }
+                />
+              ) : null}
+              {pdfVaultDual ? (
+                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Extract clears this row.
+                </p>
+              ) : null}
+              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={
+                    pdfVaultBusy ||
+                    !pdfVaultParsedChart?.measures?.length ||
+                    pdfVaultLastRunOptions?.seed == null
+                  }
+                  onClick={() => {
+                    const chart = pdfVaultParsedChart;
+                    const output = pdfVaultOutput;
+                    const runOpts = pdfVaultLastRunOptions;
+                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
+                    const driftBase = runOpts.drift ?? 'neutral';
+                    const duoBase = runOpts.duoIntent ?? 'conversational';
+                    setVaultRemixSession({
+                      kind: 'pdf',
+                      chart,
+                      runOptions: { ...runOpts },
+                      outputA: output,
+                      axis: 'drift',
+                      driftB: nextEmotionalDrift(driftBase),
+                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
+                      outputB: null,
+                      patchForB: null,
+                    });
+                  }}
+                >
+                  Remix same seed
+                </button>
+              </div>
+              {pdfVaultDual && pdfVaultParsedChart?.measures?.length ? (
+                <div
+                  style={{
+                    marginTop: '0.65rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '0.65rem',
+                  }}
+                >
+                  {(['a', 'b'] as const).map((side) => {
+                    const o = pdfVaultDual[side];
+                    const bpc = pdfVaultParsedChart.measures!.length;
+                    return (
+                      <div
+                        key={`pdf-dual-${side}`}
+                        style={{
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
+                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
+                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
+                        </p>
+                        <ChorusArcStrip
+                          chorusCount={1}
+                          barsPerChorus={bpc}
+                          output={o}
+                          locked={[false]}
+                          onToggleLock={() => {}}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+              {pdfVaultOutput.unmappedChords.length > 0 && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: '0 0 0.35rem',
+                      fontWeight: 600,
+                      color: '#ca8a04',
+                      fontSize: '0.82rem',
+                    }}
+                  >
+                    Unmapped chords
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    {pdfVaultOutput.unmappedChords.map((u, i) => (
+                      <li key={`pdf-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
+                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    setPdfMusicXmlExportError(null);
+                    if (!pdfVaultOutput.generatedNotes.length) {
+                      setPdfMusicXmlExportError('No generated notes to export (all chords may be unmapped).');
+                      return;
+                    }
+                    const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                    const xml = vaultRiffScoreNotesToMusicXml(
+                      pdfVaultOutput.generatedNotes,
+                      pdfVaultOutput.bars,
+                      titleRaw
+                    );
+                    const base =
+                      titleRaw
+                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                        .replace(/\s+/g, '_')
+                        .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${base}.xml`;
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Download MusicXML
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setPdfSideExportMsg(null);
+                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        pdfVaultOutput.generatedNotes,
+                        pdfVaultOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setPdfSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
+                      setPdfSideExportMsg(
+                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      setPdfSideExportMsg(null);
+                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
+                      const xml = vaultRiffScoreNotesToMusicXml(
+                        pdfVaultOutput.generatedNotes,
+                        pdfVaultOutput.bars,
+                        titleRaw
+                      );
+                      const base =
+                        titleRaw
+                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+                          .replace(/\s+/g, '_')
+                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
+                      const saved = await saveMusicXmlForSideExport(xml, base);
+                      if (!saved.ok) {
+                        setPdfSideExportMsg(saved.error);
+                        return;
+                      }
+                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
+                      setPdfSideExportMsg(
+                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
+                      );
+                    })();
+                  }}
+                >
+                  Export Guitar Pro
+                </button>
+              </div>
+              {pdfSideExportMsg && (
+                <p
+                  style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.82rem',
+                    color: pdfSideExportMsg.includes('exported:')
+                      ? 'var(--text-muted)'
+                      : 'var(--error, #ef4444)',
+                  }}
+                >
+                  {pdfSideExportMsg}
+                </p>
+              )}
+              {pdfMusicXmlExportError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    fontSize: '0.85rem',
+                    color: 'var(--error, #ef4444)',
+                  }}
+                >
+                  {pdfMusicXmlExportError}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </details>
+
+        </div>
+      </details>
 
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
@@ -11139,1168 +12329,6 @@ export function HomeGenerate({
         />
       )}
 
-
-
-      <details
-        style={{
-          marginBottom: '1rem',
-          maxWidth: 560,
-          padding: '0.75rem 0.85rem',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            color: 'var(--text)',
-            listStylePosition: 'outside',
-          }}
-        >
-          Chord Inspector
-        </summary>
-        <div style={{ marginTop: '0.85rem' }}>
-          <label
-            htmlFor="co-chord-inspector-input"
-            style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-          >
-            Chord symbol
-          </label>
-          <input
-            id="co-chord-inspector-input"
-            type="text"
-            value={chordInspectorInput}
-            onChange={(e) => setChordInspectorInput(e.target.value)}
-            placeholder="e.g. Cmaj7, F#min9, Bb7#11"
-            autoComplete="off"
-            spellCheck={false}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              fontSize: '0.88rem',
-              padding: '0.45rem 0.5rem',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--bg)',
-              color: 'var(--text)',
-            }}
-          />
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              marginTop: '0.65rem',
-              alignItems: 'flex-end',
-            }}
-          >
-            <div role="group" aria-label="Chord inspector mode">
-              <span
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Mode
-              </span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className={chordInspectorMode === 'solo' ? undefined : 'secondary'}
-                  onClick={() => setChordInspectorMode('solo')}
-                  aria-pressed={chordInspectorMode === 'solo'}
-                >
-                  Solo
-                </button>
-                <button
-                  type="button"
-                  className={chordInspectorMode === 'melody' ? undefined : 'secondary'}
-                  onClick={() => setChordInspectorMode('melody')}
-                  aria-pressed={chordInspectorMode === 'melody'}
-                >
-                  Melody
-                </button>
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-inspector-bars"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Bars
-              </label>
-              <select
-                id="co-chord-inspector-bars"
-                value={chordInspectorBars}
-                onChange={(e) => setChordInspectorBars(Number(e.target.value) as 1 | 2 | 4)}
-              >
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={4}>4</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-inspector-riff-style"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Riff style
-              </label>
-              <select
-                id="co-chord-inspector-riff-style"
-                value={chordInspectorRiffStyle}
-                onChange={(e) =>
-                  setChordInspectorRiffStyle(
-                    e.target.value as
-                      | 'bebop-placement'
-                      | 'quadratonic'
-                      | 'dyad-seesaw'
-                      | 'triad-pair-pendulum'
-                      | 'pedal-string'
-                  )
-                }
-              >
-                <option value="bebop-placement">bebop-placement</option>
-                <option value="quadratonic">quadratonic</option>
-                <option value="dyad-seesaw">dyad-seesaw</option>
-                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
-                <option value="pedal-string">pedal-string</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-chord-inspector-tuning"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Tuning
-              </label>
-              <select
-                id="co-chord-inspector-tuning"
-                value={chordInspectorTuningId}
-                onChange={(e) => setChordInspectorTuningId(e.target.value)}
-              >
-                <option value="standard">standard</option>
-                <option value="dadgad">dadgad (DADGAD)</option>
-                <option value="open_d">open_d (Open D)</option>
-                <option value="open_g">open_g (Open G)</option>
-                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setChordInspectorExportError(null);
-                const r = inspectChordSymbol(chordInspectorInput, chordInspectorTuningId);
-                if (!r) {
-                  setChordInspectorResult(null);
-                  setChordInspectorReharmPanelOpen(false);
-                  setChordInspectorParseError(
-                    'Could not parse chord or map it to the Tonality Vault. Check the symbol (e.g. Cmaj7, F#m9, Bb7#11).'
-                  );
-                  return;
-                }
-                setChordInspectorParseError(null);
-                setChordInspectorResult(r);
-                setChordInspectorReharmPanelOpen(false);
-              }}
-            >
-              Inspect Chord
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => {
-                setChordInspectorExportError(null);
-                const xml = inspectChordToMusicXml(chordInspectorInput, {
-                  bars: chordInspectorBars,
-                  mode: chordInspectorMode,
-                  tuningId: chordInspectorTuningId,
-                  riffStyle: chordInspectorRiffStyle,
-                });
-                if (!xml) {
-                  setChordInspectorExportError(
-                    'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
-                  );
-                  return;
-                }
-                const base =
-                  chordInspectorInput
-                    .trim()
-                    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                    .replace(/\s+/g, '_')
-                    .replace(/^\.+|\.+$/g, '') || 'chord';
-                const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${base}.xml`;
-                a.rel = 'noopener';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-            >
-              Generate + Export MusicXML
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              disabled={chordInspectorAnalyticalBusy || !chordInspectorInput.trim()}
-              onClick={() => {
-                void (async () => {
-                  setChordInspectorAnalyticalError(null);
-                  setChordInspectorAnalyticalResult(null);
-                  const chords = chordsForAnalyticalInput(chordInspectorInput);
-                  if (chords.length === 0) {
-                    setChordInspectorAnalyticalError('Enter at least one chord symbol.');
-                    return;
-                  }
-                  setChordInspectorAnalyticalBusy(true);
-                  try {
-                    const r = await api.analyse({
-                      chords,
-                      key: tonalCenter.trim() || chordPasteKey || 'C',
-                    });
-                    if (!r.success) {
-                      setChordInspectorAnalyticalError(r.error);
-                      return;
-                    }
-                    setChordInspectorAnalyticalResult(r.result);
-                  } catch (e) {
-                    setChordInspectorAnalyticalError(e instanceof Error ? e.message : String(e));
-                  } finally {
-                    setChordInspectorAnalyticalBusy(false);
-                  }
-                })();
-              }}
-            >
-              {chordInspectorAnalyticalBusy ? 'Analysing…' : 'Analyse'}
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              disabled={!chordInspectorInput.trim()}
-              onClick={() => {
-                void (async () => {
-                  setChordInspectorSideExportMsg(null);
-                  const xml = inspectChordToMusicXml(chordInspectorInput, {
-                    bars: chordInspectorBars,
-                    mode: chordInspectorMode,
-                    tuningId: chordInspectorTuningId,
-                    riffStyle: chordInspectorRiffStyle,
-                  });
-                  if (!xml) {
-                    setChordInspectorSideExportMsg(
-                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
-                    );
-                    return;
-                  }
-                  const base =
-                    chordInspectorInput
-                      .trim()
-                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                      .replace(/\s+/g, '_')
-                      .replace(/^\.+|\.+$/g, '') || 'chord';
-                  const saved = await saveMusicXmlForSideExport(xml, base);
-                  if (!saved.ok) {
-                    setChordInspectorSideExportMsg(saved.error);
-                    return;
-                  }
-                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
-                  setChordInspectorSideExportMsg(
-                    r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
-                  );
-                })();
-              }}
-            >
-              Export PDF
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              disabled={!chordInspectorInput.trim()}
-              onClick={() => {
-                void (async () => {
-                  setChordInspectorSideExportMsg(null);
-                  const xml = inspectChordToMusicXml(chordInspectorInput, {
-                    bars: chordInspectorBars,
-                    mode: chordInspectorMode,
-                    tuningId: chordInspectorTuningId,
-                    riffStyle: chordInspectorRiffStyle,
-                  });
-                  if (!xml) {
-                    setChordInspectorSideExportMsg(
-                      'Could not generate MusicXML (unmapped chord, empty riff, or parse error).'
-                    );
-                    return;
-                  }
-                  const base =
-                    chordInspectorInput
-                      .trim()
-                      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                      .replace(/\s+/g, '_')
-                      .replace(/^\.+|\.+$/g, '') || 'chord';
-                  const saved = await saveMusicXmlForSideExport(xml, base);
-                  if (!saved.ok) {
-                    setChordInspectorSideExportMsg(saved.error);
-                    return;
-                  }
-                  const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
-                  setChordInspectorSideExportMsg(
-                    r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
-                  );
-                })();
-              }}
-            >
-              Export Guitar Pro
-            </button>
-          </div>
-          {chordInspectorSideExportMsg && (
-            <p
-              style={{
-                marginTop: '0.5rem',
-                fontSize: '0.82rem',
-                color: chordInspectorSideExportMsg.includes('exported:')
-                  ? 'var(--text-muted)'
-                  : 'var(--error, #ef4444)',
-              }}
-            >
-              {chordInspectorSideExportMsg}
-            </p>
-          )}
-          {chordInspectorAnalyticalError && (
-            <div
-              role="alert"
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: 6,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                fontSize: '0.85rem',
-                color: 'var(--error, #ef4444)',
-              }}
-            >
-              {chordInspectorAnalyticalError}
-            </div>
-          )}
-          {chordInspectorAnalyticalResult && !chordInspectorAnalyticalError && (
-            <div style={{ marginTop: '0.75rem', overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '0.35rem 0.5rem' }}>Symbol</th>
-                    <th style={{ padding: '0.35rem 0.5rem' }}>Normalised</th>
-                    <th style={{ padding: '0.35rem 0.5rem' }}>Degree</th>
-                    <th style={{ padding: '0.35rem 0.5rem' }}>Function</th>
-                    <th style={{ padding: '0.35rem 0.5rem' }}>Tension</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chordInspectorAnalyticalResult.bars.map((row, i) => (
-                    <tr key={`analytical-${row.barIndex}-${i}-${row.symbol}`} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.symbol}</td>
-                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.normalised}</td>
-                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.scaleDegree ?? '—'}</td>
-                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.functionalHint ?? '—'}</td>
-                      <td style={{ padding: '0.35rem 0.5rem' }}>{row.tension ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {chordInspectorAnalyticalResult.modulationSuggestions.length > 0 && (
-                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  {chordInspectorAnalyticalResult.modulationSuggestions.map((s) => (
-                    <li key={s}>{s}</li>
-                  ))}
-                </ul>
-              )}
-              {chordInspectorAnalyticalResult.warnings.length > 0 && (
-                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.1rem', fontSize: '0.82rem', color: '#ca8a04' }}>
-                  {chordInspectorAnalyticalResult.warnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-          {chordInspectorParseError && (
-            <div
-              role="alert"
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: 6,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                fontSize: '0.85rem',
-                color: 'var(--error, #ef4444)',
-              }}
-            >
-              {chordInspectorParseError}
-            </div>
-          )}
-          {chordInspectorExportError && (
-            <div
-              role="alert"
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: 6,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                fontSize: '0.85rem',
-                color: 'var(--error, #ef4444)',
-              }}
-            >
-              {chordInspectorExportError}
-            </div>
-          )}
-          {chordInspectorResult && !chordInspectorParseError && (
-            <div
-              style={{
-                marginTop: '0.85rem',
-                fontSize: '0.88rem',
-                color: 'var(--text-muted)',
-                lineHeight: 1.45,
-              }}
-            >
-              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
-                <strong>Vault chord type id:</strong> {chordInspectorResult.vaultChordTypeId}
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>
-                <strong>Melodic triad (pitch classes):</strong>{' '}
-                {chordInspectorResult.melodicTriad.join(', ')}
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>
-                <strong>Primary tension note (PC):</strong> {chordInspectorResult.primaryTensionNote}
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>
-                <strong>Quadratonic pitch classes:</strong>{' '}
-                {chordInspectorResult.quadratonicPitchClasses.join(', ')}
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>
-                <strong>Guitar grips found:</strong> {chordInspectorResult.guitarGrips.length}
-              </p>
-              <div
-                style={{
-                  marginTop: '0.85rem',
-                  padding: '0.65rem 0.75rem',
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-elevated, rgba(0,0,0,0.04))',
-                }}
-                role="region"
-                aria-label="Reharmonisation"
-              >
-                <p
-                  style={{
-                    margin: '0 0 0.5rem',
-                    fontSize: '0.8rem',
-                    color: 'var(--text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  Reharm (Tonality Vault)
-                </p>
-                <button
-                  type="button"
-                  style={{ marginBottom: '0.65rem' }}
-                  onClick={() => {
-                    setChordInspectorReharmPanelOpen(true);
-                  }}
-                >
-                  Reharmonise
-                </button>
-                {chordInspectorReharmPanelOpen ? (
-                  <>
-                    <div style={{ marginBottom: '0.65rem' }}>
-                      <label
-                        htmlFor="co-chord-inspector-reharm-drift-slider"
-                        style={{ display: 'block', marginBottom: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}
-                      >
-                        Drift proximity (targets {emotionalDriftOptionLabel(sliderToTargetReharmDrift(chordInspectorReharmDriftSlider))})
-                      </label>
-                      <input
-                        id="co-chord-inspector-reharm-drift-slider"
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        value={chordInspectorReharmDriftSlider}
-                        onChange={(e) => {
-                          const raw = Number(e.target.value);
-                          const v = Math.min(1, Math.max(0, Math.round(raw * 10) / 10));
-                          setChordInspectorReharmDriftSlider(v);
-                        }}
-                        style={{ width: '100%', maxWidth: 360 }}
-                      />
-                      <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {chordInspectorReharmDriftSlider.toFixed(1)} · reorder by affinity to selected drift
-                      </p>
-                    </div>
-                    {chordInspectorReharmTopEight.length === 0 ? (
-                      <p style={{ margin: 0, fontSize: '0.82rem' }}>No candidates (empty vault row or parse edge case).</p>
-                    ) : (
-                      <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem' }}>
-                        {chordInspectorReharmTopEight.map((c, i) => {
-                          const sym = formatChordInspectorSubstituteSymbol(c.substituteRootPc, c.substituteChordTypeId);
-                          const dom = dominantEmotionalDriftForChordType(c.substituteChordTypeId);
-                          return (
-                            <li
-                              key={`reharm-${c.substituteChordTypeId}-${c.strategy}-${i}`}
-                              style={{ marginBottom: '0.55rem' }}
-                            >
-                              <span style={{ color: 'var(--text)' }}>
-                                <strong>{sym}</strong>
-                              </span>
-                              <span style={{ marginLeft: '0.45rem', color: 'var(--text-muted)' }}>
-                                drift: {emotionalDriftOptionLabel(dom)}
-                              </span>
-                              <div style={{ marginTop: '0.35rem' }}>
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  onClick={() => setChordInspectorInput(sym)}
-                                >
-                                  Use this chord
-                                </button>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            </div>
-          )}
-        </div>
-      </details>
-
-      <details
-        style={{
-          marginBottom: '1rem',
-          maxWidth: 'min(1200px, 100%)',
-          padding: '0.75rem 0.85rem',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            color: 'var(--text)',
-            listStylePosition: 'outside',
-          }}
-        >
-          Reharm preview
-        </summary>
-        <ReharmPanel
-          chordProgressionText={chordProgressionText}
-          songFormBars={songFormBars}
-          baseSeed={baseSeed}
-          songwriterStyleId={songwriterStyle}
-          playbackBeat={playbackBeat}
-          playbackBeatsPerBar={playbackSeq?.beatsPerBar}
-          postGenHarmonyBars={
-            result?.success && result.parsedCustomProgressionBars?.length === songFormBars
-              ? result.parsedCustomProgressionBars
-              : null
-          }
-          postGenSeed={result?.runManifest?.seed ?? baseSeed}
-          styleTransferWayneHarmonyAuthoritative={
-            (result as { styleTransferWayneHarmonyAuthoritative?: boolean } | null)
-              ?.styleTransferWayneHarmonyAuthoritative
-          }
-          postGenMusicXml={lastGenerateMusicXml ?? result?.xml ?? null}
-          postGenTimeSig={
-            iRealParsedChart?.timeSignature
-              ? `${iRealParsedChart.timeSignature.num}/${iRealParsedChart.timeSignature.den}`
-              : '4/4'
-          }
-          onApplyBars={(bars) => {
-            setChordProgressionText(bars.join(' | '));
-            reharmApplyHarmonyUnlockRef.current = true;
-            if (presetId === 'string_quartet' && sqArrangerGenerateBlocked) return;
-            void generate();
-          }}
-        />
-      </details>
-
-      <details
-        style={{
-          marginBottom: '1rem',
-          maxWidth: 560,
-          padding: '0.75rem 0.85rem',
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            color: 'var(--text)',
-            listStylePosition: 'outside',
-          }}
-        >
-          PDF Lead Sheet Import (Beta)
-        </summary>
-        <div style={{ marginTop: '0.85rem' }}>
-          <input
-            ref={pdfFileInputRef}
-            type="file"
-            accept="application/pdf,.pdf"
-            aria-label="PDF lead sheet file"
-            disabled={pdfVaultBusy}
-            style={{ display: 'block', marginBottom: '0.65rem', fontSize: '0.85rem' }}
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              setPdfLeadSheetFile(f);
-              setPdfVaultOutput(null);
-              setPdfVaultParsedChart(null);
-              setPdfVaultError(null);
-              setPdfMusicXmlExportError(null);
-            }}
-          />
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-              marginBottom: '0.65rem',
-              alignItems: 'flex-end',
-            }}
-          >
-            <div>
-              <label
-                htmlFor="co-pdf-page"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Page
-              </label>
-              <input
-                id="co-pdf-page"
-                type="number"
-                min={1}
-                value={pdfPageNumber}
-                onChange={(e) => setPdfPageNumber(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-                disabled={pdfVaultBusy}
-                style={{
-                  width: '4.5rem',
-                  padding: '0.35rem 0.45rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-            <div role="group" aria-label="PDF vault mode">
-              <span
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Mode
-              </span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className={pdfVaultMode === 'solo' ? undefined : 'secondary'}
-                  onClick={() => setPdfVaultMode('solo')}
-                  disabled={pdfVaultBusy}
-                  aria-pressed={pdfVaultMode === 'solo'}
-                >
-                  Solo
-                </button>
-                <button
-                  type="button"
-                  className={pdfVaultMode === 'melody' ? undefined : 'secondary'}
-                  onClick={() => setPdfVaultMode('melody')}
-                  disabled={pdfVaultBusy}
-                  aria-pressed={pdfVaultMode === 'melody'}
-                >
-                  Melody
-                </button>
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="co-pdf-tuning"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Tuning
-              </label>
-              <select
-                id="co-pdf-tuning"
-                value={pdfVaultTuningId}
-                onChange={(e) => setPdfVaultTuningId(e.target.value)}
-                disabled={pdfVaultBusy}
-              >
-                <option value="standard">standard</option>
-                <option value="dadgad">dadgad (DADGAD)</option>
-                <option value="open_d">open_d (Open D)</option>
-                <option value="open_g">open_g (Open G)</option>
-                <option value="sy_cgdgcd">sy_cgdgcd (Sonic Youth)</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-pdf-riff-style"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Riff style
-              </label>
-              <select
-                id="co-pdf-riff-style"
-                value={pdfVaultRiffStyle}
-                onChange={(e) =>
-                  setPdfVaultRiffStyle(
-                    e.target.value as
-                      | 'bebop-placement'
-                      | 'quadratonic'
-                      | 'dyad-seesaw'
-                      | 'triad-pair-pendulum'
-                      | 'pedal-string'
-                  )
-                }
-                disabled={pdfVaultBusy}
-              >
-                <option value="bebop-placement">bebop-placement</option>
-                <option value="quadratonic">quadratonic</option>
-                <option value="dyad-seesaw">dyad-seesaw</option>
-                <option value="triad-pair-pendulum">triad-pair-pendulum</option>
-                <option value="pedal-string">pedal-string</option>
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-pdf-drift"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Emotional drift
-              </label>
-              <select
-                id="co-pdf-drift"
-                value={pdfVaultDrift}
-                onChange={(e) => setPdfVaultDrift(e.target.value as EmotionalDrift)}
-                disabled={pdfVaultBusy}
-              >
-                {VAULT_EMOTIONAL_DRIFT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="co-pdf-choruses"
-                style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: 'var(--text-muted)' }}
-              >
-                Choruses
-              </label>
-              <input
-                id="co-pdf-choruses"
-                type="number"
-                min={1}
-                max={4}
-                step={1}
-                value={pdfVaultChorusCount}
-                onChange={(e) =>
-                  setPdfVaultChorusCount(Math.min(4, Math.max(1, Math.floor(Number(e.target.value) || 1))))
-                }
-                disabled={pdfVaultBusy}
-                style={{
-                  width: '5rem',
-                  padding: '0.35rem 0.45rem',
-                  borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-          </div>
-          <p style={{ margin: '0.45rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 520 }}>
-            {VAULT_GENERATION_OPTIONS_HINT}
-          </p>
-          <div style={{ marginTop: '0.65rem' }}>
-            <button
-              type="button"
-              disabled={pdfVaultBusy}
-              onClick={() => {
-                void (async () => {
-                  setPdfVaultError(null);
-                  setPdfMusicXmlExportError(null);
-                  if (!pdfLeadSheetFile) {
-                    setPdfVaultError('Choose a PDF file first.');
-                    return;
-                  }
-                  setPdfVaultBusy(true);
-                  setPdfVaultOutput(null);
-                  setPdfVaultParsedChart(null);
-                  try {
-                    const ab = await pdfLeadSheetFile.arrayBuffer();
-                    const u8 = new Uint8Array(ab);
-                    const pdfBase64 = uint8ArrayToBase64(u8);
-                    const runSeed = Date.now();
-                    const pdfOpts: VaultGenerationOptions = {
-                      mode: pdfVaultMode,
-                      tuningId: pdfVaultTuningId,
-                      riffStyle: pdfVaultRiffStyle,
-                      drift: pdfVaultDrift,
-                      chorusCount: pdfVaultChorusCount,
-                      seed: runSeed,
-                      ...(presetId === 'song_mode'
-                        ? {
-                            duoIntent,
-                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
-                          }
-                        : {}),
-                    };
-                    const res = await api.generateFromPdf({
-                      pdfBase64,
-                      pageNumber: pdfPageNumber,
-                      mode: pdfVaultMode,
-                      tuningId: pdfVaultTuningId,
-                      riffStyle: pdfVaultRiffStyle,
-                      drift: pdfVaultDrift,
-                      chorusCount: pdfVaultChorusCount,
-                      seed: runSeed,
-                      ...(presetId === 'song_mode'
-                        ? {
-                            duoIntent,
-                            songwriterStyleId: songwriterStyle.trim().toLowerCase(),
-                          }
-                        : {}),
-                    });
-                    if (!res.output) {
-                      setPdfVaultError(
-                        res.error ??
-                          'PDF extraction failed or returned no chart. Check ANTHROPIC_API_KEY on the API server, page number, and lead sheet legibility.'
-                      );
-                      return;
-                    }
-                    setPdfVaultLastRunOptions(pdfOpts);
-                    setPdfVaultParsedChart(res.parsedChart ?? null);
-                    setPdfVaultOutput(res.output);
-                    setPdfVaultDual(null);
-                  } catch (e) {
-                    setPdfVaultError(
-                      e instanceof Error ? e.message : 'PDF import failed. Is the Composer OS API running?'
-                    );
-                  } finally {
-                    setPdfVaultBusy(false);
-                  }
-                })();
-              }}
-            >
-              {pdfVaultBusy ? 'Working…' : 'Extract & Generate'}
-            </button>
-          </div>
-          {pdfVaultError && (
-            <div
-              role="alert"
-              style={{
-                marginTop: '0.75rem',
-                padding: '0.5rem 0.65rem',
-                borderRadius: 6,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.35)',
-                fontSize: '0.85rem',
-                color: 'var(--error, #ef4444)',
-              }}
-            >
-              {pdfVaultError}
-            </div>
-          )}
-          {pdfVaultOutput && (
-            <div style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-              <p style={{ margin: '0 0 0.35rem', color: 'var(--text)' }}>
-                <strong>{pdfVaultOutput.title.trim() ? pdfVaultOutput.title : '(untitled)'}</strong>
-              </p>
-              <p style={{ margin: '0.25rem 0' }}>Key: {pdfVaultOutput.key ?? '—'}</p>
-              <p style={{ margin: '0.25rem 0' }}>Total bars: {pdfVaultOutput.bars}</p>
-              <p style={{ margin: '0.25rem 0' }}>
-                Mapped chords: {pdfVaultOutput.chordMappings.length} · Unmapped:{' '}
-                {pdfVaultOutput.unmappedChords.length}
-              </p>
-              <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                <strong>Vault seed:</strong> {pdfVaultOutput.seed ?? '—'}
-              </p>
-              {pdfVaultParsedChart?.measures?.length ? (
-                <ChorusArcStrip
-                  chorusCount={pdfVaultChorusCount}
-                  barsPerChorus={pdfVaultParsedChart.measures.length}
-                  output={pdfVaultOutput}
-                  locked={boolArrayToLength([], pdfVaultChorusCount)}
-                  regeneratingChorusIndex={vaultChorusRegenIx}
-                  onToggleLock={() => {}}
-                  onRegenerateChorus={
-                    pdfVaultLastRunOptions?.seed != null && pdfVaultParsedChart
-                      ? (chorusIndex, tensionOverride) =>
-                          void runVaultChorusTensionRegen(
-                            pdfVaultParsedChart,
-                            pdfVaultOutput,
-                            pdfVaultLastRunOptions,
-                            setPdfVaultOutput,
-                            chorusIndex,
-                            tensionOverride
-                          )
-                      : undefined
-                  }
-                />
-              ) : null}
-              {pdfVaultDual ? (
-                <p style={{ margin: '0.35rem 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <strong>Compare pair saved:</strong> variants A & B (see below). Next Extract clears this row.
-                </p>
-              ) : null}
-              <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={
-                    pdfVaultBusy ||
-                    !pdfVaultParsedChart?.measures?.length ||
-                    pdfVaultLastRunOptions?.seed == null
-                  }
-                  onClick={() => {
-                    const chart = pdfVaultParsedChart;
-                    const output = pdfVaultOutput;
-                    const runOpts = pdfVaultLastRunOptions;
-                    if (!chart?.measures?.length || !output || runOpts?.seed == null) return;
-                    const driftBase = runOpts.drift ?? 'neutral';
-                    const duoBase = runOpts.duoIntent ?? 'conversational';
-                    setVaultRemixSession({
-                      kind: 'pdf',
-                      chart,
-                      runOptions: { ...runOpts },
-                      outputA: output,
-                      axis: 'drift',
-                      driftB: nextEmotionalDrift(driftBase),
-                      duoB: duoBase === 'conversational' ? 'supportive' : 'conversational',
-                      outputB: null,
-                      patchForB: null,
-                    });
-                  }}
-                >
-                  Remix same seed
-                </button>
-              </div>
-              {pdfVaultDual && pdfVaultParsedChart?.measures?.length ? (
-                <div
-                  style={{
-                    marginTop: '0.65rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '0.65rem',
-                  }}
-                >
-                  {(['a', 'b'] as const).map((side) => {
-                    const o = pdfVaultDual[side];
-                    const bpc = pdfVaultParsedChart.measures!.length;
-                    return (
-                      <div
-                        key={`pdf-dual-${side}`}
-                        style={{
-                          padding: '0.55rem 0.65rem',
-                          borderRadius: 8,
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-elevated, rgba(0,0,0,0.03))',
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Saved variant {side.toUpperCase()}</div>
-                        <p style={{ margin: '0.15rem 0', fontSize: '0.78rem' }}>
-                          Bars: {o.bars} · Mapped: {o.chordMappings.length}
-                        </p>
-                        <ChorusArcStrip
-                          chorusCount={1}
-                          barsPerChorus={bpc}
-                          output={o}
-                          locked={[false]}
-                          onToggleLock={() => {}}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {pdfVaultOutput.unmappedChords.length > 0 && (
-                <div
-                  style={{
-                    marginTop: '0.5rem',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: 6,
-                    background: 'rgba(234,179,8,0.12)',
-                    border: '1px solid rgba(234,179,8,0.35)',
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: '0 0 0.35rem',
-                      fontWeight: 600,
-                      color: '#ca8a04',
-                      fontSize: '0.82rem',
-                    }}
-                  >
-                    Unmapped chords
-                  </p>
-                  <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    {pdfVaultOutput.unmappedChords.map((u, i) => (
-                      <li key={`pdf-unmapped-${u.barIndex}-${i}-${u.symbol}`}>
-                        Bar {u.barIndex + 1}: {u.symbol || '(empty)'}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    setPdfMusicXmlExportError(null);
-                    if (!pdfVaultOutput.generatedNotes.length) {
-                      setPdfMusicXmlExportError('No generated notes to export (all chords may be unmapped).');
-                      return;
-                    }
-                    const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
-                    const xml = vaultRiffScoreNotesToMusicXml(
-                      pdfVaultOutput.generatedNotes,
-                      pdfVaultOutput.bars,
-                      titleRaw
-                    );
-                    const base =
-                      titleRaw
-                        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                        .replace(/\s+/g, '_')
-                        .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
-                    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${base}.xml`;
-                    a.rel = 'noopener';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  Download MusicXML
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    void (async () => {
-                      setPdfSideExportMsg(null);
-                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
-                      const xml = vaultRiffScoreNotesToMusicXml(
-                        pdfVaultOutput.generatedNotes,
-                        pdfVaultOutput.bars,
-                        titleRaw
-                      );
-                      const base =
-                        titleRaw
-                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                          .replace(/\s+/g, '_')
-                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
-                      const saved = await saveMusicXmlForSideExport(xml, base);
-                      if (!saved.ok) {
-                        setPdfSideExportMsg(saved.error);
-                        return;
-                      }
-                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'pdf');
-                      setPdfSideExportMsg(
-                        r.success ? `PDF exported: ${r.path}` : r.error ?? 'PDF export failed.'
-                      );
-                    })();
-                  }}
-                >
-                  Export PDF
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={pdfVaultBusy || pdfVaultOutput.generatedNotes.length === 0}
-                  onClick={() => {
-                    void (async () => {
-                      setPdfSideExportMsg(null);
-                      const titleRaw = pdfVaultOutput.title.trim() || 'PDF lead sheet';
-                      const xml = vaultRiffScoreNotesToMusicXml(
-                        pdfVaultOutput.generatedNotes,
-                        pdfVaultOutput.bars,
-                        titleRaw
-                      );
-                      const base =
-                        titleRaw
-                          .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
-                          .replace(/\s+/g, '_')
-                          .replace(/^\.+|\.+$/g, '') || 'pdf_lead_sheet';
-                      const saved = await saveMusicXmlForSideExport(xml, base);
-                      if (!saved.ok) {
-                        setPdfSideExportMsg(saved.error);
-                        return;
-                      }
-                      const r = await runSideExportFromMusicXmlPath(saved.musicXmlPath, 'gp');
-                      setPdfSideExportMsg(
-                        r.success ? `Guitar Pro exported: ${r.path}` : r.error ?? 'Guitar Pro export failed.'
-                      );
-                    })();
-                  }}
-                >
-                  Export Guitar Pro
-                </button>
-              </div>
-              {pdfSideExportMsg && (
-                <p
-                  style={{
-                    marginTop: '0.5rem',
-                    fontSize: '0.82rem',
-                    color: pdfSideExportMsg.includes('exported:')
-                      ? 'var(--text-muted)'
-                      : 'var(--error, #ef4444)',
-                  }}
-                >
-                  {pdfSideExportMsg}
-                </p>
-              )}
-              {pdfMusicXmlExportError && (
-                <div
-                  role="alert"
-                  style={{
-                    marginTop: '0.75rem',
-                    padding: '0.5rem 0.65rem',
-                    borderRadius: 6,
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.35)',
-                    fontSize: '0.85rem',
-                    color: 'var(--error, #ef4444)',
-                  }}
-                >
-                  {pdfMusicXmlExportError}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </details>
 
       {vaultRemixSession ? (
         <div
